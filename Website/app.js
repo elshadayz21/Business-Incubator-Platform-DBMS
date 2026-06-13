@@ -15,6 +15,7 @@ import {
   get429,
 } from "./controllers/error/error.controller.js";
 import { initWorkshopJobs } from "./utils/jobs.js";
+import "./subscribers/subscribers.js";
 
 const app = express();
 const pgSession = connectPgSimpleImport(session);

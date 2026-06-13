@@ -114,3 +114,49 @@ export const updateUserPassword = async (userId, newHashedPassword) => {
     throw err;
   }
 };
+
+export const getUserNotifications = async (userId) => {
+  try {
+    const result = await pool.query(
+      `SELECT id, type, message, read, created_at 
+       FROM notifications 
+       WHERE user_id = $1 
+       ORDER BY created_at DESC`,
+      [userId]
+    );
+    return result.rows;
+  } catch (err) {
+    console.error("Error fetching user notifications:", err);
+    throw err;
+  }
+};
+
+export const markNotificationsAsRead = async (userId) => {
+  try {
+    await pool.query(
+      `UPDATE notifications 
+       SET read = true 
+       WHERE user_id = $1 AND read = false`,
+      [userId]
+    );
+  } catch (err) {
+    console.error("Error marking notifications as read:", err);
+    throw err;
+  }
+};
+
+export const createNotification = async (userId, type, message) => {
+  try {
+    const result = await pool.query(
+      `INSERT INTO notifications (user_id, type, message, read, created_at)
+       VALUES ($1, $2, $3, false, NOW())
+       RETURNING *`,
+      [userId, type, message]
+    );
+    return result.rows[0];
+  } catch (err) {
+    console.error("Error creating notification:", err);
+    throw err;
+  }
+};
+

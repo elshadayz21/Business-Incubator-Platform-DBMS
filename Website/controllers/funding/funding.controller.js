@@ -10,6 +10,9 @@ import {
 } from "../../models/funding/funding.model.js";
 
 import { BadRequestError } from "../../utils/error.js";
+import { getProjectEntrepreneurs, getProjectById } from "../../models/project/project.model.js";
+import { createNotification } from "../../models/auth/auth.model.js";
+import eventBus from "../../utils/eventBus.js";
 
 // Create a new funding request
 export const createFundingRequestController = async (req, res, next) => {
@@ -37,6 +40,9 @@ export const createFundingRequestController = async (req, res, next) => {
       funding_stage,
       description: description || null,
     });
+
+    // Emit event for subscribers
+    eventBus.emit("funding.requested", { request: fundingRequest, userId: req.session.userId });
 
     res.status(201).json({
       success: true,
@@ -123,17 +129,25 @@ export const updateFundingRequestStatusController = async (req, res, next) => {
 
     // Get user ID from session (assuming reviewed by admin)
     const reviewedBy = req.session?.userId || null;
+    const isInvestor = req.session?.userRole === "investor";
 
     const updatedRequest = await updateFundingRequestStatus(
       parseInt(id),
       status,
       reviewedBy,
       notes || null,
+      isInvestor,
     );
 
     if (!updatedRequest) {
       throw new BadRequestError("Funding request not found", 404);
     }
+
+    // Emit event for subscribers (logging, metrics, decoupled notifications)
+    eventBus.emit("funding.reviewed", {
+      request: updatedRequest,
+      reviewer: { id: reviewedBy, name: req.session.userName || "investor" }
+    });
 
     res.status(200).json({
       success: true,

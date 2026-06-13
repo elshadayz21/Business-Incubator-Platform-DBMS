@@ -90,7 +90,7 @@
             e.preventDefault();
             
             const workshopId = '<%= workshop.id %>';
-            const endpoint = isCurrentlyEnrolled ? 'DELETE' : 'POST';
+            const isCurrentlyEnrolled = <%= isEnrolled ? 'true' : 'false' %>;
             const method = isCurrentlyEnrolled ? 'DELETE' : 'POST';
             
             try {

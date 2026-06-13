@@ -144,3 +144,21 @@ export const getProjectById = async (project_id) => {
     throw err;
   }
 };
+
+export const getMentorProjects = async (userId) => {
+  try {
+    const result = await pool.query(
+      `SELECT p.* 
+       FROM projects p
+       JOIN mentor_project_assignments mpa ON p.id = mpa.project_id
+       JOIN mentors m ON mpa.mentor_id = m.id
+       WHERE m.user_id = $1
+       ORDER BY p.created_at DESC`,
+      [userId]
+    );
+    return result.rows;
+  } catch (err) {
+    console.error("Error getting mentor projects:", err);
+    throw err;
+  }
+};

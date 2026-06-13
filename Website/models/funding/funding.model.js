@@ -212,20 +212,31 @@ export const updateFundingRequestStatus = async (
   status,
   reviewedBy = null,
   notes = null,
+  isInvestor = false,
 ) => {
   try {
-    const result = await pool.query(
-      `UPDATE funding_requests 
-      SET 
-        status = $1,
-        reviewed_at = NOW(),
-        reviewed_by = $2,
-        notes = $3,
-        updated_at = NOW()
-      WHERE id = $4
-      RETURNING *`,
-      [status, reviewedBy, notes, id],
-    );
+    const query = isInvestor && status === "Approved"
+      ? `UPDATE funding_requests 
+         SET 
+           status = $1,
+           reviewed_at = NOW(),
+           reviewed_by = $2,
+           investor_id = $2,
+           notes = $3,
+           updated_at = NOW()
+         WHERE id = $4
+         RETURNING *`
+      : `UPDATE funding_requests 
+         SET 
+           status = $1,
+           reviewed_at = NOW(),
+           reviewed_by = $2,
+           notes = $3,
+           updated_at = NOW()
+         WHERE id = $4
+         RETURNING *`;
+
+    const result = await pool.query(query, [status, reviewedBy, notes, id]);
     return result.rows[0];
   } catch (error) {
     console.error("Error updating funding request:", error);
@@ -316,6 +327,59 @@ export const getUserProjects = async (userId) => {
     return result.rows;
   } catch (error) {
     console.error("Error fetching user projects:", error);
+    throw error;
+  }
+};
+
+export const getUserFundingRequests = async (userId) => {
+  try {
+    const result = await pool.query(
+      `SELECT fr.*, p.name as project_name
+       FROM funding_requests fr
+       JOIN projects p ON fr.project_id = p.id
+       JOIN project_entrepreneurs pe ON p.id = pe.project_id
+       WHERE pe.user_id = $1
+       ORDER BY fr.requested_at DESC`,
+      [userId]
+    );
+    return result.rows;
+  } catch (error) {
+    console.error("Error fetching user funding requests:", error);
+    throw error;
+  }
+};
+
+export const getInvestorPendingRequests = async () => {
+  try {
+    const result = await pool.query(
+      `SELECT fr.*, p.name as project_name, u.name as founder_name
+       FROM funding_requests fr
+       JOIN projects p ON fr.project_id = p.id
+       LEFT JOIN project_entrepreneurs pe ON p.id = pe.project_id AND pe.role_in_project = 'founder'
+       LEFT JOIN users u ON pe.user_id = u.id
+       WHERE fr.status = 'Pending'
+       ORDER BY fr.requested_at DESC`
+    );
+    return result.rows;
+  } catch (error) {
+    console.error("Error fetching investor pending requests:", error);
+    throw error;
+  }
+};
+
+export const getInvestorPortfolio = async (investorId) => {
+  try {
+    const result = await pool.query(
+      `SELECT fr.*, p.name as project_name
+       FROM funding_requests fr
+       JOIN projects p ON fr.project_id = p.id
+       WHERE fr.investor_id = $1 AND fr.status = 'Approved'
+       ORDER BY fr.reviewed_at DESC`,
+      [investorId]
+    );
+    return result.rows;
+  } catch (error) {
+    console.error("Error fetching investor portfolio:", error);
     throw error;
   }
 };

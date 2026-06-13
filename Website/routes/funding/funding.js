@@ -54,11 +54,11 @@ router.get(
   getFundingDashboardController,
 );
 
-// Update funding request status - only admins can review
+// Update funding request status - only admins and investors can review
 router.put(
   "/:id/status",
   isAuth,
-  authorizeRole("admin"),
+  authorizeRole("admin", "investor"),
   updateFundingRequestStatusController,
 );
 

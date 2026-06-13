@@ -1,5 +1,6 @@
 import cron from 'node-cron';
 import pool from '../config/db.js';
+import { updateWorkshopStatusesQuery as updateWorkshopStatuses } from '../models/workshop/Workshop.js';
 
 /**
  * Delete expired workshops 

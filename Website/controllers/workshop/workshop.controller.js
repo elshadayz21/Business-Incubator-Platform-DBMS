@@ -5,6 +5,7 @@ import {
   leaveWorkshopQuery,
   checkEnrollmentQuery,
 } from "../../models/workshop/Workshop.js";
+import eventBus from "../../utils/eventBus.js";
 
 // 1. Get All
 export const getAllWorkshops = async (req, res, next) => {
@@ -82,6 +83,9 @@ export const attendWorkshop = async (req, res, next) => {
       return res.status(400).json({ message: "Could not enroll in workshop." });
     }
 
+    // Emit event for subscribers
+    eventBus.emit("workshop.enrolled", { enrollment: { workshop_id: workshopId, user_id: userId } });
+
     res.json({
       status: "success",
       message: "You have successfully enrolled in the workshop!",
@@ -105,6 +109,9 @@ export const cancelAttendance = async (req, res, next) => {
         .status(400)
         .json({ message: "You are not attending this workshop anyway." });
     }
+
+    // Emit event for subscribers
+    eventBus.emit("workshop.cancelled", { enrollment: { workshop_id: workshopId, user_id: userId } });
 
     res.json({
       status: "success",

@@ -67,7 +67,8 @@
                                     <a href="#" class="text-black hover:text-[#4f46e5] transition-colors"><i class="fa-brands fa-linkedin text-2xl"></i></a>
                                     <a href="#" class="text-black hover:text-[#4f46e5] transition-colors"><i class="fa-brands fa-github text-2xl"></i></a>
                                 </div>
-                                <button class="flex-grow bg-black text-white font-bold py-2 border-4 border-black hover:bg-white hover:text-black transition-all tracking-widest uppercase text-sm shadow-none hover:shadow-[2px_2px_0px_0px_#000]">
+                                <button onclick="openBookingModal('<%= mentor.id %>', '<%= mentor.name %>')" 
+                                        class="flex-grow bg-black text-white font-bold py-2 border-4 border-black hover:bg-white hover:text-black transition-all tracking-widest uppercase text-sm shadow-none hover:shadow-[2px_2px_0px_0px_#000]">
                                     BOOK SESSION
                                 </button>
                             </div>
@@ -129,6 +130,115 @@
         </div>
 
     </main>
+
+    <!-- Booking Modal -->
+    <div id="booking-modal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center hidden p-4 animate-fade-in">
+        <div class="bg-white border-4 border-black p-6 md:p-8 max-w-md w-full shadow-[8px_8px_0px_0px_#000] relative">
+            <button onclick="closeBookingModal()" class="absolute top-4 right-4 bg-white border-2 border-black w-8 h-8 flex items-center justify-center font-black hover:bg-black hover:text-white transition-colors shadow-[2px_2px_0px_0px_#000]">
+                ✕
+            </button>
+
+            <div class="mb-6 text-left">
+                <span class="bg-[#f59e0b] text-black px-2 py-0.5 font-bold text-xs uppercase tracking-wider mb-2 inline-block border-2 border-black">
+                    Sync Calendar
+                </span>
+                <h3 class="text-3xl font-black uppercase tracking-tight">Book <span id="modal-mentor-name" class="text-[#4f46e5]">Mentor</span></h3>
+            </div>
+
+            <form id="booking-form" onsubmit="submitBooking(event)" class="space-y-4 text-left">
+                <input type="hidden" id="modal-mentor-id" name="mentorId" />
+
+                <div>
+                    <label class="block text-xs font-black uppercase mb-1 tracking-wider text-gray-500">Select Date</label>
+                    <input type="date" id="booking-date" required class="w-full p-2 border-2 border-black bg-[#FFFDF5] font-bold" />
+                </div>
+
+                <div>
+                    <label class="block text-xs font-black uppercase mb-1 tracking-wider text-gray-500">Select Time Slot</label>
+                    <select id="booking-time" required class="w-full p-2 border-2 border-black bg-[#FFFDF5] font-bold">
+                        <option value="">Choose a slot...</option>
+                        <option value="09:00 AM - 10:00 AM">09:00 AM - 10:00 AM</option>
+                        <option value="10:30 AM - 11:30 AM">10:30 AM - 11:30 AM</option>
+                        <option value="01:00 PM - 02:00 PM">01:00 PM - 02:00 PM</option>
+                        <option value="02:30 PM - 03:30 PM">02:30 PM - 03:30 PM</option>
+                        <option value="04:00 PM - 05:00 PM">04:00 PM - 05:00 PM</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-black uppercase mb-1 tracking-wider text-gray-500">Topic of Discussion</label>
+                    <textarea id="booking-notes" placeholder="Describe what you want to achieve in this session..." rows="3" class="w-full p-2 border-2 border-black bg-[#FFFDF5] font-medium resize-none"></textarea>
+                </div>
+
+                <div class="pt-4 flex gap-4">
+                    <button type="button" onclick="closeBookingModal()" class="w-1/2 bg-white text-black font-black py-3 border-2 border-black hover:bg-gray-100 uppercase text-xs tracking-wider shadow-[2px_2px_0px_0px_#000]">
+                        Cancel
+                    </button>
+                    <button type="submit" class="w-1/2 bg-black text-white font-black py-3 border-2 border-black hover:bg-white hover:text-black uppercase text-xs tracking-wider shadow-[2px_2px_0px_0px_#f59e0b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all">
+                        Confirm Slot
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openBookingModal(mentorId, mentorName) {
+            const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+            if (!isLoggedIn) {
+                alert('Please log in to book a session with a mentor!');
+                window.location.href = '/v1/auth/login';
+                return;
+            }
+
+            document.getElementById('modal-mentor-id').value = mentorId;
+            document.getElementById('modal-mentor-name').innerText = mentorName;
+            
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('booking-date').setAttribute('min', today);
+
+            const modal = document.getElementById('booking-modal');
+            modal.classList.remove('hidden');
+        }
+
+        function closeBookingModal() {
+            const modal = document.getElementById('booking-modal');
+            modal.classList.add('hidden');
+            document.getElementById('booking-form').reset();
+        }
+
+        async function submitBooking(event) {
+            event.preventDefault();
+            
+            const mentorId = document.getElementById('modal-mentor-id').value;
+            const date = document.getElementById('booking-date').value;
+            const time = document.getElementById('booking-time').value;
+            const notes = document.getElementById('booking-notes').value;
+
+            try {
+                const response = await fetch('/v1/mentors/book', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ mentorId, date, time, notes })
+                });
+
+                const result = await response.json();
+                if (response.ok && result.success) {
+                    alert(result.message);
+                    closeBookingModal();
+                    // Optional reload to show in timeline
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + (result.message || 'Failed to book session.'));
+                }
+            } catch (err) {
+                console.error('Booking session error:', err);
+                alert('An error occurred while booking your session.');
+            }
+        }
+    </script>
 
     <%- include('../partials/footer.ejs') %>
 </body>

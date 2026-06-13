@@ -5,13 +5,28 @@ import {
   updateUserProfileImage,
   getUserBasicInfo,
   updateUserPassword,
+  getUserNotifications,
+  markNotificationsAsRead,
 } from "../../models/auth/auth.model.js";
+import {
+  getUserProjects,
+  getUserFundingRequests,
+  getInvestorPendingRequests,
+  getInvestorPortfolio,
+} from "../../models/funding/funding.model.js";
+import { getMentorProjects } from "../../models/project/project.model.js";
+import {
+  getUserWorkshops,
+  getMentorWorkshops,
+} from "../../models/workshop/Workshop.js";
 import { hashPassword, comparePassword } from "../../utils/hash.js";
 import { generateUserCode } from "../../utils/helpers.js";
 import sharp from "sharp";
 import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
+import { getUserActivityLogs, getSystemMetrics } from "../../models/analytics/analytics.model.js";
+import eventBus from "../../utils/eventBus.js";
 
 export const signupPage = (req, res) =>
   res.render("auth/signup", {
@@ -34,12 +49,59 @@ export const profilePage = async (req, res, next) => {
       return res.redirect("/v1/auth/login");
     }
 
+    const userId = req.session.userId;
+    const role = user.role;
+    const activeTab = req.query.tab || "info";
+
+    // Dashboard data container
+    const dashboardData = {
+      activeTab,
+      projects: [],
+      fundingRequests: [],
+      workshops: [],
+      notifications: [],
+      pendingRequests: [],
+      portfolio: [],
+      activityLogs: [],
+      stats: [],
+    };
+
+    if (role === "entrepreneur") {
+      dashboardData.projects = await getUserProjects(userId);
+      dashboardData.fundingRequests = await getUserFundingRequests(userId);
+      dashboardData.workshops = await getUserWorkshops(userId);
+      dashboardData.notifications = await getUserNotifications(userId);
+      
+      // Mark notifications as read if user is viewing notifications tab
+      if (activeTab === "notifications") {
+        await markNotificationsAsRead(userId);
+      }
+    } else if (role === "mentor") {
+      dashboardData.projects = await getMentorProjects(userId);
+      dashboardData.workshops = await getMentorWorkshops(userId);
+    } else if (role === "investor") {
+      dashboardData.pendingRequests = await getInvestorPendingRequests();
+      dashboardData.portfolio = await getInvestorPortfolio(userId);
+    }
+
+    if (activeTab === "timeline") {
+      dashboardData.activityLogs = await getUserActivityLogs(userId);
+    } else if (activeTab === "stats") {
+      dashboardData.stats = await getSystemMetrics();
+    }
+
     res.render("profile/profile", {
       user: {
+        id: user.id,
         name: user.name,
         email: user.email,
+        role: user.role,
         profilePicture: user.profile_image || null,
+        company: user.company || null,
+        expertise: user.expertise || null,
+        bio: user.bio || null,
       },
+      dashboard: dashboardData,
       error: req.flash("error")[0] || null,
       success: req.flash("success")[0] || null,
       routes: {
@@ -120,6 +182,9 @@ export const login = async (req, res, next) => {
     req.session.userRole = user.role;
     req.session.userName = user.name;
     req.session.userEmail = user.email;
+
+    // Emit login event to trigger activity log subscriber
+    eventBus.emit("auth.login", { user });
 
     res.send(`
       <script>

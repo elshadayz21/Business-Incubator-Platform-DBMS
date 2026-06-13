@@ -7,6 +7,7 @@ export const getAllMentors = async () => {
       name, 
       email, 
       expertise, 
+      company,
       bio, 
       profile_image, 
       role,

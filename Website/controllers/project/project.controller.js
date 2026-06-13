@@ -1,10 +1,12 @@
 import {
   createProject,
   addProjectEntrepreneur,
+  getUserIdByCode,
   getAllProjects,
   getProjectById,
   getProjectEntrepreneurs,
 } from "../../models/project/project.model.js";
+import eventBus from "../../utils/eventBus.js";
 
 // Helper function to get initials from name
 const getInitials = (name) => {
@@ -179,21 +181,21 @@ export const createProjectController = async (req, res, next) => {
         return res.redirect("/v1/projects/new");
       }
 
-      // for (const code of uniqueCodes) {
-      //     const userId = await getUserIdByCode(code);
+      for (const code of uniqueCodes) {
+          const userId = await getUserIdByCode(code);
 
-      //     if (!userId) {
-      //         req.flash("error", `User code '${code}' not found. Please verify and try again`);
-      //         return res.redirect("/v1/projects/new");
-      //     }
+          if (!userId) {
+              req.flash("error", `User code '${code}' not found. Please verify and try again`);
+              return res.redirect("/v1/projects/new");
+          }
 
-      //     if (userId === req.session.userId) {
-      //         req.flash("error", "You cannot add yourself as a co-founder");
-      //         return res.redirect("/v1/projects/new");
-      //     }
+          if (userId === req.session.userId) {
+              req.flash("error", "You cannot add yourself as a co-founder");
+              return res.redirect("/v1/projects/new");
+          }
 
-      //     coFounderUserIds.push(userId);
-      // }
+          coFounderUserIds.push(userId);
+      }
 
       if (team_type === "team" && coFounderUserIds.length > 2) {
         req.flash("error", "Core Team allows maximum 2 co-founders");
@@ -229,6 +231,9 @@ export const createProjectController = async (req, res, next) => {
         await addProjectEntrepreneur(newProject.id, userId, "co-founder");
       }
     }
+
+    // Emit event for subscribers (logs, metrics, notifications)
+    eventBus.emit("project.created", { project: newProject, userId: req.session.userId });
 
     req.flash(
       "success",
@@ -273,9 +278,14 @@ export const projectsController = async (req, res, next) => {
   try {
     const dbProjects = await getAllProjects();
 
+    // Filter to only show projects that are not Pending on the public gallery
+    const activeProjects = dbProjects.filter(
+      (p) => p.status && p.status.toLowerCase() !== "pending"
+    );
+
     // Fetch entrepreneurs for each project and transform
     const projects = await Promise.all(
-      dbProjects.map(async (dbProject) => {
+      activeProjects.map(async (dbProject) => {
         const entrepreneurs = await getProjectEntrepreneurs(dbProject.id);
         return transformProject(dbProject, entrepreneurs);
       }),

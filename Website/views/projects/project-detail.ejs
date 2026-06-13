@@ -134,12 +134,12 @@
                                     <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Launch Date</div>
                                     <div class="text-xl font-black uppercase font-display"><%= project.startDate %></div>
                                 </div>
-                                <% if (project.lookingForCoFounders) { %>
-                                    <div class="bg-brand-amber p-4 border-4 border-black text-black">
-                                        <div class="text-[10px] font-black uppercase mb-1">HIRING CO-FOUNDERS</div>
-                                        <div class="font-black font-display uppercase tracking-tight"><%= project.neededRoles %></div>
-                                    </div>
-                                <% } %>
+                                <% if (project.looking_for_cofounders) { %>
+                                     <div class="bg-brand-amber p-4 border-4 border-black text-black">
+                                         <div class="text-[10px] font-black uppercase mb-1">HIRING CO-FOUNDERS</div>
+                                         <div class="font-black font-display uppercase tracking-tight">Open to Co-Founders</div>
+                                     </div>
+                                 <% } %>
                             </div>
                         </div>
 
