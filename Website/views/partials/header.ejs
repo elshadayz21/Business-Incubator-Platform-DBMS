@@ -1,4 +1,5 @@
-<header class="py-4 shadow bg-brand-slate text-white" x-data="{ open: false, isLoggedIn: <%= user ? 'true' : 'false' %> }">
+<style> body { padding-top: 100px; } </style>
+<header class="py-6 shadow bg-white text-black border-b-4 fixed w-full top-0 left-0" style="border-bottom-color: #00adef; z-index: 999999 !important;" x-data="{ open: false, isLoggedIn: <%= (typeof user !== 'undefined' && user) ? 'true' : 'false' %> }">
   <div
     class="container mx-auto flex flex-col md:flex-row justify-between items-center px-4 gap-4 md:gap-0 overflow-auto whitespace-nowrap"
   >
@@ -8,7 +9,7 @@
           <img
             src="/assets/images/logo.jpg"
             alt="Business Incubator Platform logo"
-            class="h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 rounded-full object-cover border border-white shadow-lg bg-black"
+            class="h-10 sm:h-12 w-auto object-contain"
             loading="eager"
             decoding="async"
           />
@@ -73,7 +74,7 @@
             </a>
           </li>
           <li>
-            <a href="/v1/about" class="bg-white text-black px-4 py-2 rounded-full font-semibold hover:bg-gray-100 transition whitespace-nowrap" @click="open = false">
+            <a href="/v1/about" class="bg-[#00adef] text-white px-4 py-2 rounded-full font-semibold hover:bg-blue-600 border-2 border-black transition whitespace-nowrap shadow-[2px_2px_0px_rgba(0,0,0,1)]" @click="open = false">
               About
             </a>
           </li>

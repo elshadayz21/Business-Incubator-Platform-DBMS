@@ -47,9 +47,12 @@
     </div>
 
     <div class="flex flex-col md:group md:flex-row justify-between items-center pt-8 border-t-4 border-black/30 gap-8">
-      <span class="font-bold text-slate-400 font-sans italic">
-        © <%= new Date().getFullYear() %> INCUBATION  BUILT FOR BUILDERS.
-      </span>
+      <div class="flex items-center gap-4 flex-col md:flex-row">
+        <img src="/assets/images/dxvalley-logo.jpg" alt="DxValley Logo" class="h-12 md:h-16 bg-white p-2 border-4 border-black shadow-neo-sm object-contain hover:scale-105 transition-transform cursor-pointer" loading="lazy" />
+        <span class="font-bold text-slate-400 font-sans italic text-center md:text-left">
+          © <%= new Date().getFullYear() %> DxVALLEY INCUBATION. BUILT FOR BUILDERS.
+        </span>
+      </div>
       
       <div class="flex gap-6">
         <% Object.entries(SocialLinks).forEach(([platform, url]) => { %>
