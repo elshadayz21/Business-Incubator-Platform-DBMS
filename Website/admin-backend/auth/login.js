@@ -1,5 +1,6 @@
 import { findUserByEmail } from "../models/user.model.js";
 import bcrypt from "bcrypt";
+import { ROLES } from "../../utils/constants.js";
 
 export default async function loginRequest(credentials) {
   try {
@@ -37,7 +38,7 @@ export default async function loginRequest(credentials) {
       return { success: false, message: "Incorrect password" };
     }
 
-    if (user.role !== "admin") {
+    if (user.role !== ROLES.ADMIN && user.role !== ROLES.SUPERADMIN) {
       console.log("❌ Role check failed:", user.role);
       return { success: false, message: "Access denied: Admins only" };
     }

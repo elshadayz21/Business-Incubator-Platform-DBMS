@@ -8,6 +8,7 @@ import {
   getUserNotifications,
   markNotificationsAsRead,
 } from "../../models/auth/auth.model.js";
+import { ROLES } from "../../utils/constants.js";
 import {
   getUserProjects,
   getUserFundingRequests,
@@ -186,10 +187,19 @@ export const login = async (req, res, next) => {
     // Emit login event to trigger activity log subscriber
     eventBus.emit("auth.login", { user });
 
+    let redirectUrl = '/v1/auth/profile';
+    if (user.role === ROLES.SUPERADMIN || user.role === ROLES.ADMIN) {
+      redirectUrl = '/admin/dashboard';
+    } else if (user.role === ROLES.MENTOR) {
+      redirectUrl = '/mentor/dashboard';
+    } else if (user.role === ROLES.ENTREPRENEUR) {
+      redirectUrl = '/entrepreneur/dashboard';
+    }
+
     res.send(`
       <script>
         localStorage.setItem('isLoggedIn', 'true');
-        window.location.href = '/v1/auth/profile';
+        window.location.href = '${redirectUrl}';
       </script>
     `);
   } catch (err) {
