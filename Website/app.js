@@ -9,6 +9,8 @@ import rateLimit from "express-rate-limit";
 import connectPgSimpleImport from "connect-pg-simple";
 import pool from "./config/db.js";
 import { GlobalRouter } from "./routes/index.js";
+import adminApiRoutes from "./routes/admin-api.js";
+import path from "path";
 import {
   get404,
   get500,
@@ -85,6 +87,11 @@ app.get("/", (req, res) => {
 });
 
 app.use("/v1", GlobalRouter);
+app.use("/api/admin", adminApiRoutes);
+
+app.get("/admin{/*path}", (req, res) => {
+  res.sendFile(path.resolve("public/admin/index.html"));
+});
 
 app.use(get404);
 app.use(get500);
