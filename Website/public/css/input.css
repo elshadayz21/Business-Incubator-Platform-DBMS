@@ -1,23 +1,89 @@
 @import "tailwindcss";
 
 @theme {
-  /* Palette*/
+  /* DxValley / Cooperative Bank palette */
+  --color-cyan: #00ADEF;
+  --color-cyan-mid: #078CC8;
+  --color-cyan-deep: #0878B4;
+  --color-cyan-dark: #006F9E;
+  --color-cyan-soft: #EAF8FC;
+  --color-orange: #E38524;
+  --color-orange-dark: #C97019;
+  --color-orange-soft: #FFF1E3;
+  --color-ink: #111827;
+  --color-muted: #526274;
+  --color-line: #D6E4EA;
+  --color-surface: #F6FAFC;
+
+  /* Legacy aliases retained for existing authenticated views */
   --color-neo-black: #000000;
   --color-neo-white: #FFFDF5;
   --color-brand-indigo: #00ADEF;
   --color-brand-slate: #000000;
   --color-brand-amber: #E38524;
 
-  /* fonts */
+  /* Type */
   --font-display: "Space Grotesk", sans-serif;
   --font-sans: "Inter", sans-serif;
 
+  /* Existing utility shadows */
   --shadow-neo: 6px 6px 0px 0px #000000;
   --shadow-neo-sm: 4px 4px 0px 0px #000000;
   --shadow-neo-hover: 2px 2px 0px 0px #000000;
 }
 
-/* Marquee */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: var(--font-sans);
+  }
+
+  ::selection {
+    background: var(--color-orange);
+    color: white;
+  }
+}
+
+@layer components {
+  .dv-reveal {
+    opacity: 1;
+    transform: none;
+  }
+
+  .dv-reveal.dv-visible {
+    animation: dv-fade-up 700ms cubic-bezier(.2, .7, .2, 1) both;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .dv-reveal,
+  .dv-reveal.dv-visible {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes dv-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Existing marquee utility */
 @utility animate-marquee {
   animation: marquee 30s linear infinite;
 }
