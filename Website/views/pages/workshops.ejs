@@ -1,341 +1,267 @@
+<% 
+  const formatDate = (value) => value
+    ? new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    : 'Date to be announced';
+  const formatTime = (start, end) => start && end ? `${start} – ${end}` : 'Time to be announced';
+  const formatCategory = (value) => {
+    const label = String(value || 'General').trim();
+    return label.charAt(0).toUpperCase() + label.slice(1);
+  };
+  const statusLabel = (value) => {
+    const label = String(value || 'scheduled').trim();
+    return label.charAt(0).toUpperCase() + label.slice(1);
+  };
+  const statusClass = (value) => {
+    if (value === 'completed') return 'border-line bg-surface text-muted';
+    if (value === 'full') return 'border-orange/30 bg-orange-soft text-orange';
+    if (value === 'cancelled') return 'border-red-200 bg-red-50 text-red-700';
+    return 'border-cyan/30 bg-cyan-soft text-cyan-dark';
+  };
+  const categories = [...new Set((workshops || []).map((workshop) => String(workshop.category || 'general').trim()).filter(Boolean))].sort();
+  const scheduledCount = (workshops || []).filter((workshop) => ['scheduled', 'active'].includes(workshop.status)).length;
+%>
 <!DOCTYPE html>
 <html lang="en">
   <%- include('../partials/head') %>
-  <body class="bg-[#FFFDF5] flex flex-col min-h-screen">
+  <body class="flex min-h-screen flex-col bg-white font-sans text-ink">
     <%- include('../partials/header.ejs') %>
 
     <main class="flex-grow">
-      <div class="container mx-auto px-4 py-16 text-center">
-        <span
-          class="bg-black text-white px-3 py-1 font-bold text-sm uppercase tracking-wider mb-4 inline-block transform -rotate-2 font-display"
-        >
-          Learn & Grow
-        </span>
-        <h1
-          class="text-6xl md:text-7xl font-bold text-black mb-6 font-display tracking-tight"
-        >
-          UPCOMING
-          <span
-            class="bg-indigo-700 text-white px-4 border-4 border-black shadow-neo italic inline-block"
-            >WORKSHOPS</span
-          >
-        </h1>
-        <p
-          class="text-xl text-gray-700 max-w-2xl mx-auto font-medium font-inter"
-        >
-          Level up your skills with hands-on training from industry experts.
-        </p>
-      </div>
+      <section class="relative overflow-hidden border-b border-line bg-cyan-soft">
+        <div class="pointer-events-none absolute -right-32 -top-44 h-[560px] w-[720px] rounded-[48%] border-[74px] border-white/60" aria-hidden="true"></div>
+        <div class="pointer-events-none absolute -left-40 bottom-[-280px] h-[540px] w-[650px] rounded-[50%] border-[64px] border-cyan/10" aria-hidden="true"></div>
 
-      <div class="container mx-auto px-4 mb-12 pt-4">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-5xl mx-auto">
-          <div class="col-span-1 md:col-span-2 relative">
-            <input
-              type="text"
-              id="searchInput"
-              placeholder="Search by topic or trainer..."
-              class="w-full bg-white border-4 border-black rounded-none px-4 py-3 text-black placeholder-gray-500 focus:outline-none font-bold shadow-[4px_4px_0_0_#000] font-inter focus:bg-gray-50 transition-colors"
-            />
-            <i
-              class="fa-solid fa-magnifying-glass absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400"
-            ></i>
+        <div class="relative mx-auto grid max-w-7xl gap-12 px-6 py-20 lg:grid-cols-[1.1fr_.9fr] lg:items-end lg:px-10 lg:py-24">
+          <div class="dv-reveal max-w-[720px]" data-delay="0">
+            <p class="mb-5 inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[.24em] text-orange">
+              <span class="h-2 w-2 rounded-full bg-orange" aria-hidden="true"></span>
+              Learn &amp; grow
+            </p>
+            <h1 class="max-w-[760px] text-5xl font-extrabold leading-[1.02] tracking-[-.055em] text-cyan-dark sm:text-6xl lg:text-7xl">
+              Workshops for founders with momentum.
+            </h1>
+            <p class="mt-7 max-w-[650px] text-lg leading-8 text-muted sm:text-xl">
+              Build practical skills with hands-on sessions from people who have done the work — then take what you learn back to your business.
+            </p>
+            <div class="mt-8 flex flex-wrap items-center gap-3 text-sm font-semibold text-cyan-dark">
+              <a class="inline-flex items-center gap-2 rounded-md bg-orange px-5 py-3 font-extrabold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-orange-dark focus:outline-none focus:ring-2 focus:ring-orange focus:ring-offset-2" href="#workshop-catalogue">
+                Browse workshops
+                <i class="fa-solid fa-arrow-down text-xs" aria-hidden="true"></i>
+              </a>
+              <a class="inline-flex items-center gap-2 rounded-md border border-cyan/40 bg-white/70 px-5 py-3 transition hover:bg-white hover:text-cyan-dark" href="mailto:hello@dxvalley.com?subject=Workshop%20hosting%20interest">
+                Host a session
+                <i class="fa-solid fa-arrow-up-right-from-square text-xs" aria-hidden="true"></i>
+              </a>
+            </div>
           </div>
 
-          <select
-            id="categoryFilter"
-            class="bg-white border-4 border-black rounded-none px-4 py-3 text-black focus:outline-none font-bold shadow-[4px_4px_0_0_#000] font-inter cursor-pointer"
-          >
-            <option value="">All Categories</option>
-            <option value="product">Product Development</option>
-            <option value="marketing">Marketing & Growth</option>
-            <option value="finance">Finance</option>
-            <option value="strategy">Strategy</option>
-            <option value="legal">Legal</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="container mx-auto px-4 mb-24">
-        <div
-          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10"
-          id="workshopsGrid"
-        >
-          <% workshops.forEach((workshop) => { %>
-            <div
-              class="workshop-card bg-white border-4 border-black rounded-xl overflow-hidden shadow-neo flex flex-col h-full transform transition hover:-translate-y-2 duration-300 group cursor-pointer"
-              data-title="<%= workshop.title %>"
-              data-category="<%= workshop.category || 'general' %>"
-              data-trainer="<%= workshop.mentor_name || 'TBA' %>"
-              data-workshop-id="<%= workshop.id %>"
-            >
-              <div
-                class="h-32 border-b-4 border-black relative bg-indigo-700"
-                style="
-                  background-image: radial-gradient(black 1px, transparent 1px);
-                  background-size: 10px 10px;
-                  opacity: 1;
-                "
-              >
-                <div class="absolute -bottom-12 left-6">
-                  <div
-                    class="w-24 h-24 rounded-none border-4 border-black flex items-center justify-center shadow-sm bg-indigo-700"
-                  >
-                    <i
-                      class="fa-solid fa-rocket text-5xl text-white drop-shadow-lg"
-                    ></i>
-                  </div>
+          <aside class="dv-reveal relative lg:justify-self-end" data-delay="120" aria-label="Workshop catalogue summary">
+            <div class="relative w-full max-w-[470px] rounded-[26px] border border-white/80 bg-white/85 p-6 shadow-[0_18px_46px_rgba(0,88,125,.11)] backdrop-blur-sm sm:p-7">
+              <div class="flex items-start justify-between gap-4 border-b border-line pb-5">
+                <div>
+                  <p class="text-xs font-extrabold uppercase tracking-[.2em] text-cyan-dark">The learning room</p>
+                  <h2 class="mt-2 text-2xl font-extrabold tracking-[-.03em] text-ink">Choose your next useful skill.</h2>
                 </div>
-                <div
-                  class="absolute top-4 right-4 bg-white border-2 border-black px-3 py-1 font-bold text-sm font-display"
-                >
-                  <i class="fa-solid fa-users mr-1"></i> <%= workshop.enrolled_count || 0 %>/30 SEATS
+                <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-orange-soft text-orange" aria-hidden="true">
+                  <i class="fa-solid fa-lightbulb"></i>
+                </span>
+              </div>
+              <div class="grid grid-cols-2 gap-3 py-5 sm:grid-cols-3">
+                <div class="rounded-xl bg-cyan-soft p-4">
+                  <p class="text-2xl font-extrabold text-cyan-dark"><%= workshops.length %></p>
+                  <p class="mt-1 text-xs font-semibold text-muted">Sessions listed</p>
+                </div>
+                <div class="rounded-xl bg-cyan-soft p-4">
+                  <p class="text-2xl font-extrabold text-cyan-dark"><%= scheduledCount %></p>
+                  <p class="mt-1 text-xs font-semibold text-muted">Open to join</p>
+                </div>
+                <div class="col-span-2 rounded-xl bg-orange-soft p-4 sm:col-span-1">
+                  <p class="text-2xl font-extrabold text-orange"><%= categories.length %></p>
+                  <p class="mt-1 text-xs font-semibold text-muted">Topic tracks</p>
                 </div>
               </div>
+              <div class="flex items-center gap-3 rounded-xl bg-cyan p-4 text-white">
+                <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/15" aria-hidden="true"><i class="fa-solid fa-arrow-trend-up text-sm"></i></span>
+                <p class="text-sm font-bold">Learn something you can apply this week.</p>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </section>
 
-              <div class="pt-14 pb-6 px-6 flex-grow">
-                <h3 class="text-2xl font-black text-black mb-2 font-display">
-                  <%= workshop.title %>
-                </h3>
-                <div class="flex flex-wrap items-center gap-2 mb-4">
-                  <span
-                    class="text-sm font-bold bg-black text-white px-2 py-0.5 border border-black"
-                    ><%= workshop.category || 'General' %></span
-                  >
-                </div>
-                <p
-                  class="text-gray-700 font-medium leading-relaxed mb-4 font-inter"
-                >
-                  <%= workshop.description?.substring(0, 100) %>...
-                </p>
-                <div
-                  class="bg-gray-50 border-2 border-gray-200 p-3 mb-4 flex items-center gap-3"
-                >
-                  <div
-                    class="w-10 h-10 bg-gray-200 border-2 border-black rounded-full flex items-center justify-center font-bold"
-                  >
-                    <%= (workshop.mentor_name || 'T')[0] %>
-                  </div>
-                  <div>
-                    <div
-                      class="text-xs text-gray-500 font-bold uppercase font-display"
-                    >
-                      Trainer
-                    </div>
-                    <div class="font-bold text-sm"><%= workshop.mentor_name || 'TBA' %></div>
-                  </div>
-                </div>
-                <div class="space-y-2 mb-4">
-                  <div class="flex items-center gap-2 text-sm font-bold">
-                    <i class="fa-solid fa-calendar text-indigo-700"></i
-                    ><span>
-                      <% if (workshop.start_date) { %>
-                        <%= new Date(workshop.start_date).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'}) %>
-                      <% } else { %>
-                        TBD
-                      <% } %>
+      <section id="workshop-catalogue" class="bg-white">
+        <div class="mx-auto max-w-7xl px-6 py-20 lg:px-10 lg:py-24">
+          <div class="flex flex-col justify-between gap-6 md:flex-row md:items-end">
+            <div class="dv-reveal max-w-[650px]" data-delay="0">
+              <p class="text-xs font-extrabold uppercase tracking-[.2em] text-orange">The catalogue</p>
+              <h2 class="mt-3 text-4xl font-extrabold tracking-[-.04em] text-cyan-dark sm:text-5xl">Find the next room to grow in.</h2>
+              <p class="mt-4 text-base leading-8 text-muted">Search by topic or trainer, then open a session to see the full schedule and reserve your seat.</p>
+            </div>
+            <p class="text-sm font-semibold text-muted"><span id="visibleWorkshopCount"><%= workshops.length %></span> workshops available</p>
+          </div>
+
+          <div class="mt-10 grid gap-3 rounded-2xl border border-line bg-surface p-3 md:grid-cols-[1fr_260px_auto] md:items-center">
+            <label class="relative block">
+              <span class="sr-only">Search workshops</span>
+              <i class="fa-solid fa-magnifying-glass pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm text-muted" aria-hidden="true"></i>
+              <input id="searchInput" type="search" placeholder="Search by topic, trainer, or location" class="h-12 w-full rounded-xl border border-line bg-white pl-11 pr-4 text-sm text-ink outline-none transition placeholder:text-slate-400 focus:border-cyan focus:ring-2 focus:ring-cyan/20" />
+            </label>
+            <label class="relative block">
+              <span class="sr-only">Filter by category</span>
+              <select id="categoryFilter" class="h-12 w-full appearance-none rounded-xl border border-line bg-white px-4 pr-10 text-sm font-semibold text-ink outline-none transition focus:border-cyan focus:ring-2 focus:ring-cyan/20">
+                <option value="">All categories</option>
+                <% categories.forEach((category) => { %>
+                  <option value="<%= category.toLowerCase() %>"><%= formatCategory(category) %></option>
+                <% }); %>
+              </select>
+              <i class="fa-solid fa-chevron-down pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-xs text-muted" aria-hidden="true"></i>
+            </label>
+            <button id="resetFilters" type="button" class="h-12 rounded-xl border border-line px-4 text-sm font-bold text-cyan-dark transition hover:border-cyan hover:bg-cyan-soft focus:outline-none focus:ring-2 focus:ring-cyan/20">Reset filters</button>
+          </div>
+
+          <div id="workshopsGrid" class="mt-12 grid items-stretch gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <% workshops.forEach((workshop, index) => { %>
+              <% const workshopCategory = String(workshop.category || 'general').trim().toLowerCase(); %>
+              <% const workshopStatus = String(workshop.status || 'scheduled').trim().toLowerCase(); %>
+              <% const workshopDescription = String(workshop.description || 'Practical guidance for founders building with momentum.'); %>
+              <article class="workshop-card dv-reveal group flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-white shadow-[0_12px_30px_rgba(0,88,125,.08)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_46px_rgba(0,88,125,.14)]" data-delay="<%= Math.min(index * 45, 270) %>" data-search="<%= `${workshop.title || ''} ${workshopDescription} ${workshopCategory} ${workshop.mentor_name || ''} ${workshop.location || ''}`.toLowerCase() %>" data-category="<%= workshopCategory %>">
+                <div class="relative min-h-[136px] overflow-hidden bg-cyan">
+                  <div class="pointer-events-none absolute -right-12 -top-20 h-48 w-64 rounded-[50%] border-[26px] border-white/15" aria-hidden="true"></div>
+                  <div class="pointer-events-none absolute -left-12 bottom-[-84px] h-40 w-56 rounded-[50%] border-[22px] border-cyan-deep/30" aria-hidden="true"></div>
+                  <div class="relative flex items-start justify-between gap-3 p-5">
+                    <span class="grid h-12 w-12 place-items-center rounded-xl bg-orange text-white shadow-sm" aria-hidden="true"><i class="fa-solid fa-lightbulb text-lg"></i></span>
+                    <span class="inline-flex items-center gap-2 rounded-full border border-white/60 bg-white/90 px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-wide text-cyan-dark">
+                      <i class="fa-solid fa-users text-[10px]" aria-hidden="true"></i>
+                      <%= workshop.enrolled_count || 0 %>/<%= workshop.capacity || 30 %> seats
                     </span>
                   </div>
-                  <div class="flex items-center gap-2 text-sm font-bold">
-                    <i class="fa-solid fa-location-dot text-gray-500"></i
-                    ><span><%= workshop.location || 'TBA' %></span>
+                </div>
+
+                <div class="flex flex-1 flex-col p-6">
+                  <div class="flex flex-wrap items-start justify-between gap-3">
+                    <h3 class="min-w-0 flex-1 text-2xl font-extrabold leading-tight tracking-[-.03em] text-ink"><%= workshop.title %></h3>
+                    <span class="rounded-md bg-cyan-soft px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide text-cyan-dark"><%= formatCategory(workshop.category) %></span>
+                  </div>
+                  <p class="mt-4 line-clamp-3 text-sm leading-7 text-muted"><%= workshopDescription %></p>
+
+                  <div class="mt-5 flex items-center gap-3 border-y border-line py-4">
+                    <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-cyan/30 bg-cyan-soft text-sm font-extrabold text-cyan-dark" aria-hidden="true"><%= (workshop.mentor_name || 'T').trim().charAt(0).toUpperCase() %></span>
+                    <div class="min-w-0">
+                      <p class="text-[10px] font-extrabold uppercase tracking-[.16em] text-muted">Trainer</p>
+                      <p class="truncate text-sm font-bold text-ink"><%= workshop.mentor_name || 'Trainer to be announced' %></p>
+                    </div>
+                  </div>
+
+                  <dl class="mt-5 space-y-3 text-sm font-semibold text-ink">
+                    <div class="flex items-start gap-3"><dt class="w-4 shrink-0 text-orange"><i class="fa-solid fa-calendar-days" aria-hidden="true"></i><span class="sr-only">Date</span></dt><dd><%= formatDate(workshop.start_date) %></dd></div>
+                    <div class="flex items-start gap-3"><dt class="w-4 shrink-0 text-cyan-dark"><i class="fa-solid fa-clock" aria-hidden="true"></i><span class="sr-only">Time</span></dt><dd><%= formatTime(workshop.start_time, workshop.end_time) %></dd></div>
+                    <div class="flex items-start gap-3"><dt class="w-4 shrink-0 text-cyan-dark"><i class="fa-solid fa-location-dot" aria-hidden="true"></i><span class="sr-only">Location</span></dt><dd class="line-clamp-2"><%= workshop.location || 'Location to be announced' %></dd></div>
+                  </dl>
+
+                  <div class="mt-auto pt-6">
+                    <span class="inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-bold <%= statusClass(workshopStatus) %>">
+                      <span class="h-2 w-2 rounded-full <%= workshopStatus === 'scheduled' || workshopStatus === 'active' ? 'animate-pulse bg-cyan' : workshopStatus === 'full' ? 'bg-orange' : workshopStatus === 'cancelled' ? 'bg-red-500' : 'bg-muted' %>" aria-hidden="true"></span>
+                      <%= statusLabel(workshop.status) %>
+                    </span>
                   </div>
                 </div>
-                <div
-                  class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold
-                  <%= workshop.status === 'active' ? 'bg-green-100 border-2 border-green-800 text-green-800' : 
-                      workshop.status === 'completed' ? 'bg-gray-100 border-2 border-gray-800 text-gray-800' : 
-                      'bg-blue-100 border-2 border-blue-800 text-blue-800' %>"
-                >
-                  <span class="w-2 h-2 rounded-full <%= workshop.status === 'active' ? 'bg-green-600 animate-pulse' : 'bg-gray-600' %>"></span>
-                  <%= workshop.status ? workshop.status.charAt(0).toUpperCase() + workshop.status.slice(1) : 'Scheduled' %>
+
+                <div class="border-t border-line bg-surface p-4">
+                  <a href="/v1/workshop/<%= workshop.id %>" class="view-workshop inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-cyan-dark px-4 text-sm font-extrabold text-white transition hover:bg-cyan focus:outline-none focus:ring-2 focus:ring-cyan focus:ring-offset-2">
+                    View workshop details
+                    <i class="fa-solid fa-arrow-up-right-from-square text-xs" aria-hidden="true"></i>
+                  </a>
                 </div>
-              </div>
-              <div class="p-4 border-t-4 border-black bg-gray-50">
-                <button
-                  class="w-full bg-black text-white font-bold py-3 border-2 border-transparent hover:bg-white hover:text-black hover:border-black transition-all font-display tracking-wide view-workshop"
-                  data-workshop-id="<%= workshop.id %>"
-                >
-                  <i class="fa-solid fa-eye mr-2"></i>VIEW DETAILS
-                </button>
-              </div>
-            </div>
-          <% }); %>
-        </div>
+              </article>
+            <% }); %>
+          </div>
 
-        <div
-          class="text-center py-24 border-4 border-black bg-white shadow-neo mt-10 hidden"
-          id="emptyState"
-        >
-          <div class="text-7xl mb-6 opacity-50">🧐</div>
-          <h3
-            class="text-4xl font-black mb-4 text-black font-display uppercase"
-          >
-            No Workshops Found
-          </h3>
-          <p
-            class="text-gray-700 mb-8 font-medium text-xl max-w-md mx-auto font-inter"
-          >
-            Try adjusting your search or category filter.
-          </p>
-          <button
-            id="resetFilters"
-            class="bg-black text-white px-8 py-3 border-2 border-black font-bold hover:bg-white hover:text-black transition-all shadow-[4px_4px_0_0_#000] hover:shadow-none"
-          >
-            CLEAR FILTERS
-          </button>
-        </div>
-      </div>
-
-      <div class="bg-slate-900 border-y-4 border-black py-20 mb-20 text-white">
-        <div class="container mx-auto px-4 max-w-6xl">
-          <h2
-            class="text-5xl font-black text-center mb-16 drop-shadow-[4px_4px_0_#000] font-display"
-          >
-            HOW TO JOIN
-          </h2>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div
-              class="bg-white text-black border-4 border-black p-8 shadow-[8px_8px_0_0_#FFF]"
-            >
-              <div class="text-6xl font-black text-slate-200 mb-4 font-display">
-                01
-              </div>
-              <h3 class="text-2xl font-bold mb-3 font-display">
-                Browse & Pick
-              </h3>
-              <p class="font-medium font-inter">
-                Check out upcoming workshops. Find what matches your goals.
-              </p>
-            </div>
-            <div
-              class="bg-white text-black border-4 border-black p-8 shadow-[8px_8px_0_0_#FFF] relative top-4 md:top-8"
-            >
-              <div class="text-6xl font-black text-slate-200 mb-4 font-display">
-                02
-              </div>
-              <h3 class="text-2xl font-bold mb-3 font-display">Click Attend</h3>
-              <p class="font-medium font-inter">
-                Reserve your seat. Get confirmation. Mark your calendar.
-              </p>
-            </div>
-            <div
-              class="bg-white text-black border-4 border-black p-8 shadow-[8px_8px_0_0_#FFF] relative top-8 md:top-16"
-            >
-              <div class="text-6xl font-black text-slate-200 mb-4 font-display">
-                03
-              </div>
-              <h3 class="text-2xl font-bold mb-3 font-display">
-                Show Up & Learn
-              </h3>
-              <p class="font-medium font-inter">
-                Take notes. Ask questions. Apply what you learn to your startup.
-              </p>
-            </div>
+          <div id="emptyState" class="mt-12 hidden rounded-2xl border border-line bg-surface px-6 py-20 text-center">
+            <span class="mx-auto grid h-14 w-14 place-items-center rounded-full bg-orange-soft text-orange" aria-hidden="true"><i class="fa-solid fa-magnifying-glass text-xl"></i></span>
+            <h3 class="mt-5 text-3xl font-extrabold tracking-[-.03em] text-cyan-dark">No workshops match that search.</h3>
+            <p class="mx-auto mt-3 max-w-md text-sm leading-7 text-muted">Try a different topic, trainer, or category to find the right room.</p>
+            <button id="emptyResetFilters" type="button" class="mt-6 inline-flex items-center gap-2 rounded-md bg-orange px-5 py-3 text-sm font-extrabold text-white transition hover:bg-orange-dark focus:outline-none focus:ring-2 focus:ring-orange focus:ring-offset-2">Clear filters <i class="fa-solid fa-arrow-rotate-left text-xs" aria-hidden="true"></i></button>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div class="container mx-auto px-4 mb-20">
-        <div
-          class="bg-gray-900 border-4 border-black p-12 md:p-16 flex flex-col md:flex-row items-center justify-between gap-10 shadow-neo"
-        >
-          <div class="flex-1">
-            <h2
-              class="text-4xl md:text-5xl font-black mb-4 leading-tight text-white font-display"
-            >
-              WANT TO HOST <br />
-              A WORKSHOP?
-            </h2>
-            <p class="text-xl font-bold text-gray-300 font-inter">
-              Share your expertise. Help entrepreneurs build better startups.
-            </p>
+      <section id="how-to-join" class="bg-cyan-dark text-white">
+        <div class="mx-auto max-w-7xl px-6 py-20 lg:px-10 lg:py-24">
+          <div class="flex flex-col justify-between gap-6 md:flex-row md:items-end">
+            <div><p class="text-xs font-extrabold uppercase tracking-[.2em] text-white/70">A simple progression</p><h2 class="mt-3 text-4xl font-extrabold tracking-[-.04em] sm:text-5xl">How to join</h2></div>
+            <p class="max-w-[360px] text-sm leading-7 text-white/75">Pick a session, reserve your seat, and bring one useful question with you.</p>
           </div>
-          <div>
-            <a href="mailto:admin@incubator.com?subject=Mentorship Application" 
-   class="inline-block bg-white text-black text-xl font-black px-10 py-5 border-4 border-black shadow-[4px_4px_0px_0px_#000] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all uppercase">
-    Contact to Join 📧
-</a>
+          <div class="relative mt-14 grid gap-8 md:grid-cols-3 md:gap-6">
+            <div class="absolute left-[16.5%] right-[16.5%] top-7 hidden h-px bg-white/25 md:block" aria-hidden="true"></div>
+            <article class="dv-reveal relative" data-delay="0"><div class="relative z-10 grid h-14 w-14 place-items-center rounded-full bg-orange text-lg font-extrabold text-white ring-8 ring-cyan-dark">01</div><div class="mt-8 rounded-2xl bg-white p-6 text-ink shadow-[0_14px_28px_rgba(0,67,103,.18)]"><h3 class="text-xl font-extrabold">Browse &amp; pick</h3><p class="mt-3 text-sm leading-7 text-muted">Use the catalogue to find a workshop that fits your current challenge.</p></div></article>
+            <article class="dv-reveal relative" data-delay="90"><div class="relative z-10 grid h-14 w-14 place-items-center rounded-full bg-orange text-lg font-extrabold text-white ring-8 ring-cyan-dark">02</div><div class="mt-8 rounded-2xl bg-white p-6 text-ink shadow-[0_14px_28px_rgba(0,67,103,.18)]"><h3 class="text-xl font-extrabold">Reserve your seat</h3><p class="mt-3 text-sm leading-7 text-muted">Open the details page, check the schedule, and confirm your attendance.</p></div></article>
+            <article class="dv-reveal relative" data-delay="180"><div class="relative z-10 grid h-14 w-14 place-items-center rounded-full bg-orange text-lg font-extrabold text-white ring-8 ring-cyan-dark">03</div><div class="mt-8 rounded-2xl bg-white p-6 text-ink shadow-[0_14px_28px_rgba(0,67,103,.18)]"><h3 class="text-xl font-extrabold">Show up &amp; learn</h3><p class="mt-3 text-sm leading-7 text-muted">Take notes, ask questions, and apply the next useful idea to your startup.</p></div></article>
           </div>
         </div>
-      </div>
+      </section>
+
+      <section class="bg-cyan-soft">
+        <div class="mx-auto flex max-w-7xl flex-col items-start justify-between gap-8 px-6 py-16 lg:flex-row lg:items-center lg:px-10 lg:py-20">
+          <div><p class="text-xs font-extrabold uppercase tracking-[.2em] text-orange">Bring your expertise</p><h2 class="mt-3 max-w-[650px] text-4xl font-extrabold tracking-[-.04em] text-cyan-dark sm:text-5xl">Want to host a workshop?</h2><p class="mt-4 max-w-[620px] text-base leading-8 text-muted">Share your experience and help Ethiopian founders make better decisions, faster.</p></div>
+          <a class="inline-flex shrink-0 items-center gap-3 rounded-md bg-orange px-7 py-4 text-sm font-extrabold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-orange-dark focus:outline-none focus:ring-2 focus:ring-orange focus:ring-offset-2" href="mailto:hello@dxvalley.com?subject=Workshop%20hosting%20interest">Contact to join <i class="fa-solid fa-arrow-up-right-from-square text-xs" aria-hidden="true"></i></a>
+        </div>
+      </section>
     </main>
 
     <%- include('../partials/footer.ejs') %>
 
     <script>
-      document.addEventListener("DOMContentLoaded", () => {
-        const searchInput = document.getElementById("searchInput");
-        const categoryFilter = document.getElementById("categoryFilter");
-        const cards = document.querySelectorAll(".workshop-card");
-        const emptyState = document.getElementById("emptyState");
-        const resetBtn = document.getElementById("resetFilters");
+      (() => {
+        const searchInput = document.getElementById('searchInput');
+        const categoryFilter = document.getElementById('categoryFilter');
+        const cards = Array.from(document.querySelectorAll('.workshop-card'));
+        const emptyState = document.getElementById('emptyState');
+        const visibleCount = document.getElementById('visibleWorkshopCount');
+        const resetButtons = [document.getElementById('resetFilters'), document.getElementById('emptyResetFilters')].filter(Boolean);
 
-        function filterWorkshops() {
-          const searchTerm = searchInput.value.toLowerCase();
-          const selectedCategory = categoryFilter.value.toLowerCase();
-          let visibleCount = 0;
+        const filterWorkshops = () => {
+          const query = (searchInput?.value || '').trim().toLowerCase();
+          const category = (categoryFilter?.value || '').trim().toLowerCase();
+          let count = 0;
 
           cards.forEach((card) => {
-            const title = card.getAttribute("data-title").toLowerCase();
-            const trainer = card.getAttribute("data-trainer").toLowerCase();
-            const category = card.getAttribute("data-category").toLowerCase();
-
-            const matchesSearch =
-              title.includes(searchTerm) || trainer.includes(searchTerm);
-            const matchesCategory =
-              selectedCategory === "" || category === selectedCategory;
-
-            if (matchesSearch && matchesCategory) {
-              card.style.display = "flex";
-              visibleCount++;
-            } else {
-              card.style.display = "none";
-            }
+            const matchesQuery = !query || (card.dataset.search || '').includes(query);
+            const matchesCategory = !category || card.dataset.category === category;
+            const isVisible = matchesQuery && matchesCategory;
+            card.classList.toggle('hidden', !isVisible);
+            if (isVisible) count += 1;
           });
 
-          if (visibleCount === 0) {
-            emptyState.classList.remove("hidden");
-          } else {
-            emptyState.classList.add("hidden");
-          }
-        }
+          if (visibleCount) visibleCount.textContent = String(count);
+          emptyState?.classList.toggle('hidden', count !== 0);
+        };
 
-        // Add click handlers to workshop cards and view details buttons
-        cards.forEach((card) => {
-          card.style.cursor = "pointer";
-          
-          // Make entire card clickable
-          card.addEventListener("click", function (e) {
-            if (!e.target.closest(".view-workshop")) {
-              const workshopId = this.getAttribute("data-workshop-id");
-              if (workshopId) {
-                window.location.href = `/v1/workshop/${workshopId}`;
-              }
-            }
-          });
-        });
-
-        // Handle view details button clicks
-        document.querySelectorAll(".view-workshop").forEach((btn) => {
-          btn.addEventListener("click", function (e) {
-            e.stopPropagation();
-            const workshopId = this.getAttribute("data-workshop-id");
-            if (workshopId) {
-              window.location.href = `/v1/workshop/${workshopId}`;
-            }
-          });
-        });
-
-        // Event Listeners
-        searchInput.addEventListener("input", filterWorkshops);
-        categoryFilter.addEventListener("change", filterWorkshops);
-
-        resetBtn.addEventListener("click", () => {
-          searchInput.value = "";
-          categoryFilter.value = "";
+        const resetFilters = () => {
+          if (searchInput) searchInput.value = '';
+          if (categoryFilter) categoryFilter.value = '';
           filterWorkshops();
-        });
-      });
+          searchInput?.focus();
+        };
+
+        searchInput?.addEventListener('input', filterWorkshops);
+        categoryFilter?.addEventListener('change', filterWorkshops);
+        resetButtons.forEach((button) => button.addEventListener('click', resetFilters));
+
+        const revealItems = document.querySelectorAll('.dv-reveal');
+        if ('IntersectionObserver' in window) {
+          const revealObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach((entry) => {
+              if (!entry.isIntersecting) return;
+              entry.target.style.animationDelay = `${entry.target.dataset.delay || 0}ms`;
+              entry.target.classList.add('dv-visible');
+              observer.unobserve(entry.target);
+            });
+          }, { threshold: 0.1 });
+          revealItems.forEach((item) => revealObserver.observe(item));
+        } else {
+          revealItems.forEach((item) => item.classList.add('dv-visible'));
+        }
+      })();
     </script>
   </body>
 </html>
