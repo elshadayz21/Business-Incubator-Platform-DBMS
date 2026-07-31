@@ -16,8 +16,9 @@ function App() {
       if (isLoggedIn === "true" && user && loginTime) {
         try {
           const userData = JSON.parse(user);
-          // Check if user is admin
-          if (userData.role === "admin") {
+          // Check if user is admin or superadmin
+          const role = userData.role?.toUpperCase();
+          if (role === "ADMIN" || role === "SUPERADMIN") {
             setIsAuthenticated(true);
           } else {
             // Clear session if not admin

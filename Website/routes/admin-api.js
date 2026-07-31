@@ -23,12 +23,30 @@ import {
   getAllFundingRequests, getFundingDashboard, getFundingByStage, getFundingRequestById,
   updateFundingRequestStatus, deleteFundingRequest
 } from "../admin-backend/funding/funding.js";
+import loginRequest from "../admin-backend/auth/login.js";
 
 const router = Router();
 
 const asyncHandler = (fn) => (req, res, next) => {
   Promise.resolve(fn(req, res, next)).catch(next);
 };
+
+// Public Admin APIs
+router.post("/auth/login", asyncHandler(async (req, res) => {
+  const result = await loginRequest(req.body);
+  if (result.success) {
+    req.session.userId = result.user.id;
+    req.session.userRole = result.user.role;
+    req.session.userName = result.user.name;
+    req.session.userEmail = result.user.email;
+  }
+  res.json(result);
+}));
+
+import { authorizeRole } from "../middleware/check_roles.middleware.js";
+import { ROLES } from "../utils/constants.js";
+
+router.use(authorizeRole(ROLES.SUPERADMIN, ROLES.ADMIN));
 
 // Workshops
 router.get("/workshops", asyncHandler(async (req, res) => res.json(await getAllWorkshops())));

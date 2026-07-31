@@ -1,4 +1,5 @@
 import pool from "../../config/db.js";
+import { ROLES } from "../../utils/constants.js";
 
 export const findUserByEmail = async (email) => {
   try {
@@ -17,12 +18,26 @@ export const findUserByEmail = async (email) => {
   }
 };
 
+export const checkSuperadminExists = async () => {
+  try {
+    const result = await pool.query("SELECT 1 FROM users WHERE role = $1 LIMIT 1", [
+      ROLES.SUPERADMIN,
+    ]);
+    return result.rows.length > 0;
+  } catch (err) {
+    console.error("Error checking superadmin existence:", err);
+    throw err;
+  }
+};
+
+
+
 export const createUser = async ({
   name,
   user_code,
   email,
   password,
-  role = "entrepreneur",
+  role = ROLES.ENTREPRENEUR,
 }) => {
   try {
     const result = await pool.query(

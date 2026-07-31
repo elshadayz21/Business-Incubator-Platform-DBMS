@@ -1,145 +1,160 @@
 <!DOCTYPE html>
 <html lang="en">
-<%- include('../partials/head') %> <body class="bg-neo-white flex flex-col min-h-screen text-neo-black">
-    
+  <%- include('../partials/head') %>
+  <body class="flex min-h-screen flex-col bg-white font-sans text-ink">
     <%- include('../partials/header') %>
 
     <main class="flex-grow">
-        
-        <div class="bg-brand-slate text-white pb-20 pt-12 text-center border-b-4 border-black">
-            <div class="container mx-auto px-4">
-                <span class="text-brand-indigo font-bold tracking-widest uppercase text-sm mb-4 inline-block font-inter">Who We Are</span>
-                <h1 class="text-6xl md:text-8xl font-bold mb-6 tracking-tighter font-display">
-                    WE BUILD <br>
-                    <span class="bg-white text-brand-slate px-4 border-4 border-brand-indigo shadow-neo inline-block transform -rotate-1 mt-2">FUTURE</span>
-                </h1>
-                <p class="text-xl md:text-2xl text-slate-300 max-w-3xl mx-auto font-medium border-l-4 border-brand-indigo p-6 bg-brand-slate/50 shadow-lg mt-8 font-inter italic">
-                    // Not just an incubator. We are a factory of dreams, built with hard code and bold ideas.
-                </p>
+      <section class="relative overflow-hidden bg-gradient-to-br from-cyan via-cyan-mid to-cyan-deep text-white">
+        <div class="pointer-events-none absolute -left-28 -top-32 h-[520px] w-[700px] rounded-[48%] border-[76px] border-white/10" aria-hidden="true"></div>
+        <div class="pointer-events-none absolute -right-44 bottom-[-260px] h-[620px] w-[760px] rounded-[50%] border-[88px] border-white/10" aria-hidden="true"></div>
+        <div class="relative mx-auto grid max-w-7xl gap-12 px-6 py-20 lg:grid-cols-[1.12fr_.88fr] lg:items-end lg:px-10 lg:py-24">
+          <div class="dv-reveal max-w-[720px]" data-delay="0">
+            <p class="mb-5 inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[.24em] text-white/80">
+              <span class="h-2 w-2 rounded-full bg-orange" aria-hidden="true"></span>
+              Who we are
+            </p>
+            <h1 class="max-w-[760px] text-5xl font-extrabold leading-[1.02] tracking-[-.055em] sm:text-6xl lg:text-7xl">
+              The people behind<br />
+              <span class="text-white/75">the momentum.</span>
+            </h1>
+            <p class="mt-7 max-w-[650px] text-lg leading-8 text-white/85 sm:text-xl">
+              DxValley is the incubation arm of Cooperative Bank of Oromia. We create the structure, support, and community that help Ethiopian founders move from a promising idea to meaningful impact.
+            </p>
+            <div class="mt-9 flex flex-col gap-3 sm:flex-row">
+              <a class="inline-flex items-center justify-center gap-3 rounded-md bg-orange px-6 py-3.5 text-sm font-extrabold text-white shadow-[0_10px_24px_rgba(141,67,10,.24)] transition hover:-translate-y-0.5 hover:bg-orange-dark focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-cyan-deep" href="<%= routes.signupRoute %>">
+                Start building with us
+                <i class="fa-solid fa-arrow-right text-xs" aria-hidden="true"></i>
+              </a>
+              <a class="inline-flex items-center justify-center gap-3 rounded-md border border-white/70 bg-white/5 px-6 py-3.5 text-sm font-bold text-white transition hover:bg-white hover:text-cyan-deep focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-cyan-deep" href="#faq">
+                Read the FAQs
+                <i class="fa-solid fa-chevron-down text-xs" aria-hidden="true"></i>
+              </a>
             </div>
-        </div>
+          </div>
 
-        <div class="container mx-auto px-4 py-20">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto">
-                <div class="bg-brand-indigo text-white border-4 border-black p-10 shadow-neo transform hover:-translate-y-2 transition-transform duration-300">
-                    <div class="w-20 h-20 bg-white text-brand-indigo border-4 border-black rounded-full flex items-center justify-center text-4xl mb-6 shadow-sm">
-                        🚀
-                    </div>
-                    <h2 class="text-4xl font-black mb-4 uppercase font-display">The Vision</h2>
-                    <p class="font-medium text-lg leading-relaxed border-l-4 border-white pl-4 font-inter text-indigo-100">
-                        To create a structured ecosystem where developers turn coffee into scalable businesses. We believe in limitless potential.
-                    </p>
+          <aside class="dv-reveal relative lg:justify-self-end" data-delay="120" aria-label="DxValley overview">
+            <div class="relative w-full max-w-[450px] rounded-[26px] border border-white/30 bg-white/10 p-6 shadow-[0_22px_70px_rgba(0,63,102,.25)] backdrop-blur-md sm:p-7">
+              <div class="flex items-start justify-between gap-4 border-b border-white/20 pb-5">
+                <div>
+                  <p class="text-xs font-bold uppercase tracking-[.2em] text-white/65">Our operating belief</p>
+                  <p class="mt-2 text-2xl font-extrabold">Make the next move useful.</p>
                 </div>
-                <div class="bg-brand-slate text-white border-4 border-black p-10 shadow-neo transform hover:-translate-y-2 transition-transform duration-300">
-                    <div class="w-20 h-20 bg-white text-brand-slate border-4 border-black rounded-full flex items-center justify-center text-4xl mb-6 shadow-sm">
-                        🎯
-                    </div>
-                    <h2 class="text-4xl font-black mb-4 uppercase font-display">The Mission</h2>
-                    <p class="font-medium text-lg leading-relaxed border-l-4 border-white pl-4 font-inter text-slate-200">
-                        Empowering 1000+ startups with solid tools. No corporate fluff, just straight-up value and robust backend logic.
-                    </p>
-                </div>
+                <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-orange text-white" aria-hidden="true"><i class="fa-solid fa-arrow-trend-up"></i></span>
+              </div>
+              <div class="space-y-3 py-5">
+                <div class="flex items-center gap-3 rounded-xl bg-white/10 p-4"><span class="grid h-9 w-9 place-items-center rounded-full bg-orange text-sm font-extrabold">01</span><span class="text-sm font-semibold text-white/90">Start with the real problem.</span></div>
+                <div class="flex items-center gap-3 rounded-xl bg-white/10 p-4"><span class="grid h-9 w-9 place-items-center rounded-full bg-white/15 text-sm font-extrabold">02</span><span class="text-sm font-semibold text-white/90">Build with evidence and care.</span></div>
+                <div class="flex items-center gap-3 rounded-xl bg-white/10 p-4"><span class="grid h-9 w-9 place-items-center rounded-full bg-white/15 text-sm font-extrabold">03</span><span class="text-sm font-semibold text-white/90">Grow with people beside you.</span></div>
+              </div>
+              <div class="flex items-center gap-3 rounded-xl bg-white p-4 text-ink"><img src="/brand/coopbank-mark.jpeg" alt="" class="h-9 w-12 object-contain object-left mix-blend-multiply" aria-hidden="true" /><p class="text-xs font-bold uppercase tracking-[.15em] text-cyan-dark">Powered by partnership</p></div>
             </div>
+          </aside>
         </div>
+      </section>
 
-        <div class="container mx-auto px-4 mb-24 max-w-4xl pt-10">
-            <h2 class="text-5xl font-black text-center mb-16 underline decoration-brand-indigo decoration-8 underline-offset-8 font-display text-neo-black">OUR JOURNEY</h2>
-            
-            <div class="relative border-l-8 border-brand-slate ml-4 md:ml-1/2 md:pl-0 space-y-12">
-                
-                <div class="relative md:flex items-center justify-between group">
-                    <div class="absolute -left-[14px] md:left-1/2 md:-ml-3 w-6 h-6 bg-brand-amber border-4 border-black rounded-full z-10"></div>
-                    <div class="ml-10 md:ml-0 md:w-[45%] md:pr-8 md:text-right">
-                        <div class="bg-white border-4 border-black p-6 shadow-neo-sm">
-                            <h3 class="text-2xl font-bold bg-brand-amber text-black inline-block px-3 py-1 border-2 border-black mb-2 font-display">2024</h3>
-                            <p class="font-medium font-inter text-slate-700">The idea was born in a garage. One server, zero funding, infinite ambition.</p>
-                        </div>
-                    </div>
-                    <div class="hidden md:block md:w-[45%]"></div>
-                </div>
-
-                <div class="relative md:flex items-center justify-between group">
-                    <div class="absolute -left-[14px] md:left-1/2 md:-ml-3 w-6 h-6 bg-brand-indigo border-4 border-black rounded-full z-10"></div>
-                    <div class="hidden md:block md:w-[45%]"></div>
-                    <div class="ml-10 md:ml-0 md:w-[45%] md:pl-8">
-                        <div class="bg-white border-4 border-black p-6 shadow-neo-sm">
-                            <h3 class="text-2xl font-bold bg-brand-indigo text-white inline-block px-3 py-1 border-2 border-black mb-2 font-display">2025</h3>
-                            <p class="font-medium font-inter text-slate-700">First 10 startups joined. We scaled the infrastructure and stabilized the core.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="relative md:flex items-center justify-between group">
-                    <div class="absolute -left-[14px] md:left-1/2 md:-ml-3 w-6 h-6 bg-brand-slate border-4 border-black rounded-full z-10"></div>
-                    <div class="ml-10 md:ml-0 md:w-[45%] md:pr-8 md:text-right">
-                        <div class="bg-white border-4 border-black p-6 shadow-neo-sm">
-                            <h3 class="text-2xl font-bold bg-brand-slate text-white inline-block px-3 py-1 border-2 border-black mb-2 font-display">2026</h3>
-                            <p class="font-medium font-inter text-slate-700">Global expansion phase. Empowering developers worldwide.</p>
-                        </div>
-                    </div>
-                    <div class="hidden md:block md:w-[45%]"></div>
-                </div>
-
-            </div>
+      <section class="bg-white">
+        <div class="mx-auto grid max-w-7xl gap-6 px-6 py-20 lg:grid-cols-2 lg:px-10 lg:py-24">
+          <article class="dv-reveal rounded-2xl border border-cyan/30 bg-cyan p-8 text-white shadow-[0_12px_30px_rgba(0,88,125,.08)] sm:p-10" data-delay="0">
+            <div class="grid h-12 w-12 place-items-center rounded-full bg-white text-cyan-dark" aria-hidden="true"><i class="fa-solid fa-compass text-lg"></i></div>
+            <p class="mt-8 text-xs font-extrabold uppercase tracking-[.2em] text-white/70">Our vision</p>
+            <h2 class="mt-3 text-3xl font-extrabold tracking-[-.03em] sm:text-4xl">An ecosystem where ambitious ideas can compound.</h2>
+            <p class="mt-5 max-w-xl border-l-2 border-white/60 pl-4 text-base leading-8 text-white/85">To create a structured ecosystem where founders turn real problems into scalable businesses, with access to the practical support and people they need at every stage.</p>
+          </article>
+          <article class="dv-reveal rounded-2xl border border-line bg-surface p-8 shadow-[0_12px_30px_rgba(0,88,125,.08)] sm:p-10" data-delay="90">
+            <div class="grid h-12 w-12 place-items-center rounded-full bg-orange text-white" aria-hidden="true"><i class="fa-solid fa-bullseye text-lg"></i></div>
+            <p class="mt-8 text-xs font-extrabold uppercase tracking-[.2em] text-orange">Our mission</p>
+            <h2 class="mt-3 text-3xl font-extrabold tracking-[-.03em] text-cyan-dark sm:text-4xl">Help founders make progress that can be seen.</h2>
+            <p class="mt-5 max-w-xl border-l-2 border-orange/50 pl-4 text-base leading-8 text-muted">We empower startups and MSMEs with clear stages, expert mentorship, learning sprints, and a community that makes the hard work feel possible.</p>
+          </article>
         </div>
+      </section>
 
-        <div class="bg-slate-100 border-y-4 border-black py-16 mb-20">
-            <div class="container mx-auto px-4 max-w-6xl text-center">
-                 <h3 class="text-3xl font-bold mb-10 bg-white border-4 border-black inline-block px-8 py-3 shadow-neo-sm font-display uppercase tracking-widest">Key Metrics</h3>
-                <div class="flex flex-col md:flex-row justify-center gap-8">
-                    <div class="flex-1 bg-white border-4 border-black p-8 shadow-neo hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all">
-                        <h4 class="text-6xl font-black mb-2 text-brand-indigo font-display">50+</h4>
-                        <p class="text-xl font-bold uppercase tracking-wider text-slate-600 font-inter">Startups</p>
-                    </div>
-                    <div class="flex-1 bg-white border-4 border-black p-8 shadow-neo hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all">
-                        <h4 class="text-6xl font-black mb-2 text-brand-indigo font-display">200+</h4>
-                        <p class="text-xl font-bold uppercase tracking-wider text-slate-600 font-inter">Mentors</p>
-                    </div>
-                    <div class="flex-1 bg-white border-4 border-black p-8 shadow-neo hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all">
-                        <h4 class="text-6xl font-black mb-2 text-brand-indigo font-display">∞</h4>
-                        <p class="text-xl font-bold uppercase tracking-wider text-slate-600 font-inter">Coffees</p>
-                    </div>
-                </div>
-            </div>
+      <section class="bg-surface">
+        <div class="mx-auto max-w-7xl px-6 py-20 lg:px-10 lg:py-24">
+          <div class="flex flex-col justify-between gap-6 md:flex-row md:items-end">
+            <div class="dv-reveal max-w-[650px]" data-delay="0"><p class="text-xs font-extrabold uppercase tracking-[.2em] text-orange">From the first idea to the next chapter</p><h2 class="mt-3 text-4xl font-extrabold tracking-[-.04em] text-cyan-dark sm:text-5xl">Our journey</h2></div>
+            <p class="max-w-[360px] text-sm leading-7 text-muted">A growing center built around founders, mentors, partners, and the practical work of building.</p>
+          </div>
+
+          <div class="relative mt-14 space-y-6 md:space-y-0">
+            <div class="absolute bottom-10 left-5 top-10 w-px bg-line md:bottom-auto md:left-1/2 md:right-0 md:top-1/2 md:h-px md:w-auto" aria-hidden="true"></div>
+            <article class="dv-reveal relative grid gap-6 md:grid-cols-[1fr_72px_1fr] md:items-center" data-delay="0">
+              <div class="rounded-2xl border border-line bg-white p-6 shadow-[0_12px_30px_rgba(0,88,125,.08)] md:text-right"><p class="text-xs font-extrabold uppercase tracking-[.18em] text-orange">2024</p><h3 class="mt-2 text-2xl font-extrabold text-ink">The idea begins</h3><p class="mt-3 text-sm leading-7 text-muted">A practical incubation center takes shape around one conviction: Ethiopia’s builders deserve a clearer path.</p></div>
+              <div class="relative z-10 mx-auto grid h-10 w-10 place-items-center rounded-full border-4 border-surface bg-orange text-xs font-extrabold text-white ring-4 ring-orange/15">01</div><div class="hidden md:block"></div>
+            </article>
+            <article class="dv-reveal relative grid gap-6 md:grid-cols-[1fr_72px_1fr] md:items-center" data-delay="90">
+              <div class="hidden md:block"></div><div class="relative z-10 mx-auto grid h-10 w-10 place-items-center rounded-full border-4 border-surface bg-cyan text-xs font-extrabold text-white ring-4 ring-cyan/15">02</div><div class="rounded-2xl border border-line bg-white p-6 shadow-[0_12px_30px_rgba(0,88,125,.08)]"><p class="text-xs font-extrabold uppercase tracking-[.18em] text-cyan-dark">2025</p><h3 class="mt-2 text-2xl font-extrabold text-ink">The community grows</h3><p class="mt-3 text-sm leading-7 text-muted">Founders, mentors, and partners join the learning loop and strengthen the center’s foundation.</p></div>
+            </article>
+            <article class="dv-reveal relative grid gap-6 md:grid-cols-[1fr_72px_1fr] md:items-center" data-delay="180">
+              <div class="rounded-2xl border border-line bg-white p-6 shadow-[0_12px_30px_rgba(0,88,125,.08)] md:text-right"><p class="text-xs font-extrabold uppercase tracking-[.18em] text-cyan-dark">2026</p><h3 class="mt-2 text-2xl font-extrabold text-ink">Momentum becomes impact</h3><p class="mt-3 text-sm leading-7 text-muted">Structured cohorts, public learning, and stronger partnerships help more businesses move forward.</p></div>
+              <div class="relative z-10 mx-auto grid h-10 w-10 place-items-center rounded-full border-4 border-surface bg-cyan-dark text-xs font-extrabold text-white ring-4 ring-cyan-dark/15">03</div><div class="hidden md:block"></div>
+            </article>
+          </div>
         </div>
+      </section>
 
-        <div class="container mx-auto px-4 mb-24 max-w-6xl">
-            <h2 class="text-5xl font-black text-center mb-12 font-display text-neo-black">THE MANIFESTO</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="border-4 border-black p-8 bg-white hover:bg-brand-slate hover:text-white transition-colors duration-300 group shadow-neo">
-                    <i class="fa-solid fa-code text-4xl mb-6 text-brand-indigo group-hover:text-white"></i>
-                    <h3 class="text-2xl font-bold mb-3 font-display">Code First</h3>
-                    <p class="font-inter leading-relaxed font-medium">Talk is cheap. Show us the repo. We value builders and creators over talkers.</p>
-                </div>
-                <div class="border-4 border-black p-8 bg-white hover:bg-brand-slate hover:text-white transition-colors duration-300 group shadow-neo">
-                    <i class="fa-solid fa-bolt text-4xl mb-6 text-brand-amber group-hover:text-white"></i>
-                    <h3 class="text-2xl font-bold mb-3 font-display">Move Fast</h3>
-                    <p class="font-inter leading-relaxed font-medium">Iterate quickly. Fail fast, learn faster. Just don't break production on Friday.</p>
-                </div>
-                <div class="border-4 border-black p-8 bg-white hover:bg-brand-slate hover:text-white transition-colors duration-300 group shadow-neo">
-                    <i class="fa-solid fa-users text-4xl mb-6 text-brand-indigo group-hover:text-white"></i>
-                    <h3 class="text-2xl font-bold mb-3 font-display">Community</h3>
-                    <p class="font-inter leading-relaxed font-medium">A lone wolf dies, but the pack survives. We support and uplift each other.</p>
-                </div>
-            </div>
+      <section class="border-y border-line bg-white">
+        <div class="mx-auto max-w-7xl px-6 py-16 lg:px-10 lg:py-20">
+          <div class="grid gap-4 sm:grid-cols-3">
+            <div class="dv-reveal border-l-2 border-cyan px-5" data-delay="0"><p class="text-4xl font-extrabold tracking-[-.05em] text-cyan-dark sm:text-5xl">50+</p><p class="mt-2 text-xs font-extrabold uppercase tracking-[.18em] text-muted">Startups supported</p></div>
+            <div class="dv-reveal border-l-2 border-orange px-5" data-delay="90"><p class="text-4xl font-extrabold tracking-[-.05em] text-cyan-dark sm:text-5xl">200+</p><p class="mt-2 text-xs font-extrabold uppercase tracking-[.18em] text-muted">Mentor connections</p></div>
+            <div class="dv-reveal border-l-2 border-cyan px-5" data-delay="180"><p class="text-4xl font-extrabold tracking-[-.05em] text-cyan-dark sm:text-5xl">2</p><p class="mt-2 text-xs font-extrabold uppercase tracking-[.18em] text-muted">Cohorts each year</p></div>
+          </div>
         </div>
+      </section>
 
-        <div class="container mx-auto px-4 mb-12">
-            <div class="bg-brand-slate text-white p-12 md:p-20 text-center border-4 border-black shadow-neo relative overflow-hidden">
-                <div class="relative z-10">
-                    <h2 class="text-4xl md:text-6xl font-bold mb-6 font-display uppercase tracking-tighter">READY TO INNOVATE?</h2>
-                    <p class="text-xl mb-10 max-w-2xl mx-auto text-slate-300 font-inter italic">Join the incubator that actually cares about your code quality, not just your pitch deck.</p>
-                    <a href="<%= routes.signupRoute %>" class="inline-block bg-white text-brand-slate text-xl font-bold px-10 py-4 border-4 border-black shadow-neo hover:translate-y-1 hover:shadow-none transition-all font-display tracking-wide">
-                        START BUILDING NOW
-                    </a>
-                </div>
-                <div class="absolute top-0 left-0 w-64 h-64 bg-brand-indigo rounded-full opacity-20 -translate-x-1/2 -translate-y-1/2 blur-3xl"></div>
-                <div class="absolute bottom-0 right-0 w-64 h-64 bg-brand-indigo rounded-full opacity-20 translate-x-1/2 translate-y-1/2 blur-3xl"></div>
-            </div>
+      <section class="bg-white">
+        <div class="mx-auto max-w-7xl px-6 py-20 lg:px-10 lg:py-24">
+          <div class="max-w-[650px] dv-reveal" data-delay="0"><p class="text-xs font-extrabold uppercase tracking-[.2em] text-orange">How we work</p><h2 class="mt-3 text-4xl font-extrabold tracking-[-.04em] text-cyan-dark sm:text-5xl">The principles behind the program.</h2></div>
+          <div class="mt-12 divide-y divide-line border-y border-line">
+            <article class="dv-reveal grid gap-5 py-7 md:grid-cols-[80px_1fr_1.3fr] md:items-start" data-delay="0"><span class="text-2xl font-extrabold text-orange">01</span><h3 class="text-2xl font-extrabold tracking-[-.03em] text-ink">Evidence over noise</h3><p class="text-sm leading-7 text-muted">Talk is useful when it turns into a test. We value customer conversations, working prototypes, and decisions grounded in what you learn.</p></article>
+            <article class="dv-reveal grid gap-5 py-7 md:grid-cols-[80px_1fr_1.3fr] md:items-start" data-delay="90"><span class="text-2xl font-extrabold text-cyan-dark">02</span><h3 class="text-2xl font-extrabold tracking-[-.03em] text-ink">Progress over perfection</h3><p class="text-sm leading-7 text-muted">The right next step beats a polished plan that never leaves the page. We create room to iterate, learn, and keep moving.</p></article>
+            <article class="dv-reveal grid gap-5 py-7 md:grid-cols-[80px_1fr_1.3fr] md:items-start" data-delay="180"><span class="text-2xl font-extrabold text-orange">03</span><h3 class="text-2xl font-extrabold tracking-[-.03em] text-ink">Community with accountability</h3><p class="text-sm leading-7 text-muted">Founders do hard things together. We connect people who can challenge, encourage, and help one another make the work better.</p></article>
+          </div>
         </div>
+      </section>
 
+      <section id="faq" class="bg-cyan-soft scroll-mt-6">
+        <div class="mx-auto grid max-w-7xl gap-12 px-6 py-20 lg:grid-cols-[.82fr_1.18fr] lg:gap-24 lg:px-10 lg:py-24">
+          <div class="dv-reveal" data-delay="0"><p class="text-xs font-extrabold uppercase tracking-[.2em] text-orange">Questions, answered</p><h2 class="mt-3 text-4xl font-extrabold tracking-[-.04em] text-cyan-dark sm:text-5xl">Before you build with us.</h2><p class="mt-5 max-w-md text-base leading-8 text-muted">Still deciding if DxValley is the right fit? Here are the questions founders ask most often.</p><a class="mt-8 inline-flex items-center gap-3 text-sm font-extrabold text-cyan-dark underline underline-offset-4 transition hover:text-orange" href="mailto:hello@dxvalley.com">Ask another question <i class="fa-solid fa-arrow-up-right-from-square text-xs" aria-hidden="true"></i></a></div>
+          <div class="dv-reveal divide-y divide-cyan/20 border-y border-cyan/20" data-delay="90">
+            <details class="group py-5" open><summary class="flex cursor-pointer list-none items-center justify-between gap-6 text-base font-extrabold text-ink"><span>Do I need a team to apply?</span><span class="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white text-cyan-dark transition group-open:rotate-45" aria-hidden="true"><i class="fa-solid fa-plus text-xs"></i></span></summary><p class="mt-4 max-w-xl text-sm leading-7 text-muted">Not at all. You can apply as an individual and meet collaborators through the center, workshops, and cohort community.</p></details>
+            <details class="group py-5"><summary class="flex cursor-pointer list-none items-center justify-between gap-6 text-base font-extrabold text-ink"><span>What kinds of founders does DxValley support?</span><span class="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white text-cyan-dark transition group-open:rotate-45" aria-hidden="true"><i class="fa-solid fa-plus text-xs"></i></span></summary><p class="mt-4 max-w-xl text-sm leading-7 text-muted">We support early-stage startups and MSMEs solving meaningful problems, with current tracks focused on Idea, MVP, and Scale-Up progress.</p></details>
+            <details class="group py-5"><summary class="flex cursor-pointer list-none items-center justify-between gap-6 text-base font-extrabold text-ink"><span>How does the cohort progression work?</span><span class="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white text-cyan-dark transition group-open:rotate-45" aria-hidden="true"><i class="fa-solid fa-plus text-xs"></i></span></summary><p class="mt-4 max-w-xl text-sm leading-7 text-muted">Accepted founders move through structured learning, mentor conversations, practical milestones, and peer accountability tailored to their current stage.</p></details>
+            <details class="group py-5"><summary class="flex cursor-pointer list-none items-center justify-between gap-6 text-base font-extrabold text-ink"><span>Do you take equity in participating businesses?</span><span class="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white text-cyan-dark transition group-open:rotate-45" aria-hidden="true"><i class="fa-solid fa-plus text-xs"></i></span></summary><p class="mt-4 max-w-xl text-sm leading-7 text-muted">Program terms depend on the specific cohort and support package. The application team will share the current terms before acceptance.</p></details>
+            <details class="group py-5"><summary class="flex cursor-pointer list-none items-center justify-between gap-6 text-base font-extrabold text-ink"><span>Can mentors or partners get involved?</span><span class="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white text-cyan-dark transition group-open:rotate-45" aria-hidden="true"><i class="fa-solid fa-plus text-xs"></i></span></summary><p class="mt-4 max-w-xl text-sm leading-7 text-muted">Yes. We welcome people who can share practical expertise, open doors, host workshops, or help founders build stronger businesses.</p></details>
+          </div>
+        </div>
+      </section>
+
+      <section class="bg-white">
+        <div class="mx-auto flex max-w-7xl flex-col items-start justify-between gap-8 px-6 py-16 lg:flex-row lg:items-center lg:px-10 lg:py-20">
+          <div><p class="text-xs font-extrabold uppercase tracking-[.2em] text-orange">Your next chapter starts here</p><h2 class="mt-3 max-w-[720px] text-4xl font-extrabold tracking-[-.04em] text-cyan-dark sm:text-5xl">Ready to build something that matters?</h2><p class="mt-4 text-base text-muted">Bring the problem, the curiosity, and the courage to begin.</p></div>
+          <a class="inline-flex shrink-0 items-center gap-3 rounded-md bg-orange px-7 py-4 text-sm font-extrabold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-orange-dark focus:outline-none focus:ring-2 focus:ring-orange focus:ring-offset-2" href="<%= routes.signupRoute %>">Start your application <i class="fa-solid fa-arrow-right text-xs" aria-hidden="true"></i></a>
+        </div>
+      </section>
     </main>
 
     <%- include('../partials/footer') %>
-</body>
+
+    <script>
+      (() => {
+        const revealItems = document.querySelectorAll('.dv-reveal');
+        if ('IntersectionObserver' in window) {
+          const revealObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach((entry) => {
+              if (!entry.isIntersecting) return;
+              entry.target.style.animationDelay = `${entry.target.dataset.delay || 0}ms`;
+              entry.target.classList.add('dv-visible');
+              observer.unobserve(entry.target);
+            });
+          }, { threshold: 0.12 });
+          revealItems.forEach((item) => revealObserver.observe(item));
+        } else {
+          revealItems.forEach((item) => item.classList.add('dv-visible'));
+        }
+      })();
+    </script>
+  </body>
 </html>

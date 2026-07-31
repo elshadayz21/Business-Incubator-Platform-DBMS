@@ -1,67 +1,88 @@
-<% const SocialLinks = {
-  twitter: "https://twitter.com",
-  youtube: "https://youtube.com",
-  instagram: "https://instagram.com",
-  facebook: "https://facebook.com",
-  pinterest: "https://pinterest.com"
-}; %>
-
-<footer class="bg-black text-white pt-20 pb-10 px-4 border-t-4 border-[#00ADEF]">
-  <div class="max-w-7xl mx-auto flex flex-col gap-16">
-    <div class="flex flex-col lg:flex-row gap-12 w-full justify-between">
-      
-      <div class="flex-1 max-w-2xl text-left">
-        <h2 class="text-3xl md:text-5xl font-bold mb-8 leading-tight font-display uppercase tracking-tighter">
-          Subscribe to get <span class="text-[#00ADEF]">tips & tactics</span> to grow.
-        </h2>
-        <form class="flex w-full max-w-xl group">
-          <input
-            type="email"
-            placeholder="YOUR EMAIL ADDRESS"
-            class="flex-1 px-6 py-4 border-4 border-[#00ADEF] bg-white text-black font-bold focus:outline-none placeholder-slate-400"
-          />
-          <button
-            type="submit"
-            class="px-8 py-4 border-4 border-l-0 border-[#00ADEF] bg-[#E38524] text-black font-black text-2xl hover:bg-white transition-all shadow-neo-sm"
-          >
-            →
-          </button>
-        </form>
+<footer id="resources" class="bg-cyan text-white">
+  <div class="mx-auto max-w-7xl px-6 py-16 lg:px-10 lg:py-20">
+    <div class="grid gap-12 lg:grid-cols-[1.35fr_.75fr_.75fr_1fr] lg:gap-10">
+      <div>
+        <img src="/brand/dxvalley-wordmark.jpeg" alt="DxValley Incubation Center" class="h-14 w-auto max-w-[230px] object-contain object-left mix-blend-multiply" loading="lazy" decoding="async" />
+        <p class="mt-5 max-w-[290px] text-sm leading-7 text-white/80">
+          A practical incubation center for Ethiopia’s ambitious founders, powered by community and accountable progress.
+        </p>
+        <div class="mt-7 flex items-center gap-2" aria-label="Social links">
+          <a aria-label="LinkedIn" class="grid h-8 w-8 place-items-center rounded-full border border-white/50 transition hover:bg-white hover:text-cyan" href="#linkedin" title="LinkedIn">
+            <i class="fa-brands fa-linkedin-in text-sm" aria-hidden="true"></i>
+          </a>
+          <a aria-label="YouTube" class="grid h-8 w-8 place-items-center rounded-full border border-white/50 transition hover:bg-white hover:text-cyan" href="#youtube" title="YouTube">
+            <i class="fa-brands fa-youtube text-sm" aria-hidden="true"></i>
+          </a>
+          <a aria-label="Instagram" class="grid h-8 w-8 place-items-center rounded-full border border-white/50 transition hover:bg-white hover:text-cyan" href="#instagram" title="Instagram">
+            <i class="fa-brands fa-instagram text-sm" aria-hidden="true"></i>
+          </a>
+        </div>
       </div>
 
-      <div class="flex flex-wrap gap-12 lg:gap-24 uppercase font-display font-bold">
-        <div class="flex flex-col gap-3 min-w-[150px]">
-            <span class="text-[#E38524] text-xs tracking-widest mb-2">Platform</span>
-            <a href="#" class="hover:text-[#00ADEF] transition-colors">Discover</a>
-            <a href="#" class="hover:text-[#00ADEF] transition-colors">Blog</a>
-            <a href="#" class="hover:text-[#00ADEF] transition-colors">Pricing</a>
-            <a href="#" class="hover:text-[#00ADEF] transition-colors">Small Bets</a>
-        </div>
-        <div class="flex flex-col gap-3 min-w-[150px]">
-            <span class="text-[#E38524] text-xs tracking-widest mb-2"> Legal</span>
-            <a href="#" class="hover:text-[#00ADEF] transition-colors">Help</a>
-            <a href="/v1/terms" class="hover:text-[#00ADEF] transition-colors">Terms</a>
-            <a href="#" class="hover:text-[#00ADEF] transition-colors">Privacy</a>
-        </div>
+      <div>
+        <h2 class="text-sm font-extrabold uppercase tracking-[.16em]">Platform</h2>
+        <nav class="mt-5 flex flex-col gap-3 text-sm text-white/80" aria-label="Platform links">
+          <a class="transition hover:text-white hover:underline" href="/#programs">Programs</a>
+          <a class="transition hover:text-white hover:underline" href="<%= routes.mentors %>">Mentors</a>
+          <a class="transition hover:text-white hover:underline" href="<%= routes.workshops %>">Workshops</a>
+          <a class="transition hover:text-white hover:underline" href="/v1/search">Project search</a>
+        </nav>
+      </div>
+
+      <div>
+        <h2 class="text-sm font-extrabold uppercase tracking-[.16em]">Resources</h2>
+        <nav class="mt-5 flex flex-col gap-3 text-sm text-white/80" aria-label="Resource links">
+          <a class="transition hover:text-white hover:underline" href="/#announcements">Announcements</a>
+          <a class="transition hover:text-white hover:underline" href="/v1/workshop">Gallery</a>
+          <a class="transition hover:text-white hover:underline" href="/v1/terms">Terms &amp; conditions</a>
+          <a class="transition hover:text-white hover:underline" href="mailto:hello@dxvalley.com">Contact</a>
+        </nav>
+      </div>
+
+      <div id="partners">
+        <h2 class="text-sm font-extrabold uppercase tracking-[.16em]">Partner</h2>
+        <img src="/brand/coopbank-wordmark.jpeg" alt="Cooperative Bank of Oromia" class="mt-5 h-16 w-full max-w-[210px] rounded bg-white object-contain object-left p-2" loading="lazy" decoding="async" />
+        <p class="mt-3 text-xs leading-5 text-white/75">
+          Cooperative Bank of Oromia<br />
+          Incubation arm partner
+        </p>
       </div>
     </div>
 
-    <div class="flex flex-col md:group md:flex-row justify-between items-center pt-8 border-t-4 border-[#00ADEF]/30 gap-8">
-      <div class="flex items-center gap-4 flex-col md:flex-row">
-        <img src="https://placehold.co/200x50/000000/00ADEF?text=DxValley+Alt+Logo" alt="DxValley Alternate Logo" class="h-12 md:h-16 bg-black p-2 border-4 border-[#00ADEF] shadow-neo-sm object-contain hover:scale-105 transition-transform cursor-pointer" loading="lazy" />
-        <span class="font-bold text-slate-400 font-sans italic text-center md:text-left">
-          © <%= new Date().getFullYear() %> DxVALLEY INCUBATION. BUILT FOR BUILDERS.
-        </span>
+    <div class="mt-14 grid gap-8 border-t border-white/25 pt-8 lg:grid-cols-[1fr_auto] lg:items-end">
+      <div>
+        <form id="newsletter-form" class="max-w-[430px]" novalidate>
+          <label class="text-sm font-bold" for="newsletter">Stay close to the next cohort</label>
+          <div class="mt-3 flex">
+            <input id="newsletter" name="email" class="min-w-0 flex-1 rounded-l-md bg-white px-4 py-3 text-sm text-ink outline-none placeholder:text-slate-400 focus:ring-2 focus:ring-orange" placeholder="Your email address" type="email" required aria-describedby="newsletter-status" />
+            <button class="rounded-r-md bg-orange px-5 py-3 text-sm font-bold text-white transition hover:bg-orange-dark focus:outline-none focus:ring-2 focus:ring-white" type="submit">Subscribe</button>
+          </div>
+          <p id="newsletter-status" class="mt-2 text-xs text-white/75" role="status" aria-live="polite"></p>
+        </form>
       </div>
-      
-      <div class="flex gap-6">
-        <% Object.entries(SocialLinks).forEach(([platform, url]) => { %>
-          <a href="<%= url %>" target="_blank" rel="noopener noreferrer" 
-             class="w-12 h-12 flex items-center justify-center border-4 border-[#00ADEF] bg-white text-black shadow-neo-sm hover:translate-y-1 hover:shadow-none transition-all">
-            <i class="fa-brands fa-<%= platform %> text-xl"></i>
-          </a>
-        <% }); %>
-      </div>
+      <p class="text-xs text-white/75 lg:text-right">© <%= new Date().getFullYear() %> DxValley Incubation Center. All rights reserved.</p>
+    </div>
+  </div>
+
+  <div class="bg-cyan-dark">
+    <div class="mx-auto flex max-w-7xl flex-col justify-between gap-2 px-6 py-4 text-[11px] text-white/75 sm:flex-row lg:px-10">
+      <span>Built for founders with momentum.</span>
+      <span>Cooperative Bank of Oromia × DxValley</span>
     </div>
   </div>
 </footer>
+
+<script>
+  (() => {
+    const form = document.getElementById('newsletter-form');
+    const status = document.getElementById('newsletter-status');
+    if (!form || !status) return;
+
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      if (!form.reportValidity()) return;
+      status.textContent = 'Thanks — we will keep you close to the next cohort.';
+      form.reset();
+    });
+  })();
+</script>

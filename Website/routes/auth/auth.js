@@ -10,8 +10,9 @@ import {
   updateProfileImage,
   changePassword,
 } from "../../controllers/auth/auth.controller.js";
+import { setupPage, createSetupAdmin } from "../../controllers/auth/setup.controller.js";
 import upload from "../../config/multer.js";
-import { isAuth} from "../../middleware/auth.middlware.js";
+import { isAuth } from "../../middleware/auth.middlware.js";
 
 const router = Router();
 
@@ -32,6 +33,8 @@ const uploadProfileImage = (req, res, next) => {
 };
 
 // Pages
+router.get("/setup", setupPage);
+router.post("/setup", createSetupAdmin);
 router.get("/signup", signupPage);
 router.get("/login", loginPage);
 router.get("/profile", isAuth, profilePage);

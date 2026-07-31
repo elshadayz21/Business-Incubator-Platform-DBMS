@@ -1,147 +1,151 @@
-<style> body { padding-top: 100px; } </style>
-<header class="py-6 shadow bg-white text-black border-b-4 fixed w-full top-0 left-0" style="border-bottom-color: #00adef; z-index: 999999 !important;" x-data="{ open: false, isLoggedIn: <%= (typeof user !== 'undefined' && user) ? 'true' : 'false' %> }">
-  <div
-    class="container mx-auto flex flex-col md:flex-row justify-between items-center px-4 gap-4 md:gap-0 overflow-auto whitespace-nowrap"
-  >
-    <div class="flex w-full justify-between items-center whitespace-nowrap">
-      <div class="flex items-center gap-2 sm:gap-3">
-        <a href="/" rel="noopener noreferrer">
-          <img
-            src="https://placehold.co/200x50/FFFFFF/00ADEF?text=DxValley+Logo"
-            alt="DxValley logo"
-            class="h-10 sm:h-12 w-auto object-contain"
-            loading="eager"
-            decoding="async"
-          />
-        </a>
-        <a href="/" class="text-base xs:text-lg sm:text-xl md:text-2xl font-bold text-center md:text-left whitespace-nowrap leading-tight text-[#000000]">
-          DxValley ICMS
-        </a>
-      </div>
-
-      <!-- Hamburger button -->
-      <button
-        class="md:hidden flex items-center px-3 py-2"
-        @click="open = !open"
-        aria-label="Toggle menu"
-      >
-        <svg
-          class="w-8 h-8"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M4 6h16M4 12h16M4 18h16"
-          ></path>
-        </svg>
-      </button>
-    </div>
-
-    <!-- Menu: hidden on md+, shown on mobile/tablet when open -->
-    <div
-      :class="open ? 'flex' : 'hidden'"
-      class="flex-col w-full mt-4 md:mt-0 md:flex md:flex-row md:items-center md:justify-center md:w-auto md:gap-0 gap-4 whitespace-nowrap"
-    >
-      <nav
-        class="w-full md:w-auto flex flex-col md:flex-row flex-1 md:justify-center items-center md:items-center gap-4 md:gap-0 whitespace-nowrap"
-      >
-        <ul
-          class="flex flex-col md:flex-row w-full md:w-auto items-center md:space-x-8 space-y-2 md:space-y-0 whitespace-nowrap"
-        >
-          <li>
-            <a href="/v1/projects" class="hover:underline whitespace-nowrap" @click="open = false">
-              Projects & Ideas
-            </a>
-          </li>
-          <li>
-            <a href="/v1/mentors" class="hover:underline whitespace-nowrap" @click="open = false">
-              Mentors
-            </a>
-          </li>
-          <li>
-            <a href="/v1/workshop" class="hover:underline whitespace-nowrap" @click="open = false">
-              Workshops
-            </a>
-          </li>
-          <li>
-            <a href="/v1/search" class="hover:underline whitespace-nowrap" @click="open = false">
-              🔍 Search
-            </a>
-          </li>
-          <li>
-            <a href="/v1/about" class="bg-[#00adef] text-white px-4 py-2 rounded-full font-semibold hover:bg-blue-600 border-2 border-black transition whitespace-nowrap shadow-[2px_2px_0px_rgba(0,0,0,1)]" @click="open = false">
-              About
-            </a>
-          </li>
-        </ul>
+<% const signedIn = typeof user !== 'undefined' && user; %>
+<header class="border-b border-line bg-white" data-site-header>
+  <div class="bg-cyan text-white">
+    <div class="mx-auto flex max-w-7xl items-center justify-between gap-6 px-6 py-2 text-[11px] font-semibold tracking-wide lg:px-10">
+      <nav aria-label="Utility navigation" class="flex items-center gap-5 overflow-x-auto whitespace-nowrap">
+        <a class="opacity-90 transition hover:opacity-100 hover:underline" href="/v1/about#faq">FAQ</a>
+        <a class="opacity-90 transition hover:opacity-100 hover:underline" href="/v1/workshop">Events</a>
+        <a class="opacity-90 transition hover:opacity-100 hover:underline" href="/#stories">Stories</a>
+        <a class="opacity-90 transition hover:opacity-100 hover:underline" href="/#partners">Partners</a>
+        <a class="opacity-90 transition hover:opacity-100 hover:underline" href="mailto:hello@dxvalley.com">Contact</a>
       </nav>
-      
-      <!-- Auth buttons: Show Login/Signup if NOT logged in -->
-      <div
-        x-show="!isLoggedIn"
-        class="flex flex-col md:flex-row items-center gap-2 w-full md:w-auto justify-center md:justify-end mt-2 md:mt-0 whitespace-nowrap"
-      >
-        <a href="/v1/auth/login" class="px-4 py-2 hover:underline whitespace-nowrap" @click="open = false">
-          Log in
-        </a>
-        <a href="/v1/auth/signup" class="px-4 py-2 rounded w-full md:w-auto text-center whitespace-nowrap" style="font-weight: 600;" @click="open = false">
-          Sign up
-        </a>
-      </div>
 
-      <!-- Logout button: Show if logged in -->
-      <div
-        x-show="isLoggedIn"
-        x-cloak
-        class="flex flex-col md:flex-row items-center gap-2 w-full md:w-auto justify-center md:justify-end mt-2 md:mt-0 whitespace-nowrap"
-      >
-        <a href="/v1/auth/profile" class="px-4 py-2 hover:underline whitespace-nowrap" @click="open = false">
-          Profile
+      <div aria-label="Social links" class="hidden items-center gap-2 sm:flex">
+        <a aria-label="LinkedIn" class="grid h-6 w-6 place-items-center rounded-full border border-white/40 transition hover:bg-white hover:text-cyan" href="#linkedin" title="LinkedIn">
+          <i class="fa-brands fa-linkedin-in text-[11px]" aria-hidden="true"></i>
         </a>
-        <button
-          @click="handleLogout()"
-          class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded w-full md:w-auto text-center whitespace-nowrap transition"
-          style="font-weight: 600;"
-        >
-          Logout
-        </button>
+        <a aria-label="YouTube" class="grid h-6 w-6 place-items-center rounded-full border border-white/40 transition hover:bg-white hover:text-cyan" href="#youtube" title="YouTube">
+          <i class="fa-brands fa-youtube text-[11px]" aria-hidden="true"></i>
+        </a>
+        <a aria-label="Instagram" class="grid h-6 w-6 place-items-center rounded-full border border-white/40 transition hover:bg-white hover:text-cyan" href="#instagram" title="Instagram">
+          <i class="fa-brands fa-instagram text-[11px]" aria-hidden="true"></i>
+        </a>
       </div>
     </div>
   </div>
-  
-  <!-- CDN for menu toggle -->
-  <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-  
-  <style>
-    [x-cloak] { display: none !important; }
-  </style>
-  
-  <script>
-    async function handleLogout() {
-      try {
-        const response = await fetch('/v1/auth/logout', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include'
-        });
 
-        if (response.ok) {
-          localStorage.setItem('isLoggedIn', 'false');
-          window.location.href = '/v1/auth/login';
-        } else {
-          alert('Failed to logout. Please try again.');
-        }
-      } catch (error) {
-        console.error('Logout error:', error);
-        alert('An error occurred during logout.');
-      }
-    }
-  </script>
+  <div class="mx-auto max-w-7xl px-6 lg:px-10">
+    <div class="flex min-h-[88px] items-center justify-between gap-6 py-4">
+      <div class="flex min-w-0 items-center gap-4">
+        <a aria-label="DxValley home" class="shrink-0" href="/">
+          <img src="/brand/dxvalley-wordmark.jpeg" alt="DxValley Incubation Center" class="h-12 w-auto max-w-[210px] object-contain object-left mix-blend-multiply" loading="eager" decoding="async" />
+        </a>
+        <div class="hidden h-9 w-px bg-line sm:block" aria-hidden="true"></div>
+        <div class="hidden text-[10px] font-semibold uppercase leading-tight tracking-[.16em] text-muted sm:block">
+          Incubation arm of<br />
+          <span class="text-cyan-dark">Cooperative Bank of Oromia</span>
+        </div>
+      </div>
+
+      <div class="hidden items-center gap-4 lg:flex">
+        <form class="relative" action="/v1/search" method="GET" role="search">
+          <label class="sr-only" for="site-search">Search DxValley</label>
+          <i class="fa-solid fa-magnifying-glass pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted" aria-hidden="true"></i>
+          <input id="site-search" name="q" class="h-10 w-[200px] rounded-full border border-line bg-surface pl-9 pr-4 text-xs outline-none transition placeholder:text-slate-400 focus:border-cyan focus:ring-2 focus:ring-cyan/20" placeholder="Search DxValley" type="search" />
+        </form>
+        <a class="inline-flex items-center gap-2 rounded-full bg-orange px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-orange-dark focus:outline-none focus:ring-2 focus:ring-orange focus:ring-offset-2" href="<%= routes.signupRoute %>">
+          Apply now
+          <i class="fa-solid fa-arrow-up-right-from-square text-xs" aria-hidden="true"></i>
+        </a>
+      </div>
+
+      <button id="menu-toggle" aria-controls="mobile-navigation" aria-expanded="false" aria-label="Open navigation menu" class="grid h-10 w-10 place-items-center rounded-full border border-line text-cyan-dark transition hover:bg-cyan-soft lg:hidden" title="Open navigation menu" type="button">
+        <i class="fa-solid fa-bars" aria-hidden="true"></i>
+      </button>
+    </div>
+
+    <div class="hidden border-t border-line py-4 lg:block">
+      <nav aria-label="Main navigation" class="flex items-center justify-end gap-8 text-sm font-semibold text-ink">
+        <a class="transition hover:text-cyan-dark" href="/#about">About DxValley</a>
+        <a class="transition hover:text-cyan-dark" href="/#programs">Programs</a>
+        <a class="transition hover:text-cyan-dark" href="/#how-it-works">How it works</a>
+        <a class="transition hover:text-cyan-dark" href="/#community">Community</a>
+        <a class="transition hover:text-cyan-dark" href="/#resources">Resources</a>
+      </nav>
+    </div>
+
+    <div id="mobile-navigation" class="hidden border-t border-line py-4 lg:hidden">
+      <nav aria-label="Mobile navigation" class="flex flex-col gap-1 text-sm font-semibold text-ink">
+        <a class="rounded-md px-3 py-3 transition hover:bg-cyan-soft hover:text-cyan-dark" href="/#about">About DxValley</a>
+        <a class="rounded-md px-3 py-3 transition hover:bg-cyan-soft hover:text-cyan-dark" href="/#programs">Programs</a>
+        <a class="rounded-md px-3 py-3 transition hover:bg-cyan-soft hover:text-cyan-dark" href="/#how-it-works">How it works</a>
+        <a class="rounded-md px-3 py-3 transition hover:bg-cyan-soft hover:text-cyan-dark" href="/#community">Community</a>
+        <a class="rounded-md px-3 py-3 transition hover:bg-cyan-soft hover:text-cyan-dark" href="/#resources">Resources</a>
+      </nav>
+      <form class="relative mt-4" action="/v1/search" method="GET" role="search">
+        <label class="sr-only" for="mobile-site-search">Search DxValley</label>
+        <i class="fa-solid fa-magnifying-glass pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted" aria-hidden="true"></i>
+        <input id="mobile-site-search" name="q" class="h-11 w-full rounded-md border border-line bg-surface pl-9 pr-4 text-sm outline-none transition placeholder:text-slate-400 focus:border-cyan focus:ring-2 focus:ring-cyan/20" placeholder="Search DxValley" type="search" />
+      </form>
+      <a class="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-md bg-orange px-5 py-3 text-sm font-bold text-white transition hover:bg-orange-dark" href="<%= routes.signupRoute %>">
+        Apply now
+        <i class="fa-solid fa-arrow-up-right-from-square text-xs" aria-hidden="true"></i>
+      </a>
+    </div>
+
+    <% if (signedIn) { %>
+      <div class="flex items-center justify-end gap-3 border-t border-line py-3 text-xs font-semibold lg:hidden">
+        <a href="/v1/auth/profile" class="text-cyan-dark hover:underline">Profile</a>
+        <button type="button" onclick="handleLogout()" class="rounded-md bg-ink px-3 py-2 text-white transition hover:bg-slate-700">Logout</button>
+      </div>
+    <% } %>
+  </div>
+
+  <div class="hidden lg:block">
+    <div class="mx-auto flex max-w-7xl items-center justify-end gap-3 px-6 pb-3 lg:px-10">
+      <% if (signedIn) { %>
+        <a href="/v1/auth/profile" class="text-xs font-semibold text-cyan-dark hover:underline">Profile</a>
+        <button type="button" onclick="handleLogout()" class="rounded-md bg-ink px-3 py-2 text-xs font-semibold text-white transition hover:bg-slate-700">Logout</button>
+      <% } else { %>
+        <a href="<%= routes.loginRoute %>" class="text-xs font-semibold text-muted hover:text-cyan-dark hover:underline">Log in</a>
+        <a href="<%= routes.signupRoute %>" class="rounded-md border border-cyan px-3 py-2 text-xs font-bold text-cyan-dark transition hover:bg-cyan-soft">Sign up</a>
+      <% } %>
+    </div>
+  </div>
 </header>
+
+<script>
+  (() => {
+    const toggle = document.getElementById('menu-toggle');
+    const navigation = document.getElementById('mobile-navigation');
+    if (!toggle || !navigation) return;
+
+    toggle.addEventListener('click', () => {
+      const isOpen = toggle.getAttribute('aria-expanded') === 'true';
+      toggle.setAttribute('aria-expanded', String(!isOpen));
+      toggle.setAttribute('aria-label', isOpen ? 'Open navigation menu' : 'Close navigation menu');
+      navigation.classList.toggle('hidden', isOpen);
+      toggle.innerHTML = isOpen
+        ? '<i class="fa-solid fa-bars" aria-hidden="true"></i>'
+        : '<i class="fa-solid fa-xmark" aria-hidden="true"></i>';
+    });
+
+    navigation.querySelectorAll('a').forEach((link) => {
+      link.addEventListener('click', () => {
+        toggle.setAttribute('aria-expanded', 'false');
+        toggle.setAttribute('aria-label', 'Open navigation menu');
+        navigation.classList.add('hidden');
+        toggle.innerHTML = '<i class="fa-solid fa-bars" aria-hidden="true"></i>';
+      });
+    });
+  })();
+
+  async function handleLogout() {
+    try {
+      const response = await fetch('/v1/auth/logout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        window.location.href = '<%= routes.loginRoute %>';
+      } else {
+        window.alert('Failed to logout. Please try again.');
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+      window.alert('An error occurred during logout.');
+    }
+  }
+</script>

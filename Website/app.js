@@ -34,6 +34,9 @@ app.use(cors({ origin: true, credentials: true }));
 
 app.use(express.static("public"));
 
+import { setupMiddleware } from "./middleware/setup.middleware.js";
+app.use(setupMiddleware);
+
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
