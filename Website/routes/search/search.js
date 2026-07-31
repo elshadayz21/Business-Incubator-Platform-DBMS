@@ -1,10 +1,9 @@
 import { Router } from "express";
 import { searchEntities } from "../../controllers/search/search.controller.js";
-import { isAuth } from "../../middleware/auth.middlware.js";
 
 const router = Router();
 
-// Global search is accessible to authenticated users
-router.get("/", isAuth, searchEntities);
+// Public content search must work without an account.
+router.get("/", searchEntities);
 
 export { router as SearchRouter };
