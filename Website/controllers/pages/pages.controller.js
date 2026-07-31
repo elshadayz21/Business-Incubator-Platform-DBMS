@@ -116,5 +116,5 @@ export const getWorkshopDetailPage = async (req, res, next) => {
 
 // --- About Page ---
 export const getAboutPage = (req, res) => {
-  res.render("pages/about", { title: "Who We Are" });
+  res.render("pages/about", { title: "About DxValley | Incubation Center" });
 };
