@@ -1,154 +1,176 @@
 window.electron = {
   invoke: async (channel, ...args) => {
     let url;
-    let options = { headers: { 'Content-Type': 'application/json' } };
+    let options = { headers: { "Content-Type": "application/json" } };
 
     switch (channel) {
       // Auth
-      case 'auth:login':
-        url = '/api/admin/auth/login';
-        options.method = 'POST';
+      case "auth:login":
+        url = "/api/admin/auth/login";
+        options.method = "POST";
         options.body = JSON.stringify(args[0]);
         break;
 
       // Workshops
-      case 'workshops:get-all':
-      case 'get-workshops':
-        url = '/api/admin/workshops';
+      case "workshops:get-all":
+      case "get-workshops":
+        url = "/api/admin/workshops";
         break;
-      case 'workshops:get-by-id':
-      case 'get-workshop':
+      case "workshops:get-by-id":
+      case "get-workshop":
         url = `/api/admin/workshops/${args[0]}`;
         break;
-      case 'workshops:create':
-      case 'create-workshop':
-        url = '/api/admin/workshops';
-        options.method = 'POST';
+      case "workshops:create":
+      case "create-workshop":
+        url = "/api/admin/workshops";
+        options.method = "POST";
         options.body = JSON.stringify(args[0]);
         break;
-      case 'workshops:update':
-      case 'update-workshop':
+      case "workshops:update":
+      case "update-workshop":
         url = `/api/admin/workshops/${args[0]}`;
-        options.method = 'PUT';
+        options.method = "PUT";
         options.body = JSON.stringify(args[1]);
         break;
-      case 'workshops:delete':
-      case 'delete-workshop':
+      case "workshops:delete":
+      case "delete-workshop":
         url = `/api/admin/workshops/${args[0]}`;
-        options.method = 'DELETE';
+        options.method = "DELETE";
         break;
-      case 'track-attendance':
+      case "track-attendance":
         url = `/api/admin/workshops/attendance/${args[0]}`;
-        options.method = 'POST';
+        options.method = "POST";
         options.body = JSON.stringify({ attended: args[1] });
         break;
-      case 'submit-feedback':
+      case "submit-feedback":
         url = `/api/admin/workshops/feedback/${args[0]}`;
-        options.method = 'POST';
+        options.method = "POST";
         options.body = JSON.stringify(args[1]);
         break;
-      case 'get-workshop-enrollments':
+      case "get-workshop-enrollments":
         url = `/api/admin/workshops/${args[0]}/enrollments`;
         break;
-      case 'get-attendance-report':
-        url = '/api/admin/reports/attendance';
+      case "get-attendance-report":
+        url = "/api/admin/reports/attendance";
         break;
-      case 'get-feedback-report':
-        url = '/api/admin/reports/feedback';
+      case "get-feedback-report":
+        url = "/api/admin/reports/feedback";
         break;
 
       // Resources
-      case 'resources:get-all':
-        url = '/api/admin/resources';
+      case "resources:get-all":
+        url = "/api/admin/resources";
         break;
-      case 'resources:add':
-        url = '/api/admin/resources';
-        options.method = 'POST';
+      case "resources:add":
+        url = "/api/admin/resources";
+        options.method = "POST";
         options.body = JSON.stringify(args[0]);
         break;
-      case 'resources:delete':
+      case "resources:delete":
         url = `/api/admin/resources/${args[0]}`;
-        options.method = 'DELETE';
+        options.method = "DELETE";
         break;
-      case 'resources:get-stats':
-        url = '/api/admin/resources/stats';
+      case "resources:get-stats":
+        url = "/api/admin/resources/stats";
         break;
-      case 'bookings:get-pending':
-        url = '/api/admin/bookings/pending';
+      case "bookings:get-pending":
+        url = "/api/admin/bookings/pending";
         break;
-      case 'bookings:update-status':
+      case "bookings:update-status":
         url = `/api/admin/bookings/${args[0].id}/status`;
-        options.method = 'PUT';
+        options.method = "PUT";
         options.body = JSON.stringify({ status: args[0].status });
         break;
 
       // Mentors
-      case 'mentors:get-all':
-        url = '/api/admin/mentors';
+      case "mentors:get-all":
+        url = "/api/admin/mentors";
         break;
-      case 'mentors:add':
-        url = '/api/admin/mentors';
-        options.method = 'POST';
+      case "mentors:add":
+        url = "/api/admin/mentors";
+        options.method = "POST";
         options.body = JSON.stringify(args[0]);
         break;
-      case 'mentors:delete':
+      case "mentors:delete":
         url = `/api/admin/mentors/${args[0]}`;
-        options.method = 'DELETE';
+        options.method = "DELETE";
         break;
-      case 'mentors:update':
+      case "mentors:update":
         url = `/api/admin/mentors/${args[0].id}`;
-        options.method = 'PUT';
+        options.method = "PUT";
         options.body = JSON.stringify(args[0].data);
         break;
 
       // Projects
-      case 'projects:getAll':
-        url = '/api/admin/projects';
+      case "projects:getAll":
+        url = "/api/admin/projects";
         break;
-      case 'projects:getById':
+      case "projects:getById":
         url = `/api/admin/projects/${args[0]}`;
         break;
-      case 'projects:updateStatus':
+      case "projects:updateStatus":
         url = `/api/admin/projects/${args[0].id}/status`;
-        options.method = 'PUT';
+        options.method = "PUT";
         options.body = JSON.stringify({ status: args[0].status });
         break;
-      case 'projects:getByStatus':
+      case "projects:getByStatus":
         url = `/api/admin/projects/status/${args[0]}`;
         break;
-      case 'projects:toggleApproved':
+      case "projects:toggleApproved":
         url = `/api/admin/projects/${args[0]}/toggle-approved`;
-        options.method = 'PUT';
+        options.method = "PUT";
         break;
-      case 'projects:getStats':
-        url = '/api/admin/projects/stats';
+      case "projects:getStats":
+        url = "/api/admin/projects/stats";
         break;
 
       // Funding
-      case 'funding:getAll':
-        url = `/api/admin/funding?query=${args[0] || ''}`;
+      case "funding:getAll":
+        url = `/api/admin/funding?query=${args[0] || ""}`;
         break;
-      case 'funding:getDashboard':
-        url = '/api/admin/funding/dashboard';
+      case "funding:getDashboard":
+        url = "/api/admin/funding/dashboard";
         break;
-      case 'funding:getByStage':
-        url = '/api/admin/funding/stage';
+      case "funding:getByStage":
+        url = "/api/admin/funding/stage";
         break;
-      case 'funding:getById':
+      case "funding:getById":
         url = `/api/admin/funding/${args[0]}`;
         break;
-      case 'funding:updateStatus':
+      case "funding:updateStatus":
         url = `/api/admin/funding/${args[0].id}/status`;
-        options.method = 'PUT';
-        options.body = JSON.stringify({ status: args[0].status, notes: args[0].notes });
+        options.method = "PUT";
+        options.body = JSON.stringify({
+          status: args[0].status,
+          notes: args[0].notes,
+        });
         break;
-      case 'funding:delete':
+      case "funding:delete":
         url = `/api/admin/funding/${args[0]}`;
-        options.method = 'DELETE';
+        options.method = "DELETE";
+        break;
+
+      case "users:get-all":
+        url = "/api/admin/users";
+        break;
+      case "users:create":
+        url = "/api/admin/users";
+        options.method = "POST";
+        options.body = JSON.stringify(args[0]);
+        break;
+      case "users:update-role":
+        url = `/api/admin/users/${args[0]}/role`;
+        options.method = "PUT";
+        options.body = JSON.stringify({ role: args[1] });
+        break;
+      case "users:update-status":
+        url = `/api/admin/users/${args[0]}/status`;
+        options.method = "PUT";
+        options.body = JSON.stringify({ status: args[1] });
         break;
 
       default:
-        console.warn('Unknown IPC channel:', channel);
+        console.warn("Unknown IPC channel:", channel);
         return null;
     }
 
@@ -162,5 +184,5 @@ window.electron = {
       console.error(`Error in IPC shim [${channel}]:`, err);
       throw err;
     }
-  }
+  },
 };
