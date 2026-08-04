@@ -11,9 +11,12 @@ import {
   ArrowRight,
 } from "lucide-react";
 
-const Sidebar = ({ activeTab = "Dashboard", setActiveTab = () => {} }) => {
-  const [isElementsOpen, setIsElementsOpen] = useState(false);
-
+// in Sidebar.jsx
+const Sidebar = ({
+  activeTab = "Dashboard",
+  setActiveTab = () => {},
+  userRole,
+}) => {
   const navItems = [
     { id: 1, icon: LayoutDashboard, label: "Dashboard", badge: null },
     { id: 2, icon: BarChart3, label: "Mentors", badge: null },
@@ -21,6 +24,9 @@ const Sidebar = ({ activeTab = "Dashboard", setActiveTab = () => {} }) => {
     { id: 4, icon: Package, label: "Workshops", badge: null },
     { id: 5, icon: ShoppingCart, label: "Resources", badge: null },
     { id: 6, icon: FileText, label: "Funding", badge: "New" },
+    ...(userRole?.toLowerCase() === "superadmin"
+      ? [{ id: 7, icon: Users, label: "Users", badge: null }]
+      : []),
   ];
 
   const handleItemClick = (label) => {
@@ -58,7 +64,6 @@ const Sidebar = ({ activeTab = "Dashboard", setActiveTab = () => {} }) => {
 
       {/* Navigation */}
       <nav className="flex-1 p-4 overflow-y-auto scrollbar-hide space-y-3">
-
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.label;

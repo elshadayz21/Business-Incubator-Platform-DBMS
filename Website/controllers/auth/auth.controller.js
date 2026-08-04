@@ -26,7 +26,10 @@ import sharp from "sharp";
 import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
-import { getUserActivityLogs, getSystemMetrics } from "../../models/analytics/analytics.model.js";
+import {
+  getUserActivityLogs,
+  getSystemMetrics,
+} from "../../models/analytics/analytics.model.js";
 import eventBus from "../../utils/eventBus.js";
 
 export const signupPage = (req, res) =>
@@ -72,7 +75,7 @@ export const profilePage = async (req, res, next) => {
       dashboardData.fundingRequests = await getUserFundingRequests(userId);
       dashboardData.workshops = await getUserWorkshops(userId);
       dashboardData.notifications = await getUserNotifications(userId);
-      
+
       // Mark notifications as read if user is viewing notifications tab
       if (activeTab === "notifications") {
         await markNotificationsAsRead(userId);
@@ -187,13 +190,11 @@ export const login = async (req, res, next) => {
     // Emit login event to trigger activity log subscriber
     eventBus.emit("auth.login", { user });
 
-    let redirectUrl = '/v1/auth/profile';
+    let redirectUrl = "/v1/auth/profile";
     if (user.role === ROLES.SUPERADMIN || user.role === ROLES.ADMIN) {
-      redirectUrl = '/admin/dashboard';
-    } else if (user.role === ROLES.MENTOR) {
-      redirectUrl = '/mentor/dashboard';
-    } else if (user.role === ROLES.ENTREPRENEUR) {
-      redirectUrl = '/entrepreneur/dashboard';
+      redirectUrl = "/admin/dashboard";
+    } else if (user.role === ROLES.MENTOR || user.role === ROLES.ENTREPRENEUR) {
+      redirectUrl = "/v1/auth/profile";
     }
 
     res.send(`
