@@ -9,7 +9,7 @@ import {
   Save,
 } from "lucide-react";
 
-const AddUserForm = ({ onSuccess }) => {
+const AddUserForm = ({ onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -32,7 +32,7 @@ const AddUserForm = ({ onSuccess }) => {
       return;
     }
     if (formData.password.length < 8) {
-      setError("Password must be at least 8 characters.");
+      setError("Password must be at least 8 characters long.");
       return;
     }
 
@@ -44,117 +44,101 @@ const AddUserForm = ({ onSuccess }) => {
       onSuccess();
     } catch (err) {
       console.error(err);
-      setError("Failed to create user. Please try again.");
+      setError("Failed to create user. Please check your credentials.");
     } finally {
       setLoading(false);
     }
   };
 
-  const inputClasses =
-    "w-full px-4 py-3 bg-white font-bold text-black placeholder-gray-500 outline-none uppercase transition-all disabled:bg-gray-100 disabled:text-gray-400";
-  const labelClasses =
-    "block text-xs font-black uppercase text-gray-700 mb-2 tracking-widest";
-  const iconBoxClasses =
-    "w-12 bg-black flex items-center justify-center flex-shrink-0 text-white";
-  const containerClasses =
-    "flex border-2 border-black shadow-[4px_4px_0_0_black] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[3px_3px_0_0_black] focus-within:translate-x-[2px] focus-within:translate-y-[2px] focus-within:shadow-[2px_2px_0_0_black] transition-all";
-
   return (
-    <div className="bg-[#FFFDF5] w-full h-full flex flex-col font-sans">
-      <form
-        onSubmit={handleSubmit}
-        className="flex-1 p-8 space-y-8 overflow-y-auto"
-      >
-        {error && (
-          <div className="flex items-center gap-3 p-4 bg-red-100 border-2 border-red-600 text-red-700 font-bold">
-            <AlertCircle size={20} />
-            {error}
-          </div>
-        )}
-
-        <div>
-          <label className={labelClasses}>Full Name</label>
-          <div className={containerClasses}>
-            <div className={iconBoxClasses}>
-              <User size={20} />
-            </div>
-            <input
-              type="text"
-              className={inputClasses}
-              value={formData.name}
-              onChange={(e) => handleChange("name", e.target.value)}
-              placeholder="Full Name"
-              disabled={loading}
-            />
-          </div>
+    <form onSubmit={handleSubmit} className="space-y-4 font-sans">
+      {error && (
+        <div className="bg-rose-50 border border-rose-300 rounded-xl p-4 flex items-center gap-3 text-rose-800 text-xs font-bold">
+          <AlertCircle size={18} className="text-rose-600 shrink-0" />
+          <span>{error}</span>
         </div>
+      )}
 
-        <div>
-          <label className={labelClasses}>Email</label>
-          <div className={containerClasses}>
-            <div className={iconBoxClasses}>
-              <Mail size={20} />
-            </div>
-            <input
-              type="email"
-              className={inputClasses}
-              value={formData.email}
-              onChange={(e) => handleChange("email", e.target.value)}
-              placeholder="Email Address"
-              disabled={loading}
-            />
-          </div>
+      <div>
+        <label className="block text-xs font-bold text-[#526274] mb-1">Full Name</label>
+        <div className="relative">
+          <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#526274]" />
+          <input
+            type="text"
+            value={formData.name}
+            onChange={(e) => handleChange("name", e.target.value)}
+            placeholder="Full Name"
+            disabled={loading}
+            className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#D6E4EA] rounded-xl text-xs font-medium text-[#111827] outline-none focus:border-[#00ADEF]"
+          />
         </div>
+      </div>
 
-        <div>
-          <label className={labelClasses}>Password</label>
-          <div className={containerClasses}>
-            <div className={iconBoxClasses}>
-              <Lock size={20} />
-            </div>
-            <input
-              type="password"
-              className={inputClasses}
-              value={formData.password}
-              onChange={(e) => handleChange("password", e.target.value)}
-              placeholder="Min 8 characters"
-              disabled={loading}
-            />
-          </div>
+      <div>
+        <label className="block text-xs font-bold text-[#526274] mb-1">Email Address</label>
+        <div className="relative">
+          <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#526274]" />
+          <input
+            type="email"
+            value={formData.email}
+            onChange={(e) => handleChange("email", e.target.value)}
+            placeholder="user@dxvalley.com"
+            disabled={loading}
+            className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#D6E4EA] rounded-xl text-xs font-medium text-[#111827] outline-none focus:border-[#00ADEF]"
+          />
         </div>
+      </div>
 
-        <div>
-          <label className={labelClasses}>Role</label>
-          <div className={containerClasses}>
-            <div className={iconBoxClasses}>
-              <ShieldCheck size={20} />
-            </div>
-            <select
-              className={inputClasses}
-              value={formData.role}
-              onChange={(e) => handleChange("role", e.target.value)}
-              disabled={loading}
-            >
-              <option value="admin">Admin</option>
-              <option value="superadmin">Superadmin</option>
-            </select>
-          </div>
+      <div>
+        <label className="block text-xs font-bold text-[#526274] mb-1">Password</label>
+        <div className="relative">
+          <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#526274]" />
+          <input
+            type="password"
+            value={formData.password}
+            onChange={(e) => handleChange("password", e.target.value)}
+            placeholder="Min 8 characters"
+            disabled={loading}
+            className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#D6E4EA] rounded-xl text-xs font-medium text-[#111827] outline-none focus:border-[#00ADEF]"
+          />
         </div>
+      </div>
 
+      <div>
+        <label className="block text-xs font-bold text-[#526274] mb-1">Role Assignment</label>
+        <div className="relative">
+          <ShieldCheck size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#526274]" />
+          <select
+            value={formData.role}
+            onChange={(e) => handleChange("role", e.target.value)}
+            disabled={loading}
+            className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#D6E4EA] rounded-xl text-xs font-medium text-[#111827] outline-none focus:border-[#00ADEF] cursor-pointer"
+          >
+            <option value="admin">Admin</option>
+            <option value="superadmin">Superadmin</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="pt-4 border-t border-[#D6E4EA] flex items-center justify-end gap-3">
+        <button
+          type="button"
+          onClick={onClose}
+          disabled={loading}
+          className="px-4 py-2.5 rounded-xl border border-[#D6E4EA] text-xs font-bold text-[#526274] hover:bg-[#F6FAFC]"
+        >
+          Cancel
+        </button>
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-black text-white px-8 py-4 font-bold uppercase border-4 border-black shadow-[4px_4px_0_0_#4f46e5] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all flex items-center justify-center gap-3 text-lg disabled:opacity-50"
+          className="px-6 py-2.5 rounded-xl bg-[#E38524] text-white text-xs font-extrabold uppercase shadow-xs hover:bg-[#C97019] disabled:opacity-50 transition flex items-center gap-2"
         >
-          {loading ? (
-            <Loader2 className="animate-spin" size={22} />
-          ) : (
-            <Save size={22} />
-          )}
-          {loading ? "Saving..." : "Create User"}
+          {loading ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+          <span>Create Account</span>
         </button>
-      </form>
-    </div>
+      </div>
+    </form>
   );
 };
 

@@ -4,7 +4,9 @@ import {
   FolderKanban,
   UserCheck,
   Calendar,
-  ArrowRight,
+  TrendingUp,
+  Sparkles,
+  Building2,
 } from "lucide-react";
 import {
   LineChart,
@@ -24,70 +26,70 @@ import {
 import StatCard from "../../../components/StatCard";
 
 const THEME = {
-  black: "#000000",
-  white: "#FFFDF5",
-  indigo: "#4f46e5",
-  slate: "#0f172a",
-  amber: "#f59e0b",
-  teal: "#0d9488",
+  cyan: "#00ADEF",
+  cyanDark: "#006F9E",
+  orange: "#E38524",
+  ink: "#111827",
+  muted: "#526274",
+  line: "#D6E4EA",
 };
 
 const CustomTooltip = ({ active, payload, label }) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-white border-4 border-black p-3 shadow-[4px_4px_0px_0px_#000]">
-          <p className="font-bold font-sans uppercase mb-1 border-b-2 border-black pb-1">
-            {label}
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white border border-[#D6E4EA] p-3 rounded-xl shadow-md text-xs">
+        <p className="font-bold text-[#111827] mb-1.5 border-b border-[#D6E4EA] pb-1">
+          {label}
+        </p>
+        {payload.map((entry, index) => (
+          <p
+            key={index}
+            className="font-bold py-0.5 flex items-center justify-between gap-4"
+            style={{ color: entry.color }}
+          >
+            <span>{entry.name}:</span>
+            <span>{entry.value}</span>
           </p>
-          {payload.map((entry, index) => (
-            <p
-              key={index}
-              className="font-bold text-sm"
-              style={{ color: entry.color }}
-            >
-              {entry.name}: {entry.value}
-            </p>
-          ))}
-        </div>
-      );
-    }
-    return null;
-  };
-
+        ))}
+      </div>
+    );
+  }
+  return null;
+};
 
 const Dashboard = () => {
   const stats = [
     {
       id: 1,
-      title: "Total Users",
+      title: "Total Entrepreneurs",
       value: "12,428",
       icon: Users,
-      bgClass: "bg-[#4f46e5]",
-      textClass: "text-white",
+      badgeText: "+18% this cohort",
+      accentColor: "cyan",
     },
     {
       id: 2,
-      title: "Projects",
+      title: "Incubated Startups",
       value: "54,320",
       icon: FolderKanban,
-      bgClass: "bg-[#0f172a]",
-      textClass: "text-white",
+      badgeText: "+24% active",
+      accentColor: "orange",
     },
     {
       id: 3,
-      title: "Mentors",
+      title: "Expert Mentors",
       value: "1,852",
       icon: UserCheck,
-      bgClass: "bg-[#f59e0b]",
-      textClass: "text-black",
+      badgeText: "85% assigned",
+      accentColor: "cyan",
     },
     {
       id: 4,
-      title: "Workshops",
+      title: "Workshops Hosted",
       value: "509",
       icon: Calendar,
-      bgClass: "bg-white",
-      textClass: "text-black",
+      badgeText: "+12 completed",
+      accentColor: "orange",
     },
   ];
 
@@ -103,20 +105,20 @@ const Dashboard = () => {
   ];
 
   const userGrowthData = [
-    { day: "Day 1", users: 145 },
-    { day: "Day 2", users: 178 },
-    { day: "Day 3", users: 132 },
-    { day: "Day 4", users: 98 },
-    { day: "Day 5", users: 156 },
-    { day: "Day 6", users: 165 },
-    { day: "Day 7", users: 189 },
+    { day: "Mon", users: 145 },
+    { day: "Tue", users: 178 },
+    { day: "Wed", users: 132 },
+    { day: "Thu", users: 198 },
+    { day: "Fri", users: 156 },
+    { day: "Sat", users: 165 },
+    { day: "Sun", users: 189 },
   ];
 
   const mentorsData = [
-    { name: "Technology", value: 650 },
-    { name: "Business", value: 480 },
-    { name: "Design", value: 390 },
-    { name: "Marketing", value: 332 },
+    { name: "FinTech & Banking", value: 650 },
+    { name: "AgriTech", value: 480 },
+    { name: "MSME & Retail", value: 390 },
+    { name: "Tech & Software", value: 332 },
   ];
 
   const workshopsData = [
@@ -125,279 +127,208 @@ const Dashboard = () => {
     { status: "Scheduled", count: 82 },
   ];
 
-  const PIE_COLORS = [THEME.indigo, THEME.slate, THEME.amber, THEME.teal];
-  const WORKSHOP_COLORS = [THEME.slate, THEME.indigo, "#94a3b8"];
+  const PIE_COLORS = [THEME.cyan, THEME.orange, THEME.cyanDark, THEME.muted];
 
   return (
-    <div className="flex-1 overflow-y-auto bg-[#FFFDF5] h-screen text-black font-sans scrollbar-hide">
-      <style jsx global>{`
-        .scrollbar-hide::-webkit-scrollbar {
-          display: none;
-        }
-        .scrollbar-hide {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-      `}</style>
-
-      <div className="p-6 lg:p-10 max-w-[1920px] mx-auto">
-        <div className="mb-12">
-          <span className="bg-black text-white px-3 py-1 font-bold text-sm uppercase tracking-wider mb-2 inline-block transform -rotate-1">
-            System Overview
-          </span>
-          <h1 className="text-5xl md:text-6xl font-black text-black mb-2 uppercase tracking-tighter">
-            DASHBOARD{" "}
-            <span className="bg-[#4f46e5] text-white px-2 border-4 border-black shadow-[4px_4px_0px_0px_#000] italic inline-block transform rotate-1 text-4xl md:text-5xl">
-              STATS
-            </span>
+    <div className="space-y-6">
+      {/* Header Banner */}
+      <div className="bg-gradient-to-r from-[#00ADEF] via-[#078CC8] to-[#0878B4] rounded-2xl p-6 sm:p-8 text-white shadow-sm relative overflow-hidden">
+        <div className="pointer-events-none absolute -right-16 -top-16 w-64 h-64 rounded-full border-30 border-white/10" />
+        <div className="relative z-10 space-y-3">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 text-xs font-bold uppercase tracking-wider text-white">
+            <Sparkles size={12} className="text-[#E38524]" />
+            DxValley Incubation Center • Analytics Overview
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight font-['Space_Grotesk']">
+            Dashboard Overview
           </h1>
-          <p className="text-xl text-slate-600 font-medium border-l-4 border-[#4f46e5] pl-4 italic mt-4">
-            Real-time metrics. Don't guess, measure.
+          <p className="text-sm text-white/85 max-w-2xl leading-relaxed">
+            Real-time tracking of cohort progress, mentorship assignments, workshop engagements, and startup milestones under Cooperative Bank of Oromia.
           </p>
         </div>
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
-          {stats.map((stat) => (
-            <StatCard
-              key={stat.id}
-              title={stat.title}
-              value={stat.value}
-              icon={stat.icon}
-              bgClass={stat.bgClass}
-              textClass={stat.textClass}
-            />
-          ))}
+      {/* Stat Cards Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        {stats.map((stat) => (
+          <StatCard
+            key={stat.id}
+            title={stat.title}
+            value={stat.value}
+            icon={stat.icon}
+            badgeText={stat.badgeText}
+            accentColor={stat.accentColor}
+          />
+        ))}
+      </div>
+
+      {/* Main Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        {/* Main Growth Trajectory Chart */}
+        <div className="lg:col-span-8 bg-white border border-[#D6E4EA] rounded-2xl p-6 shadow-xs">
+          <div className="flex items-center justify-between mb-6 pb-4 border-b border-[#D6E4EA]">
+            <div>
+              <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#006F9E] block mb-1">
+                Ecosystem Performance
+              </span>
+              <h2 className="text-xl font-bold text-[#111827] font-['Space_Grotesk']">
+                Startup &amp; User Growth Trajectory
+              </h2>
+            </div>
+            <div className="flex items-center gap-2 text-xs font-bold text-[#526274]">
+              <span className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded-full bg-[#00ADEF]" /> Total Users
+              </span>
+              <span className="flex items-center gap-1.5 ml-3">
+                <span className="w-3 h-3 rounded-full bg-[#E38524]" /> Startups
+              </span>
+            </div>
+          </div>
+
+          <div className="h-[320px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={growthData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
+                <XAxis dataKey="month" stroke="#526274" fontSize={12} tickLine={false} />
+                <YAxis stroke="#526274" fontSize={12} tickLine={false} />
+                <Tooltip content={<CustomTooltip />} />
+                <Line
+                  type="monotone"
+                  dataKey="users"
+                  stroke={THEME.cyan}
+                  strokeWidth={3}
+                  dot={{ fill: THEME.cyan, r: 4 }}
+                  activeDot={{ r: 6 }}
+                  name="Total Users"
+                />
+                <Line
+                  type="monotone"
+                  dataKey="projects"
+                  stroke={THEME.orange}
+                  strokeWidth={3}
+                  dot={{ fill: THEME.orange, r: 4 }}
+                  activeDot={{ r: 6 }}
+                  name="Incubated Startups"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mb-12">
-          <div className="lg:col-span-2 bg-white border-4 border-black p-8 shadow-[8px_8px_0px_0px_#000]">
-            <div className="flex items-center gap-4 mb-8">
-              <div className="bg-black text-white px-4 py-2 font-bold text-xl uppercase tracking-widest border-2 border-transparent">
-                01
-              </div>
-              <h2 className="text-3xl font-black uppercase text-black tracking-tight">
-                Growth Trajectory
-              </h2>
-            </div>
-
-            <div className="h-[350px] w-full border-2 border-black bg-[#FFFDF5] p-4">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={growthData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
-                  <XAxis
-                    dataKey="month"
-                    stroke="#000"
-                    tick={{ fill: "#000", fontWeight: "bold" }}
-                    tickLine={{ stroke: "#000", strokeWidth: 2 }}
-                    axisLine={{ stroke: "#000", strokeWidth: 3 }}
-                  />
-                  <YAxis
-                    stroke="#000"
-                    tick={{ fill: "#000", fontWeight: "bold" }}
-                    tickLine={{ stroke: "#000", strokeWidth: 2 }}
-                    axisLine={{ stroke: "#000", strokeWidth: 3 }}
-                  />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Legend
-                    wrapperStyle={{
-                      paddingTop: "20px",
-                      fontWeight: "bold",
-                      textTransform: "uppercase",
-                    }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="users"
-                    stroke={THEME.indigo}
-                    strokeWidth={4}
-                    dot={{
-                      fill: THEME.white,
-                      stroke: "#000",
-                      strokeWidth: 3,
-                      r: 6,
-                    }}
-                    activeDot={{
-                      r: 8,
-                      stroke: "#000",
-                      strokeWidth: 3,
-                      fill: THEME.indigo,
-                    }}
-                    name="TOTAL USERS"
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="projects"
-                    stroke={THEME.amber}
-                    strokeWidth={4}
-                    dot={{
-                      fill: THEME.white,
-                      stroke: "#000",
-                      strokeWidth: 3,
-                      r: 6,
-                    }}
-                    activeDot={{
-                      r: 8,
-                      stroke: "#000",
-                      strokeWidth: 3,
-                      fill: THEME.amber,
-                    }}
-                    name="PROJECTS"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+        {/* Expertise Distribution Pie */}
+        <div className="lg:col-span-4 bg-white border border-[#D6E4EA] rounded-2xl p-6 shadow-xs flex flex-col justify-between">
+          <div>
+            <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#006F9E] block mb-1">
+              Mentorship Focus
+            </span>
+            <h2 className="text-xl font-bold text-[#111827] font-['Space_Grotesk'] mb-4">
+              Sector Expertise
+            </h2>
           </div>
 
-          <div className="bg-white border-4 border-black p-8 shadow-[8px_8px_0px_0px_#000]">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="bg-black text-white px-3 py-1 font-bold text-lg uppercase">
-                02
-              </div>
-              <h2 className="text-2xl font-black uppercase text-black">
-                Daily Influx
-              </h2>
-            </div>
-            <div className="h-[300px] w-full border-2 border-black bg-[#FFFDF5] p-4">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={userGrowthData}>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="#e5e5e5"
-                    vertical={false}
-                  />
-                  <XAxis
-                    dataKey="day"
-                    stroke="#000"
-                    tick={{ fill: "#000", fontWeight: "bold", fontSize: 12 }}
-                    axisLine={{ stroke: "#000", strokeWidth: 3 }}
-                  />
-                  <YAxis
-                    stroke="#000"
-                    tick={{ fill: "#000", fontWeight: "bold" }}
-                    axisLine={{ stroke: "#000", strokeWidth: 3 }}
-                  />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Bar
-                    dataKey="users"
-                    fill={THEME.slate}
-                    radius={[0, 0, 0, 0]}
-                    stroke="#000"
-                    strokeWidth={2}
-                    name="NEW USERS"
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          <div className="bg-white border-4 border-black p-8 shadow-[8px_8px_0px_0px_#000]">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="bg-black text-white px-3 py-1 font-bold text-lg uppercase">
-                03
-              </div>
-              <h2 className="text-2xl font-black uppercase text-black">
-                Expertise Distribution
-              </h2>
-            </div>
-            <div className="h-[300px] w-full border-2 border-black bg-[#FFFDF5] p-4">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={mentorsData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={5}
-                    dataKey="value"
-                    stroke="#000"
-                    strokeWidth={2}
-                  >
-                    {mentorsData.map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={PIE_COLORS[index % PIE_COLORS.length]}
-                      />
-                    ))}
-                  </Pie>
-                  <Tooltip content={<CustomTooltip />} />
-                  <Legend
-                    layout="vertical"
-                    verticalAlign="middle"
-                    align="right"
-                    wrapperStyle={{
-                      fontWeight: "bold",
-                      textTransform: "uppercase",
-                      fontSize: "12px",
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          <div className="lg:col-span-2 bg-[#0f172a] border-4 border-black p-8 shadow-[8px_8px_0px_0px_#000] text-white">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="bg-white text-black border-2 border-black px-3 py-1 font-bold text-lg uppercase">
-                04
-              </div>
-              <h2 className="text-2xl font-black uppercase text-white">
-                Workshop Status
-              </h2>
-            </div>
-            <div className="h-[250px] w-full border-2 border-white bg-black/20 p-4">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={workshopsData}
-                  layout="vertical"
-                  margin={{ left: 20 }}
+          <div className="h-[240px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={mentorsData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={55}
+                  outerRadius={85}
+                  paddingAngle={4}
+                  dataKey="value"
                 >
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="#334155"
-                    horizontal={false}
+                  {mentorsData.map((entry, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={PIE_COLORS[index % PIE_COLORS.length]}
+                    />
+                  ))}
+                </Pie>
+                <Tooltip content={<CustomTooltip />} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="space-y-2 pt-2 border-t border-[#D6E4EA]">
+            {mentorsData.map((item, idx) => (
+              <div key={idx} className="flex items-center justify-between text-xs">
+                <span className="flex items-center gap-2 font-medium text-[#526274]">
+                  <span
+                    className="w-2.5 h-2.5 rounded-full shrink-0"
+                    style={{ backgroundColor: PIE_COLORS[idx % PIE_COLORS.length] }}
                   />
-                  <XAxis
-                    type="number"
-                    stroke="#fff"
-                    tick={{ fill: "#fff", fontWeight: "bold" }}
-                    axisLine={{ stroke: "#fff", strokeWidth: 2 }}
-                  />
-                  <YAxis
-                    dataKey="status"
-                    type="category"
-                    stroke="#fff"
-                    width={100}
-                    tick={{ fill: "#fff", fontWeight: "bold" }}
-                    axisLine={{ stroke: "#fff", strokeWidth: 2 }}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "#000",
-                      border: "2px solid #fff",
-                      color: "#fff",
-                    }}
-                    itemStyle={{ color: "#fff" }}
-                    cursor={{ fill: "rgba(255,255,255,0.1)" }}
-                  />
-                  <Bar
-                    dataKey="count"
-                    radius={[0, 0, 0, 0]}
-                    stroke="#fff"
-                    strokeWidth={2}
-                  >
-                    {workshopsData.map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={WORKSHOP_COLORS[index]}
-                      />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+                  {item.name}
+                </span>
+                <span className="font-bold text-[#111827]">{item.value}</span>
+              </div>
+            ))}
           </div>
         </div>
+
+      </div>
+
+      {/* Secondary Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        {/* Daily Registrations */}
+        <div className="bg-white border border-[#D6E4EA] rounded-2xl p-6 shadow-xs">
+          <div className="mb-6 pb-4 border-b border-[#D6E4EA]">
+            <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#006F9E] block mb-1">
+              Weekly Activity
+            </span>
+            <h2 className="text-lg font-bold text-[#111827] font-['Space_Grotesk']">
+              Daily Entrepreneur Registrations
+            </h2>
+          </div>
+
+          <div className="h-[240px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={userGrowthData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
+                <XAxis dataKey="day" stroke="#526274" fontSize={12} tickLine={false} />
+                <YAxis stroke="#526274" fontSize={12} tickLine={false} />
+                <Tooltip content={<CustomTooltip />} />
+                <Bar
+                  dataKey="users"
+                  fill={THEME.cyan}
+                  radius={[6, 6, 0, 0]}
+                  name="New Registrations"
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Workshop Engagement */}
+        <div className="bg-white border border-[#D6E4EA] rounded-2xl p-6 shadow-xs">
+          <div className="mb-6 pb-4 border-b border-[#D6E4EA]">
+            <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#006F9E] block mb-1">
+              Program Operations
+            </span>
+            <h2 className="text-lg font-bold text-[#111827] font-['Space_Grotesk']">
+              Workshop Status Summary
+            </h2>
+          </div>
+
+          <div className="h-[240px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={workshopsData} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" horizontal={false} />
+                <XAxis type="number" stroke="#526274" fontSize={12} tickLine={false} />
+                <YAxis dataKey="status" type="category" stroke="#526274" fontSize={12} tickLine={false} width={80} />
+                <Tooltip content={<CustomTooltip />} />
+                <Bar dataKey="count" radius={[0, 6, 6, 0]} name="Workshops">
+                  <Cell fill={THEME.cyan} />
+                  <Cell fill={THEME.orange} />
+                  <Cell fill={THEME.cyanDark} />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
       </div>
     </div>
   );

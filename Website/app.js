@@ -35,6 +35,13 @@ app.use(cookieParser());
 app.use(cors({ origin: true, credentials: true }));
 
 app.use(express.static("public"));
+app.use("/admin", express.static(path.resolve("public/admin"), {
+    setHeaders: (res, filePath) => {
+        if (filePath.endsWith(".html")) {
+            res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        }
+    }
+}));
 
 import { setupMiddleware } from "./middleware/setup.middleware.js";
 app.use(setupMiddleware);
@@ -95,7 +102,8 @@ app.use("/v1", GlobalRouter);
 app.use("/api/admin", adminApiRoutes);
 app.use("/api/public", publicRoutes);
 
-app.get("/admin{/*path}", (req, res) => {
+app.get(/^\/admin(\/.*)?$/, (req, res) => {
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     res.sendFile(path.resolve("public/admin/index.html"));
 });
 //for contact us

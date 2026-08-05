@@ -4,137 +4,111 @@ import { Mail, Loader2, Inbox, Edit2, Trash2 } from "lucide-react";
 const MentorTable = ({ mentors, loading, onEdit, onDelete }) => {
   if (loading)
     return (
-      <div className="flex flex-col items-center justify-center py-20 bg-white border-4 border-black border-dashed">
-        <Loader2 className="text-black animate-spin mb-4" size={32} />
-        <p className="text-black font-black text-lg uppercase">
-          Loading mentors...
-        </p>
+      <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-[#D6E4EA]">
+        <Loader2 className="text-[#00ADEF] animate-spin mb-3" size={32} />
+        <p className="text-[#526274] font-bold text-sm">Loading mentors...</p>
       </div>
     );
 
-  // Empty State
   if (!mentors || mentors.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 bg-white border-4 border-black border-dashed text-center">
-        <div className="p-5 bg-gray-100 border-2 border-black rounded-full mb-5">
-          <Inbox className="text-black" size={48} strokeWidth={1.5} />
+      <div className="flex flex-col items-center justify-center py-16 bg-white rounded-2xl border border-[#D6E4EA] text-center p-6">
+        <div className="p-4 bg-[#EAF8FC] rounded-full text-[#00ADEF] mb-3">
+          <Inbox size={36} />
         </div>
-        <h2 className="text-2xl font-black text-black uppercase mb-2">
-          No mentors found
-        </h2>
-        <p className="text-gray-600 text-lg font-medium max-w-sm mb-8">
-          Try adjusting your search or filters.
+        <h3 className="text-lg font-bold text-[#111827]">No mentors found</h3>
+        <p className="text-xs text-[#526274] mt-1 max-w-sm">
+          Try adjusting your search query or filters.
         </p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white border-4 border-black shadow-[8px_8px_0_0_#000] overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse min-w-[900px]">
-          <thead>
-            <tr className="bg-[#0f172a] border-b-4 border-black text-white">
-              <th className="p-5 font-black text-white text-sm uppercase tracking-wider border-r-2 border-black">
-                Mentor Name
-              </th>
-              <th className="p-5 font-black text-white text-sm uppercase tracking-wider border-r-2 border-black">
-                Expertise
-              </th>
-              <th className="p-5 font-black text-white text-sm uppercase tracking-wider border-r-2 border-black">
-                Assignments
-              </th>
-              <th className="p-5 font-black text-white text-sm uppercase tracking-wider text-center border-r-2 border-black">
-                Status
-              </th>
-              <th className="p-5 font-black text-white text-sm uppercase tracking-wider text-right">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y-2 divide-black">
-            {mentors.map((m, index) => (
-              <tr
-                key={m.id || index} // Safe key fallback
-                className="hover:bg-blue-50 transition-colors group"
-              >
-                {/* Name & Email */}
-                <td className="p-5 border-r-2 border-black">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 border-2 border-black bg-white flex items-center justify-center text-black font-black text-xl shadow-[2px_2px_0_0_black]">
-                      {(m.name || "?").charAt(0).toUpperCase()}
+    <div className="overflow-x-auto font-sans">
+      <table className="w-full text-left border-collapse min-w-[850px]">
+        <thead>
+          <tr className="bg-[#F6FAFC] border-b border-[#D6E4EA] text-[#526274] text-xs font-bold uppercase tracking-wider">
+            <th className="p-4">Mentor Name &amp; Email</th>
+            <th className="p-4">Expertise Field</th>
+            <th className="p-4">Assignments</th>
+            <th className="p-4 text-center">Status</th>
+            <th className="p-4 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-[#D6E4EA] text-sm">
+          {mentors.map((m, index) => (
+            <tr key={m.id || index} className="hover:bg-[#F6FAFC] transition-colors">
+              <td className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-[#00ADEF] text-white flex items-center justify-center font-bold text-sm shrink-0">
+                    {(m.name || "?").charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <div className="font-bold text-[#111827] text-sm">
+                      {m.name || "Unknown Mentor"}
                     </div>
-                    <div>
-                      <div className="font-black text-black text-base uppercase">
-                        {m.name || "Unknown Mentor"}
-                      </div>
-                      <div className="text-gray-500 text-sm font-bold flex items-center gap-1.5 mt-0.5 lowercase">
-                        <Mail size={14} strokeWidth={2.5} />{" "}
-                        {m.email || "No Email"}
-                      </div>
+                    <div className="text-xs text-[#526274] font-medium flex items-center gap-1.5 mt-0.5">
+                      <Mail size={12} className="text-[#00ADEF]" /> {m.email || "No Email"}
                     </div>
                   </div>
-                </td>
+                </div>
+              </td>
 
-                {/* Expertise Badge */}
-                <td className="p-5 border-r-2 border-black">
-                  <span className="inline-flex items-center px-3 py-1 text-xs font-black bg-[#4f46e5] text-white border-2 border-black uppercase tracking-wide shadow-[2px_2px_0_0_black]">
-                    {m.expertise || "General"}
-                  </span>
-                </td>
+              <td className="p-4">
+                <span className="inline-flex px-2.5 py-1 rounded-full bg-[#EAF8FC] text-[#006F9E] text-xs font-bold border border-[#00ADEF]/20">
+                  {m.expertise || "General"}
+                </span>
+              </td>
 
-                {/* Assignments Count */}
-                <td className="p-5 border-r-2 border-black">
-                  <div className="text-sm font-bold text-gray-600 uppercase">
-                    <span className="font-black text-black text-lg">
-                      {m.projects_count || 0}
-                    </span>{" "}
-                    Projects
-                    <span className="mx-2 text-gray-400">/</span>
-                    <span className="font-black text-black text-lg">
-                      {m.workshops_count || 0}
-                    </span>{" "}
-                    Workshops
-                  </div>
-                </td>
+              <td className="p-4">
+                <div className="text-xs font-medium text-[#526274]">
+                  <span className="font-bold text-[#111827]">
+                    {m.projects_count || 0}
+                  </span>{" "}
+                  Projects
+                  <span className="mx-2 text-slate-300">•</span>
+                  <span className="font-bold text-[#111827]">
+                    {m.workshops_count || 0}
+                  </span>{" "}
+                  Workshops
+                </div>
+              </td>
 
-                {/* Status */}
-                <td className="p-5 text-center border-r-2 border-black">
-                  <span
-                    className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-black border-2 border-black uppercase shadow-[2px_2px_0_0_black] ${
-                      m.status === "active"
-                        ? "bg-[#0d9488] text-white"
-                        : "bg-gray-200 text-gray-500"
-                    }`}
+              <td className="p-4 text-center">
+                <span
+                  className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold ${
+                    m.status === "active"
+                      ? "bg-emerald-50 text-emerald-700 border border-emerald-300"
+                      : "bg-slate-100 text-slate-600 border border-slate-300"
+                  }`}
+                >
+                  {m.status === "active" ? "Active" : "Inactive"}
+                </span>
+              </td>
+
+              <td className="p-4 text-right">
+                <div className="flex items-center justify-end gap-2">
+                  <button
+                    onClick={() => onEdit && onEdit(m)}
+                    className="p-2 text-[#006F9E] hover:bg-[#EAF8FC] rounded-xl border border-[#D6E4EA] transition"
+                    title="Edit Mentor"
                   >
-                    {m.status === "active" ? "Active" : "Inactive"}
-                  </span>
-                </td>
-
-                {/* Actions (Now functional via props) */}
-                <td className="p-5 text-right">
-                  <div className="flex items-center justify-end gap-2">
-                    <button
-                      onClick={() => onEdit && onEdit(m)}
-                      className="p-2 text-black hover:bg-black hover:text-white border-2 border-transparent hover:border-black transition-all"
-                      title="Edit Mentor"
-                    >
-                      <Edit2 size={20} strokeWidth={2.5} />
-                    </button>
-                    <button
-                      onClick={() => onDelete && onDelete(m.id)}
-                      className="p-2 text-red-600 hover:bg-red-600 hover:text-white border-2 border-transparent hover:border-black transition-all"
-                      title="Delete Mentor"
-                    >
-                      <Trash2 size={20} strokeWidth={2.5} />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                    <Edit2 size={16} />
+                  </button>
+                  <button
+                    onClick={() => onDelete && onDelete(m.id)}
+                    className="p-2 text-rose-600 hover:bg-rose-50 rounded-xl border border-rose-200 transition"
+                    title="Delete Mentor"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 };

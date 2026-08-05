@@ -34,16 +34,16 @@ const Admin = () => {
   };
 
   return (
-    <>
-      <div className="flex h-screen bg-gray-50 overflow-hidden">
-        <Sidebar
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          userRole={userRole}
-        />
-        <div className="flex-1 overflow-y-auto pb-16">{renderContent()}</div>
+    <div className="flex h-screen bg-[#F6FAFC] font-sans text-[#111827] overflow-hidden selection:bg-[#E38524] selection:text-white">
+      <Sidebar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        userRole={userRole}
+      />
+      <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
+        {renderContent()}
       </div>
-    </>
+    </div>
   );
 };
 
