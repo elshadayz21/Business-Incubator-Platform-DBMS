@@ -3,7 +3,6 @@ import {
   Calendar,
   User,
   Users,
-  MoreHorizontal,
   ChevronDown,
   ChevronUp,
   Eye,
@@ -21,21 +20,21 @@ const WorkshopTable = ({ workshops, onView, onDelete }) => {
   const getStatusBadge = (status) => {
     const styles = {
       scheduled: {
-        bg: "bg-orange-50",
-        text: "text-orange-700",
-        border: "border-orange-100",
+        bg: "bg-[#FFF1E3]",
+        text: "text-[#E38524]",
+        border: "border-[#E38524]/20",
         icon: Clock,
       },
       ongoing: {
-        bg: "bg-blue-50",
-        text: "text-blue-700",
-        border: "border-blue-100",
+        bg: "bg-[#EAF8FC]",
+        text: "text-[#006F9E]",
+        border: "border-[#00ADEF]/20",
         icon: AlertCircle,
       },
       completed: {
-        bg: "bg-green-50",
-        text: "text-green-700",
-        border: "border-green-100",
+        bg: "bg-emerald-50",
+        text: "text-emerald-700",
+        border: "border-emerald-200",
         icon: CheckCircle,
       },
     };
@@ -45,7 +44,7 @@ const WorkshopTable = ({ workshops, onView, onDelete }) => {
 
     return (
       <span
-        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border capitalize ${config.bg} ${config.text} ${config.border}`}
+        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border capitalize ${config.bg} ${config.text} ${config.border}`}
       >
         <Icon size={12} />
         {status}
@@ -55,7 +54,7 @@ const WorkshopTable = ({ workshops, onView, onDelete }) => {
 
   const formatDate = (dateString) => {
     if (!dateString) return "-";
-    return new Date(dateString).toLocaleDateString("en-US", {
+    return new Date(dateString).toLocaleDateString("en-GB", {
       month: "short",
       day: "numeric",
       year: "numeric",
@@ -63,46 +62,30 @@ const WorkshopTable = ({ workshops, onView, onDelete }) => {
   };
 
   return (
-    <div className="w-full">
+    <div className="w-full font-sans">
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse min-w-[1000px]">
+        <table className="w-full text-left border-collapse min-w-[950px]">
           <thead>
-            <tr className="bg-gray-50/50 border-b border-gray-200">
-              <th className="p-5 font-semibold text-gray-500 text-sm uppercase tracking-wider w-12"></th>
-              <th className="p-5 font-semibold text-gray-500 text-sm uppercase tracking-wider">
-                Workshop Title
-              </th>
-              <th className="p-5 font-semibold text-gray-500 text-sm uppercase tracking-wider">
-                Mentor
-              </th>
-              <th className="p-5 font-semibold text-gray-500 text-sm uppercase tracking-wider">
-                Date Range
-              </th>
-              <th className="p-5 font-semibold text-gray-500 text-sm uppercase tracking-wider">
-                Capacity
-              </th>
-              <th className="p-5 font-semibold text-gray-500 text-sm uppercase tracking-wider">
-                Status
-              </th>
-              <th className="p-5 font-semibold text-gray-500 text-sm uppercase tracking-wider text-right">
-                Actions
-              </th>
+            <tr className="bg-[#F6FAFC] border-b border-[#D6E4EA] text-[#526274] text-xs font-bold uppercase tracking-wider">
+              <th className="p-4 w-10"></th>
+              <th className="p-4">Workshop Title</th>
+              <th className="p-4">Mentor Instructor</th>
+              <th className="p-4">Date Range</th>
+              <th className="p-4">Capacity</th>
+              <th className="p-4">Status</th>
+              <th className="p-4 text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-[#D6E4EA] text-sm">
             {workshops.map((workshop) => (
               <React.Fragment key={workshop.id}>
-                <tr
-                  className={`transition-colors group ${expandedId === workshop.id ? "bg-indigo-50/30" : "hover:bg-gray-50/80"}`}
-                >
-                  {/* Expand Button */}
-                  <td className="p-5 pr-0">
+                <tr className="hover:bg-[#F6FAFC] transition-colors">
+                  <td className="p-4 pr-0">
                     <button
                       onClick={async () => {
                         if (expandedId === workshop.id) {
                           setExpandedId(null);
                         } else {
-                          // Fetch full workshop details with enrollments
                           try {
                             const fullWorkshop =
                               await workshopService.getWorkshop(workshop.id);
@@ -112,220 +95,144 @@ const WorkshopTable = ({ workshops, onView, onDelete }) => {
                             });
                             setExpandedId(workshop.id);
                           } catch (error) {
-                            console.error(
-                              "Error fetching workshop details:",
-                              error,
-                            );
+                            console.error("Error fetching details:", error);
                             setExpandedId(workshop.id);
                           }
                         }
                       }}
-                      className={`p-1 rounded-md transition-all ${expandedId === workshop.id ? "bg-indigo-100 text-indigo-600" : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"}`}
+                      className="p-1 rounded-lg text-[#526274] hover:bg-[#EAF8FC] hover:text-[#00ADEF]"
                     >
                       {expandedId === workshop.id ? (
-                        <ChevronUp size={18} />
+                        <ChevronUp size={16} />
                       ) : (
-                        <ChevronDown size={18} />
+                        <ChevronDown size={16} />
                       )}
                     </button>
                   </td>
 
-                  {/* Title & Description */}
-                  <td className="p-5">
+                  <td className="p-4">
                     <div>
-                      <p className="font-bold text-gray-900 text-base">
+                      <p className="font-bold text-[#111827] text-sm">
                         {workshop.title || "Untitled"}
                       </p>
-                      <p className="text-sm text-gray-500 mt-0.5 truncate max-w-xs">
+                      <p className="text-xs text-[#526274] truncate max-w-xs mt-0.5">
                         {workshop.description || "No description provided"}
                       </p>
                     </div>
                   </td>
 
-                  {/* Mentor */}
-                  <td className="p-5">
-                    <div className="flex items-center gap-2 text-gray-700 font-medium">
-                      <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 text-xs">
+                  <td className="p-4">
+                    <div className="flex items-center gap-2 text-xs font-bold text-[#111827]">
+                      <div className="w-7 h-7 rounded-full bg-[#EAF8FC] text-[#006F9E] flex items-center justify-center shrink-0">
                         <User size={14} />
                       </div>
-                      {workshop.mentor || workshop.mentor_name || "-"}
+                      {workshop.mentor || workshop.mentor_name || "Unassigned"}
                     </div>
                   </td>
 
-                  {/* Date */}
-                  <td className="p-5">
-                    <div className="flex flex-col text-sm">
-                      <span className="font-medium text-gray-900 flex items-center gap-1.5">
-                        <Calendar size={14} className="text-gray-400" />
-                        {formatDate(workshop.startDate || workshop.start_date)}
-                      </span>
-                      <span className="text-gray-500 pl-5 text-xs">
-                        to {formatDate(workshop.endDate || workshop.end_date)}
-                      </span>
+                  <td className="p-4 text-xs font-medium text-[#526274]">
+                    <div className="flex items-center gap-1.5 text-[#111827] font-bold">
+                      <Calendar size={13} className="text-[#00ADEF]" />
+                      {formatDate(workshop.startDate || workshop.start_date)}
+                    </div>
+                    <div className="text-[11px] text-[#526274] pl-5">
+                      to {formatDate(workshop.endDate || workshop.end_date)}
                     </div>
                   </td>
 
-                  {/* Capacity Progress */}
-                  <td className="p-5">
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1 w-24 h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <td className="p-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-20 h-2 bg-[#D6E4EA] rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-indigo-500 rounded-full transition-all duration-500"
+                          className="h-full bg-[#00ADEF] rounded-full"
                           style={{
-                            width: `${Math.min(((workshop.enrolledCount || 0) / (workshop.capacity || 1)) * 100, 100)}%`,
+                            width: `${Math.min(
+                              ((workshop.enrolledCount || 0) / (workshop.capacity || 1)) * 100,
+                              100
+                            )}%`,
                           }}
-                        ></div>
+                        />
                       </div>
-                      <span className="text-xs font-bold text-gray-600">
+                      <span className="text-xs font-bold text-[#111827]">
                         {workshop.enrolledCount || 0}/{workshop.capacity || 0}
                       </span>
                     </div>
                   </td>
 
-                  {/* Status */}
-                  <td className="p-5">{getStatusBadge(workshop.status)}</td>
+                  <td className="p-4">{getStatusBadge(workshop.status)}</td>
 
-                  {/* Actions */}
-                  <td className="p-5 text-right">
+                  <td className="p-4 text-right">
                     <div className="flex items-center justify-end gap-2">
                       <button
                         onClick={() => onView(workshop)}
-                        className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                        className="p-2 text-[#006F9E] hover:bg-[#EAF8FC] rounded-xl border border-[#D6E4EA] transition"
                         title="View Details"
                       >
-                        <Eye size={18} />
+                        <Eye size={16} />
                       </button>
                       <button
                         onClick={() => onDelete(workshop.id)}
-                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                        className="p-2 text-rose-600 hover:bg-rose-50 rounded-xl border border-rose-200 transition"
                         title="Delete Workshop"
                       >
-                        <Trash2 size={18} />
+                        <Trash2 size={16} />
                       </button>
                     </div>
                   </td>
                 </tr>
 
-                {/* Expanded Enrollments Section */}
                 {expandedId === workshop.id && (
-                  <tr className="bg-gray-50/50">
-                    <td
-                      colSpan="7"
-                      className="p-4 md:p-6 border-b border-gray-100"
-                    >
-                      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-                        <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/30 flex items-center gap-2">
-                          <Users size={16} className="text-indigo-600" />
-                          <h4 className="font-bold text-gray-800 text-sm uppercase tracking-wide">
+                  <tr className="bg-[#F6FAFC]">
+                    <td colSpan="7" className="p-4">
+                      <div className="bg-white border border-[#D6E4EA] rounded-xl p-4 shadow-2xs">
+                        <div className="flex items-center gap-2 mb-3 pb-2 border-b border-[#D6E4EA]">
+                          <Users size={16} className="text-[#00ADEF]" />
+                          <h4 className="font-bold text-xs text-[#111827] uppercase tracking-wider">
                             Enrolled Entrepreneurs
                           </h4>
                         </div>
 
                         <div className="overflow-x-auto">
-                          <table className="w-full text-sm">
-                            <thead className="bg-gray-50 text-gray-500">
-                              <tr>
-                                <th className="px-5 py-3 text-left font-medium">
-                                  Name
-                                </th>
-                                <th className="px-5 py-3 text-left font-medium">
-                                  Email
-                                </th>
-                                <th className="px-5 py-3 text-left font-medium">
-                                  Joined
-                                </th>
-                                <th className="px-5 py-3 text-left font-medium">
-                                  Attendance
-                                </th>
-                                <th className="px-5 py-3 text-left font-medium">
-                                  Feedback
-                                </th>
+                          <table className="w-full text-xs">
+                            <thead>
+                              <tr className="bg-[#F6FAFC] text-[#526274] font-bold text-left">
+                                <th className="p-2.5">Entrepreneur Name</th>
+                                <th className="p-2.5">Email</th>
+                                <th className="p-2.5">Joined Date</th>
+                                <th className="p-2.5">Attendance</th>
                               </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-100">
+                            <tbody className="divide-y divide-[#D6E4EA]">
                               {(workshopDetails[workshop.id]?.enrollments ||
-                                workshop.enrollments) &&
-                              (
-                                workshopDetails[workshop.id]?.enrollments ||
-                                workshop.enrollments
-                              ).length > 0 ? (
-                                (
-                                  workshopDetails[workshop.id]?.enrollments ||
-                                  workshop.enrollments
-                                ).map((enrollment, idx) => {
-                                  const name =
-                                    enrollment.entrepreneurName ||
-                                    enrollment.entrepreneur_name ||
-                                    enrollment.name ||
-                                    "-";
-                                  const email =
-                                    enrollment.entrepreneurEmail ||
-                                    enrollment.entrepreneur_email ||
-                                    enrollment.email ||
-                                    "-";
-                                  const enrollmentDate =
-                                    enrollment.enrollmentDate ||
-                                    enrollment.enrollment_date;
-                                  const attended = enrollment.attended;
-                                  const feedbackRating =
-                                    enrollment.feedbackRating ||
-                                    enrollment.feedback_rating;
-
-                                  return (
-                                    <tr
-                                      key={idx}
-                                      className="hover:bg-gray-50 transition-colors"
-                                    >
-                                      <td className="px-5 py-3 font-medium text-gray-900">
-                                        {name}
-                                      </td>
-                                      <td className="px-5 py-3 text-gray-600">
-                                        {email}
-                                      </td>
-                                      <td className="px-5 py-3 text-gray-500">
-                                        {enrollmentDate
-                                          ? new Date(
-                                              enrollmentDate,
-                                            ).toLocaleDateString("en-US", {
-                                              month: "short",
-                                              day: "numeric",
-                                              year: "numeric",
-                                            })
-                                          : "-"}
-                                      </td>
-                                      <td className="px-5 py-3">
-                                        <span
-                                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold ${attended ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}
-                                        >
-                                          {attended ? (
-                                            <CheckCircle size={10} />
-                                          ) : (
-                                            <AlertCircle size={10} />
-                                          )}
-                                          {attended ? "Present" : "Absent"}
-                                        </span>
-                                      </td>
-                                      <td className="px-5 py-3">
-                                        {feedbackRating ? (
-                                          <span className="flex items-center gap-1 text-orange-500 font-bold">
-                                            ★ {feedbackRating}
-                                          </span>
-                                        ) : (
-                                          <span className="text-gray-400 italic text-xs">
-                                            Pending
-                                          </span>
-                                        )}
-                                      </td>
-                                    </tr>
-                                  );
-                                })
+                                workshop.enrollments || []).length > 0 ? (
+                                (workshopDetails[workshop.id]?.enrollments || workshop.enrollments).map((enrollment, idx) => (
+                                  <tr key={idx} className="hover:bg-[#F6FAFC]">
+                                    <td className="p-2.5 font-bold text-[#111827]">
+                                      {enrollment.entrepreneurName || enrollment.name || "Entrepreneur"}
+                                    </td>
+                                    <td className="p-2.5 text-[#526274]">
+                                      {enrollment.entrepreneurEmail || enrollment.email || "-"}
+                                    </td>
+                                    <td className="p-2.5 text-[#526274]">
+                                      {formatDate(enrollment.enrollmentDate || enrollment.enrollment_date)}
+                                    </td>
+                                    <td className="p-2.5">
+                                      <span
+                                        className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                          enrollment.attended
+                                            ? "bg-emerald-100 text-emerald-800"
+                                            : "bg-rose-100 text-rose-800"
+                                        }`}
+                                      >
+                                        {enrollment.attended ? "Present" : "Absent"}
+                                      </span>
+                                    </td>
+                                  </tr>
+                                ))
                               ) : (
                                 <tr>
-                                  <td
-                                    colSpan="5"
-                                    className="px-5 py-8 text-center text-gray-400 italic"
-                                  >
-                                    No enrollments found for this workshop.
+                                  <td colSpan="4" className="p-4 text-center text-[#526274] italic">
+                                    No incubatee enrollments found for this workshop session.
                                   </td>
                                 </tr>
                               )}
