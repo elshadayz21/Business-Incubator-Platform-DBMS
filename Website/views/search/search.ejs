@@ -2,140 +2,159 @@
 <html lang="en">
 <%- include('../partials/head.ejs') %>
 
-<body class="bg-[#FFFDF5] text-black min-h-screen flex flex-col font-sans">
+<body class="bg-surface text-ink min-h-screen flex flex-col font-sans">
     <%- include('../partials/header.ejs') %>
 
-    <main class="flex-1 px-6 py-10">
-        <div class="max-w-4xl mx-auto">
+    <main class="flex-1 pb-20">
+        <!-- Hero Header -->
+        <section class="relative overflow-hidden bg-gradient-to-br from-cyan via-cyan-mid to-cyan-deep text-white py-16 lg:py-20">
+            <div class="pointer-events-none absolute -left-24 -top-20 h-[360px] w-[500px] rounded-[48%] border-[50px] border-white/10" aria-hidden="true"></div>
+            <div class="pointer-events-none absolute -right-32 -bottom-32 h-[500px] w-[600px] rounded-[50%] border-[70px] border-white/10" aria-hidden="true"></div>
             
-            <!-- Page Header -->
-            <div class="mb-10 text-center md:text-left">
-                <span class="bg-black text-white px-3 py-1 font-bold text-sm uppercase tracking-wider mb-2 inline-block transform -rotate-1">
+            <div class="relative mx-auto max-w-5xl px-6 lg:px-10 text-center">
+                <p class="mb-4 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[.24em] text-white/80">
+                    <span class="h-2 w-2 rounded-full bg-orange" aria-hidden="true"></span>
                     Global Engine
-                </span>
-                <h1 class="text-5xl md:text-6xl font-black text-black mb-2 uppercase tracking-tighter">
-                    Global <span class="bg-[#f59e0b] text-black px-2 border-4 border-black shadow-[4px_4px_0px_0px_#000] italic inline-block transform rotate-1">Search</span>
+                </p>
+                <h1 class="text-4xl font-extrabold leading-tight tracking-[-.04em] sm:text-5xl lg:text-6xl">
+                    Search the <span class="text-white/75">DxValley Ecosystem</span>
                 </h1>
-                <p class="text-slate-650 font-bold uppercase text-xs tracking-wider">Search projects, mentors, and workshops across the platform</p>
+                <p class="mt-4 max-w-2xl mx-auto text-base text-white/85 sm:text-lg">
+                    Discover projects, expert mentors, and upcoming workshops tailored for ambitious founders.
+                </p>
             </div>
+        </section>
 
-            <!-- Search Form -->
-            <form action="/v1/search" method="GET" class="bg-white border-4 border-black p-6 md:p-8 shadow-[6px_6px_0px_0px_#000] mb-10">
-                <div class="flex flex-col md:flex-row gap-4 mb-6">
-                    <div class="flex-1 relative">
+        <!-- Search Box Container -->
+        <div class="mx-auto max-w-5xl px-6 lg:px-10">
+            <form action="/v1/search" method="GET" class="relative -mt-10 z-10 rounded-[24px] border border-line bg-white p-6 sm:p-8 shadow-xl shadow-cyan-deep/5">
+                <div class="flex flex-col sm:flex-row gap-4 mb-6">
+                    <div class="relative flex-1">
+                        <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-muted text-base" aria-hidden="true"></i>
                         <input 
                             type="text" 
                             name="q" 
                             value="<%= q %>" 
                             placeholder="Type keywords (e.g. Tech, FinTech, UI/UX, AI)..." 
-                            class="w-full px-4 py-4 border-4 border-black bg-[#FFFDF5] font-black text-lg focus:outline-none focus:bg-white focus:shadow-[4px_4px_0px_0px_#000] transition-all"
+                            class="w-full rounded-xl border border-line bg-surface pl-11 pr-4 py-4 text-base font-semibold text-ink outline-none transition placeholder:text-slate-400 focus:border-cyan focus:ring-2 focus:ring-cyan/20 focus:bg-white"
                             required
                         />
                     </div>
                     <button 
                         type="submit" 
-                        class="bg-[#4f46e5] text-white px-8 py-4 font-black uppercase text-lg border-4 border-black shadow-[4px_4px_0px_0px_#000] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all flex items-center justify-center gap-2"
+                        class="inline-flex items-center justify-center gap-2 rounded-xl bg-orange px-8 py-4 text-sm font-extrabold uppercase tracking-wider text-white shadow-sm transition hover:bg-orange-dark focus:outline-none focus:ring-2 focus:ring-orange focus:ring-offset-2 shrink-0"
                     >
-                        <span>🔍</span> Search
+                        <i class="fa-solid fa-magnifying-glass text-xs" aria-hidden="true"></i>
+                        Search
                     </button>
                 </div>
 
-                <!-- Entity Filters -->
-                <div class="border-t-4 border-black pt-4">
-                    <span class="block text-xs font-black uppercase tracking-widest text-gray-500 mb-3">Filter by Entity Type:</span>
-                    <div class="flex flex-wrap gap-4">
-                        <label class="flex items-center gap-2 cursor-pointer select-none">
+                <!-- Entity Filter Pills -->
+                <div class="border-t border-line pt-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <span class="text-xs font-bold uppercase tracking-[.16em] text-muted">Filter by entity:</span>
+                    <div class="flex flex-wrap gap-3">
+                        <label class="inline-flex items-center gap-2.5 rounded-full border border-line bg-surface px-4 py-2 text-xs font-bold text-ink cursor-pointer transition hover:border-cyan/40 hover:bg-cyan-soft <%= types.projects ? 'border-cyan bg-cyan-soft text-cyan-dark' : '' %>">
                             <input 
                                 type="checkbox" 
                                 name="type" 
                                 value="projects" 
                                 <%= types.projects ? 'checked' : '' %>
-                                class="w-5 h-5 accent-black border-2 border-black"
+                                class="h-4 w-4 accent-cyan rounded text-cyan focus:ring-cyan"
                             />
-                            <span class="font-black uppercase text-sm">🚀 Projects</span>
+                            <span>🚀 Projects</span>
                         </label>
-                        <label class="flex items-center gap-2 cursor-pointer select-none">
+                        <label class="inline-flex items-center gap-2.5 rounded-full border border-line bg-surface px-4 py-2 text-xs font-bold text-ink cursor-pointer transition hover:border-cyan/40 hover:bg-cyan-soft <%= types.mentors ? 'border-cyan bg-cyan-soft text-cyan-dark' : '' %>">
                             <input 
                                 type="checkbox" 
                                 name="type" 
                                 value="mentors" 
                                 <%= types.mentors ? 'checked' : '' %>
-                                class="w-5 h-5 accent-black border-2 border-black"
+                                class="h-4 w-4 accent-cyan rounded text-cyan focus:ring-cyan"
                             />
-                            <span class="font-black uppercase text-sm">🧑‍🏫 Mentors</span>
+                            <span>🧑‍🏫 Mentors</span>
                         </label>
-                        <label class="flex items-center gap-2 cursor-pointer select-none">
+                        <label class="inline-flex items-center gap-2.5 rounded-full border border-line bg-surface px-4 py-2 text-xs font-bold text-ink cursor-pointer transition hover:border-cyan/40 hover:bg-cyan-soft <%= types.workshops ? 'border-cyan bg-cyan-soft text-cyan-dark' : '' %>">
                             <input 
                                 type="checkbox" 
                                 name="type" 
                                 value="workshops" 
                                 <%= types.workshops ? 'checked' : '' %>
-                                class="w-5 h-5 accent-black border-2 border-black"
+                                class="h-4 w-4 accent-cyan rounded text-cyan focus:ring-cyan"
                             />
-                            <span class="font-black uppercase text-sm">🎓 Workshops</span>
+                            <span>🎓 Workshops</span>
                         </label>
                     </div>
                 </div>
             </form>
 
-            <!-- Search Results -->
-            <% if (q.length > 0) { %>
-                <div class="mb-6">
-                    <h2 class="text-2xl font-black uppercase tracking-tight">
-                        Results for "<span class="text-[#4f46e5]"><%= q %></span>" (<%= results.length %>)
-                    </h2>
-                </div>
+            <!-- Search Results Section -->
+            <div class="mt-12">
+                <% if (q.length > 0) { %>
+                    <div class="mb-8 flex items-center justify-between border-b border-line pb-4">
+                        <h2 class="text-xl font-extrabold tracking-tight text-ink sm:text-2xl">
+                            Results for "<span class="text-cyan-dark"><%= q %></span>"
+                        </h2>
+                        <span class="rounded-full bg-cyan-soft px-3.5 py-1 text-xs font-bold text-cyan-dark">
+                            <%= results.length %> <%= results.length === 1 ? 'match' : 'matches' %>
+                        </span>
+                    </div>
 
-                <% if (results.length > 0) { %>
-                    <div class="space-y-6">
-                        <% results.forEach(item => { %>
-                            <div class="bg-white border-4 border-black p-6 shadow-[6px_6px_0px_0px_#000] hover:-translate-y-1 transition-all flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
-                                <div class="flex items-start gap-4">
-                                    <!-- Unified Icon -->
-                                    <div class="text-4xl bg-gray-100 border-2 border-black p-2 rounded shadow-[2px_2px_0px_0px_#000] flex-shrink-0">
-                                        <%= item.icon %>
-                                    </div>
-                                    <div>
-                                        <div class="flex flex-wrap items-center gap-2 mb-1">
-                                            <span class="bg-black text-white text-[9px] font-black px-2 py-0.5 border border-black uppercase tracking-wider">
-                                                <%= item.typeName %>
-                                            </span>
-                                            <span class="bg-[#FFFDF5] text-black border-2 border-black text-[9px] font-black px-2 py-0.5 uppercase">
-                                                <%= item.badge %>
-                                            </span>
+                    <% if (results.length > 0) { %>
+                        <div class="grid gap-5">
+                            <% results.forEach(item => { %>
+                                <article class="group rounded-2xl border border-line bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md hover:border-cyan/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+                                    <div class="flex items-start gap-4 min-w-0 flex-1">
+                                        <div class="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-cyan-soft text-2xl text-cyan-dark">
+                                            <%= item.icon %>
                                         </div>
-                                        <h3 class="text-xl font-black uppercase text-black mb-1"><%= item.title %></h3>
-                                        <p class="text-xs font-bold text-slate-500 uppercase mb-2"><%= item.subtitle %></p>
-                                        <p class="text-sm font-medium text-slate-700 italic"><%= item.description.length > 180 ? item.description.slice(0, 180) + '...' : item.description %></p>
+                                        <div class="min-w-0 flex-1">
+                                            <div class="flex flex-wrap items-center gap-2 mb-2">
+                                                <span class="rounded-full bg-cyan-dark px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-white">
+                                                    <%= item.typeName %>
+                                                </span>
+                                                <% if (item.badge) { %>
+                                                    <span class="rounded-full border border-line bg-surface px-2.5 py-0.5 text-[10px] font-semibold text-muted">
+                                                        <%= item.badge %>
+                                                    </span>
+                                                <% } %>
+                                            </div>
+                                            <h3 class="text-lg font-bold text-ink transition group-hover:text-cyan-dark truncate"><%= item.title %></h3>
+                                            <% if (item.subtitle) { %>
+                                                <p class="text-xs font-semibold text-cyan-dark uppercase tracking-wider mb-2"><%= item.subtitle %></p>
+                                            <% } %>
+                                            <p class="text-sm text-muted leading-relaxed line-clamp-2"><%= item.description %></p>
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="w-full md:w-auto pt-4 md:pt-0 border-t-2 md:border-t-0 border-slate-100 flex-shrink-0">
                                     <a 
                                         href="<%= item.link %>" 
-                                        class="bg-black text-white px-5 py-2.5 text-xs font-black uppercase border-2 border-black shadow-[2px_2px_0px_0px_#f59e0b] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all block text-center"
+                                        class="inline-flex shrink-0 items-center gap-2 rounded-lg border border-cyan bg-white px-5 py-2.5 text-xs font-bold text-cyan-dark transition hover:bg-cyan hover:text-white"
                                     >
-                                        View details →
+                                        View details
+                                        <i class="fa-solid fa-arrow-right text-[10px]" aria-hidden="true"></i>
                                     </a>
-                                </div>
+                                </article>
+                            <% }) %>
+                        </div>
+                    <% } else { %>
+                        <div class="rounded-2xl border border-line bg-white p-12 text-center shadow-sm">
+                            <div class="mx-auto grid h-16 w-16 place-items-center rounded-full bg-orange-soft text-2xl text-orange mb-4">
+                                <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
                             </div>
-                        <% }) %>
-                    </div>
+                            <h3 class="text-2xl font-extrabold text-cyan-dark">No results found</h3>
+                            <p class="mt-2 text-sm text-muted max-w-md mx-auto">We couldn't find any matches for "<%= q %>". Try refining your search terms or enabling all entity filters.</p>
+                        </div>
+                    <% } %>
                 <% } else { %>
-                    <div class="bg-white border-4 border-black p-12 text-center shadow-[6px_6px_0px_0px_#000]">
-                        <div class="text-6xl mb-4 grayscale">🔍</div>
-                        <h3 class="text-2xl font-black uppercase text-slate-700">No results found</h3>
-                        <p class="text-slate-500 font-bold text-sm mt-2">We couldn't find any matches. Try refactoring your keyword or checking the filter options.</p>
+                    <!-- Empty Search State -->
+                    <div class="rounded-2xl border border-line bg-white p-12 text-center shadow-sm">
+                        <div class="mx-auto grid h-16 w-16 place-items-center rounded-full bg-cyan-soft text-2xl text-cyan-dark mb-4">
+                            <i class="fa-solid fa-lightbulb" aria-hidden="true"></i>
+                        </div>
+                        <h3 class="text-2xl font-extrabold text-cyan-dark">Enter a search query</h3>
+                        <p class="mt-2 text-sm text-muted max-w-md mx-auto">Use the search bar above to look up projects, mentors, and workshops across the DxValley incubator platform.</p>
                     </div>
                 <% } %>
-            <% } else { %>
-                <!-- Empty Search Prompt -->
-                <div class="bg-white border-4 border-black p-12 text-center shadow-[6px_6px_0px_0px_#000]">
-                    <div class="text-6xl mb-4">💡</div>
-                    <h3 class="text-2xl font-black uppercase text-slate-700">Awaiting your search query...</h3>
-                    <p class="text-slate-500 font-bold text-sm mt-2">Enter keywords in the box above to perform a global search query across the platform.</p>
-                </div>
-            <% } %>
-
+            </div>
         </div>
     </main>
 
