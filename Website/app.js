@@ -36,6 +36,7 @@ app.use(cookieParser());
 app.use(cors({ origin: true, credentials: true }));
 
 app.use(express.static("public"));
+app.use("/admin", express.static(path.resolve("public/admin")));
 
 import { setupMiddleware } from "./middleware/setup.middleware.js";
 app.use(setupMiddleware);
@@ -95,7 +96,7 @@ app.get("/", (req, res) => {
 app.use("/v1", GlobalRouter);
 app.use("/api/admin", adminApiRoutes);
 
-app.get("/admin{/*path}", (req, res) => {
+app.get(/^\/admin(\/.*)?$/, (req, res) => {
     res.sendFile(path.resolve("public/admin/index.html"));
 });
 
