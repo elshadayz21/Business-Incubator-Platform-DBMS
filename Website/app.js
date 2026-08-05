@@ -18,6 +18,7 @@ import {
 } from "./controllers/error/error.controller.js";
 import { initWorkshopJobs } from "./utils/jobs.js";
 import "./subscribers/subscribers.js";
+import { getPublishedAnnouncements } from "./admin-backend/content/announcements.js";
 
 const app = express();
 const pgSession = connectPgSimpleImport(session);
@@ -85,8 +86,13 @@ app.use((req, res, next) => {
   next();
 });
 
-app.get("/", (req, res) => {
-  res.render("index");
+app.get("/", async (req, res, next) => {
+  try {
+    const announcements = await getPublishedAnnouncements(6);
+    res.render("index", { announcements });
+  } catch (err) {
+    next(err);
+  }
 });
 
 app.use("/v1", GlobalRouter);

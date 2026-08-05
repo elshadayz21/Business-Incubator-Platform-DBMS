@@ -7,6 +7,7 @@ import Mentors from "./Mentors/Mentors.JSX";
 import Projects from "./projects/projects";
 import Funding from "./Funding/Funding";
 import Users from "./Users/Users";
+import Announcements from "./Announcements/Announcements";
 
 const Admin = () => {
   const [activeTab, setActiveTab] = useState("Dashboard");
@@ -28,6 +29,8 @@ const Admin = () => {
         return <Funding />;
       case "Users":
         return <Users />;
+      case "Announcements":
+        return <Announcements />;
       default:
         return <Dashboard />;
     }

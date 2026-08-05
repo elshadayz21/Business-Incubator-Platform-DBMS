@@ -6,6 +6,7 @@ import {
 } from "../../models/workshop/Workshop.js";
 import eventBus from "../../utils/eventBus.js";
 import pool from "../../config/db.js";
+import { getPublishedAnnouncements, getAnnouncementById } from "../../admin-backend/content/announcements.js";
 
 // --- Mentors Page ---
 export const getMentorsPage = async (req, res, next) => {
@@ -117,4 +118,45 @@ export const getWorkshopDetailPage = async (req, res, next) => {
 // --- About Page ---
 export const getAboutPage = (req, res) => {
   res.render("pages/about", { title: "About DxValley | Incubation Center" });
+};
+
+// --- Announcements List Page ---
+export const getAnnouncementsPage = async (req, res, next) => {
+  try {
+    const announcements = await getPublishedAnnouncements(50); // simple cap, no pagination yet
+    res.render("pages/announcements", {
+      title: "Announcements | DxValley",
+      announcements,
+    });
+  } catch (err) {
+    console.error("Announcements Page Error:", err);
+    next(err);
+  }
+};
+
+// --- Announcement Detail Page ---
+export const getAnnouncementDetailPage = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const announcement = await getAnnouncementById(id);
+
+    if (!announcement || !announcement.published_at || new Date(announcement.published_at) > new Date()) {
+      return res.status(404).render("error/error", {
+        title: "Not Found",
+        statusCode: "404",
+        message: "This announcement doesn't exist or hasn't been published yet.",
+        color: "#FFDE59",
+        icon: "fa-solid fa-bullhorn",
+        redirectLink: "/v1/announcements",
+        buttonText: "Back to Announcements",
+      });
+    }
+
+    res.render("pages/announcement-detail", {
+      title: `${announcement.title} | DxValley`,
+      announcement,
+    });
+  } catch (err) {
+    next(err);
+  }
 };

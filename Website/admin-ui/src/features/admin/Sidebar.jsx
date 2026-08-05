@@ -9,9 +9,9 @@ import {
   ChevronDown,
   LogOut,
   ArrowRight,
+  Megaphone
 } from "lucide-react";
 
-// in Sidebar.jsx
 const Sidebar = ({
   activeTab = "Dashboard",
   setActiveTab = () => {},
@@ -24,6 +24,7 @@ const Sidebar = ({
     { id: 4, icon: Package, label: "Workshops", badge: null },
     { id: 5, icon: ShoppingCart, label: "Resources", badge: null },
     { id: 6, icon: FileText, label: "Funding", badge: "New" },
+    { id: 7, icon: Megaphone, label: "Announcements", badge: null },
     ...(userRole?.toLowerCase() === "superadmin"
       ? [{ id: 7, icon: Users, label: "Users", badge: null }]
       : []),
