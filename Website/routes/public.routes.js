@@ -33,4 +33,16 @@ router.post("/subscribe", async (req, res) => {
     }
 });
 
+
+// GET ALL ANNOUNCEMENTS (Public)
+router.get("/announcements", async (req, res) => {
+    try {
+        const result = await pool.query("SELECT * FROM announcements WHERE is_published = true ORDER BY created_at DESC LIMIT 5");
+        res.status(200).json(result.rows);
+    } catch (error) {
+        console.error("Error fetching announcements:", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+});
+
 export { router as publicRoutes };

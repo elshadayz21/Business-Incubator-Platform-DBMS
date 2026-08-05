@@ -8,6 +8,7 @@ import Projects from "./projects/projects";
 import Funding from "./Funding/Funding";
 import Users from "./Users/Users";
 import Inbox from "./Inbox/Inbox";
+import Announcements from "./Announcements/Announcements";
 
 const Admin = () => {
   const [activeTab, setActiveTab] = useState("Dashboard");
@@ -29,6 +30,8 @@ const Admin = () => {
         return <Funding />;
       case "Inbox":               //  for inbox
         return <Inbox />;         // for inbox
+      case "Announcements":      // for announcements
+        return <Announcements />;
       case "Users":
         return <Users />;
       default:
