@@ -1,40 +1,36 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   LayoutDashboard,
   BarChart3,
+  FolderKanban,
+  GraduationCap,
+  Boxes,
+  Coins,
   Users,
-  Package,
-  ShoppingCart,
-  FileText,
-  ChevronDown,
   LogOut,
-  ArrowRight,
+  ChevronRight,
+  ShieldCheck,
+  Building2,
 } from "lucide-react";
 
-// in Sidebar.jsx
 const Sidebar = ({
   activeTab = "Dashboard",
   setActiveTab = () => {},
-  userRole,
+  userRole = "admin",
 }) => {
+  const currentUser = JSON.parse(sessionStorage.getItem("user") || "{}");
+
   const navItems = [
     { id: 1, icon: LayoutDashboard, label: "Dashboard", badge: null },
-    { id: 2, icon: BarChart3, label: "Mentors", badge: null },
-    { id: 3, icon: Users, label: "Projects", badge: null },
-    { id: 4, icon: Package, label: "Workshops", badge: null },
-    { id: 5, icon: ShoppingCart, label: "Resources", badge: null },
-    { id: 6, icon: FileText, label: "Funding", badge: "New" },
+    { id: 2, icon: FolderKanban, label: "Projects", badge: null },
+    { id: 3, icon: BarChart3, label: "Mentors", badge: null },
+    { id: 4, icon: GraduationCap, label: "Workshops", badge: null },
+    { id: 5, icon: Boxes, label: "Resources", badge: null },
+    { id: 6, icon: Coins, label: "Funding", badge: "New" },
     ...(userRole?.toLowerCase() === "superadmin"
-      ? [{ id: 7, icon: Users, label: "Users", badge: null }]
+      ? [{ id: 7, icon: Users, label: "Users", badge: "Admin" }]
       : []),
   ];
-
-  const handleItemClick = (label) => {
-    setActiveTab(label);
-    if (label === "Elements") {
-      setIsElementsOpen(!isElementsOpen);
-    }
-  };
 
   const handleLogout = async () => {
     try {
@@ -48,80 +44,105 @@ const Sidebar = ({
   };
 
   return (
-    <div className="w-64 h-screen bg-[#FFFDF5] border-r-4 border-black flex flex-col shrink-0 font-sans overflow-hidden">
-      {/* Logo Section */}
-      <div className="p-6 border-b-4 border-black bg-white">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-black border-4 border-black flex items-center justify-center shadow-[4px_4px_0_0_#4f46e5]">
-            <span className="text-white font-black text-2xl tracking-tighter">
-              B
-            </span>
+    <aside className="w-64 h-screen bg-white border-r border-[#D6E4EA] flex flex-col shrink-0 font-sans shadow-sm z-30 select-none">
+      {/* Brand Header */}
+      <div className="p-5 border-b border-[#D6E4EA] bg-[#F6FAFC]">
+        <a href="/" className="block">
+          <img
+            src="/brand/dxvalley-wordmark.jpeg"
+            alt="DxValley"
+            className="h-10 w-auto object-contain object-left mix-blend-multiply mb-2"
+          />
+        </a>
+        <div className="flex items-center gap-1.5 text-[10px] font-semibold text-[#526274] leading-tight">
+          <Building2 size={12} className="text-[#00ADEF] shrink-0" />
+          <span>Cooperative Bank of Oromia</span>
+        </div>
+      </div>
+
+      {/* User Info Badge */}
+      <div className="px-4 py-3 bg-[#EAF8FC] border-b border-[#D6E4EA] flex items-center justify-between">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-8 h-8 rounded-full bg-[#00ADEF] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
+            {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : "A"}
           </div>
-          <div className="flex flex-col">
-            <span className="font-black text-xl uppercase leading-none tracking-tighter text-black">
-              Incubator
-            </span>
-            <span className="text-[10px] font-black uppercase text-[#4f46e5] tracking-widest mt-1">
-              Admin Suite
-            </span>
+          <div className="min-w-0">
+            <p className="text-xs font-bold text-[#111827] truncate">
+              {currentUser.name || "DxValley Admin"}
+            </p>
+            <p className="text-[10px] font-semibold text-[#006F9E] flex items-center gap-1">
+              <ShieldCheck size={10} className="text-[#00ADEF]" />
+              <span className="capitalize">{userRole || "Admin"}</span>
+            </p>
           </div>
         </div>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 p-4 overflow-y-auto scrollbar-hide space-y-3">
+      {/* Navigation Links */}
+      <nav className="flex-1 p-3 overflow-y-auto space-y-1">
+        <div className="px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-wider text-[#526274]">
+          Main Menu
+        </div>
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.label;
 
           return (
-            <div key={item.id}>
-              <button
-                onClick={() => handleItemClick(item.label)}
-                className={`w-full flex items-center justify-between px-4 py-4 transition-all border-4 font-black uppercase text-xs tracking-widest ${
-                  isActive
-                    ? "bg-[#4f46e5] text-white border-black shadow-[4px_4px_0_0_#000] translate-x-[-2px] translate-y-[-2px]"
-                    : "bg-white text-black border-black hover:bg-[#FFFDF5] hover:shadow-[4px_4px_0_0_#000] hover:translate-x-[-2px] hover:translate-y-[-2px]"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Icon size={18} strokeWidth={3} />
-                  <span>{item.label}</span>
-                </div>
+            <button
+              key={item.id}
+              onClick={() => setActiveTab(item.label)}
+              className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl transition-all text-xs font-bold ${
+                isActive
+                  ? "bg-[#EAF8FC] text-[#006F9E] border-l-4 border-[#00ADEF] shadow-xs"
+                  : "text-[#526274] hover:bg-[#F6FAFC] hover:text-[#111827]"
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Icon
+                  size={18}
+                  className={isActive ? "text-[#00ADEF]" : "text-[#526274]"}
+                />
+                <span>{item.label}</span>
+              </div>
 
-                <div className="flex items-center gap-2">
-                  {item.badge === "New" && (
-                    <span
-                      className={`text-[10px] px-2 py-0.5 border-2 border-black font-black ${isActive ? "bg-white text-black" : "bg-[#f59e0b] text-black"}`}
-                    >
-                      NEW
-                    </span>
-                  )}
-                  {isActive && (
-                    <ArrowRight
-                      size={14}
-                      strokeWidth={4}
-                      className="animate-pulse"
-                    />
-                  )}
-                </div>
-              </button>
-            </div>
+              <div className="flex items-center gap-1.5">
+                {item.badge === "New" && (
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#FFF1E3] text-[#E38524] font-bold border border-[#E38524]/20">
+                    NEW
+                  </span>
+                )}
+                {item.badge === "Admin" && (
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#EAF8FC] text-[#006F9E] font-bold border border-[#00ADEF]/20">
+                    SUPER
+                  </span>
+                )}
+                {isActive && (
+                  <ChevronRight size={14} className="text-[#00ADEF]" />
+                )}
+              </div>
+            </button>
           );
         })}
       </nav>
 
-      {/* Logout Footer */}
-      <div className="p-4 border-t-4 border-black bg-white">
+      {/* Bottom Actions Footer */}
+      <div className="p-3 border-t border-[#D6E4EA] bg-[#F6FAFC] space-y-2">
+        <a
+          href="/"
+          className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-[#D6E4EA] bg-white text-xs font-bold text-[#006F9E] hover:bg-[#EAF8FC] hover:border-[#00ADEF] transition-all shadow-2xs"
+        >
+          <span>View Public Site</span>
+        </a>
+
         <button
           onClick={handleLogout}
-          className="w-full flex items-center justify-center gap-3 px-4 py-4 bg-[#ef4444] text-white border-4 border-black font-black uppercase text-xs tracking-widest transition-all shadow-[4px_4px_0_0_#000] hover:shadow-none hover:translate-x-[4px] hover:translate-y-[4px]"
+          className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 text-xs font-bold hover:bg-rose-100 transition-all"
         >
-          <LogOut size={18} strokeWidth={3} />
-          <span>Exit System</span>
+          <LogOut size={16} />
+          <span>Exit / Logout</span>
         </button>
       </div>
-    </div>
+    </aside>
   );
 };
 
