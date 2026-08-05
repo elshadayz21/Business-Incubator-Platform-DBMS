@@ -11,7 +11,6 @@ import pool from "./config/db.js";
 import { GlobalRouter } from "./routes/index.js";
 import adminApiRoutes from "./routes/admin-api.js";
 import path from "path";
-import { publicRoutes } from "./routes/public.routes.js";
 // import { getSuggestedMentorsController, assignMentorController } from "./controllers/project/project.controller.js";
 import {
     get404,
@@ -38,7 +37,13 @@ app.use(cookieParser());
 app.use(cors({ origin: true, credentials: true }));
 
 app.use(express.static("public"));
-app.use("/admin", express.static(path.resolve("public/admin")));
+app.use("/admin", express.static(path.resolve("public/admin"), {
+    setHeaders: (res, filePath) => {
+        if (filePath.endsWith(".html")) {
+            res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        }
+    }
+}));
 
 import { setupMiddleware } from "./middleware/setup.middleware.js";
 app.use(setupMiddleware);
@@ -99,6 +104,7 @@ app.use("/v1", GlobalRouter);
 app.use("/api/admin", adminApiRoutes);
 
 app.get(/^\/admin(\/.*)?$/, (req, res) => {
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     res.sendFile(path.resolve("public/admin/index.html"));
 });
 
