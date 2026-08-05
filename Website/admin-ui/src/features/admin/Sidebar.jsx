@@ -37,9 +37,15 @@ const Sidebar = ({
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await fetch("/v1/auth/logout", { method: "POST" });
+    } catch (e) {
+      console.error("Logout error:", e);
+    }
     sessionStorage.clear();
-    window.dispatchEvent(new Event("auth-change"));
+    localStorage.clear();
+    window.location.href = "/v1/auth/login";
   };
 
   return (

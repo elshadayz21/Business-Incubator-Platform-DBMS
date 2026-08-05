@@ -3,7 +3,7 @@ import Dashboard from "./Dashboard/Dashboard";
 import Sidebar from "./Sidebar";
 import Workshops from "./Workshops/Workshops";
 import Resources from "./Resources/Resources";
-import Mentors from "./Mentors/Mentors.JSX";
+import Mentors from "./Mentors/Mentors";
 import Projects from "./projects/projects";
 import Funding from "./Funding/Funding";
 import Users from "./Users/Users";

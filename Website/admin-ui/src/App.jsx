@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import Admin from "./features/admin/admin";
-import LoginPage from "./features/auth/login";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -11,29 +10,24 @@ function App() {
     const checkAuth = () => {
       const isLoggedIn = sessionStorage.getItem("isLoggedIn");
       const user = sessionStorage.getItem("user");
-      const loginTime = sessionStorage.getItem("loginTime");
 
-      if (isLoggedIn === "true" && user && loginTime) {
+      if (isLoggedIn === "true" && user) {
         try {
           const userData = JSON.parse(user);
-          // Check if user is admin or superadmin
           const role = userData.role?.toUpperCase();
           if (role === "ADMIN" || role === "SUPERADMIN") {
             setIsAuthenticated(true);
-          } else {
-            // Clear session if not admin
-            sessionStorage.clear();
-            setIsAuthenticated(false);
+            setIsLoading(false);
+            return;
           }
         } catch (error) {
           console.error("Error parsing user data:", error);
           sessionStorage.clear();
-          setIsAuthenticated(false);
         }
-      } else {
-        setIsAuthenticated(false);
       }
-      setIsLoading(false);
+      
+      // If not authenticated as admin, redirect to website home page
+      window.location.href = "/";
     };
 
     checkAuth();
@@ -65,7 +59,7 @@ function App() {
     );
   }
 
-  return <>{isAuthenticated ? <Admin /> : <LoginPage />}</>;
+  return <>{isAuthenticated ? <Admin /> : null}</>;
 }
 
 export default App;
