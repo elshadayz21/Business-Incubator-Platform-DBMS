@@ -57,6 +57,12 @@ import {
   updateUserRole,
   setUserStatus,
 } from "../admin-backend/users/users.js";
+//for Announcements
+import {
+  getAllAnnouncements,
+  createAnnouncement,
+  deleteAnnouncement,
+} from "../admin-backend/announcements/announcements.js";
 
 const router = Router();
 
@@ -298,6 +304,24 @@ router.delete(
     "/inbox/:id",
     asyncHandler(async (req, res) =>
         res.json(await deleteSubmission(req.params.id)),
+    ),
+);
+
+
+//for announcement
+// Announcements (CMS)
+router.get(
+    "/announcements",
+    asyncHandler(async (req, res) => res.json(await getAllAnnouncements())),
+);
+router.post(
+    "/announcements",
+    asyncHandler(async (req, res) => res.json(await createAnnouncement(req.body))),
+);
+router.delete(
+    "/announcements/:id",
+    asyncHandler(async (req, res) =>
+        res.json(await deleteAnnouncement(req.params.id)),
     ),
 );
 
