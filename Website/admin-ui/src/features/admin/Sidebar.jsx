@@ -11,6 +11,7 @@ import {
   ChevronRight,
   ShieldCheck,
   Building2,
+  Inbox as InboxIcon,
 } from "lucide-react";
 
 const Sidebar = ({
@@ -27,8 +28,9 @@ const Sidebar = ({
     { id: 4, icon: GraduationCap, label: "Workshops", badge: null },
     { id: 5, icon: Boxes, label: "Resources", badge: null },
     { id: 6, icon: Coins, label: "Funding", badge: "New" },
+    { id: 7, icon: InboxIcon, label: "Inbox", badge: null },
     ...(userRole?.toLowerCase() === "superadmin"
-      ? [{ id: 7, icon: Users, label: "Users", badge: "Admin" }]
+      ? [{ id: 8, icon: Users, label: "Users", badge: "Admin" }]
       : []),
   ];
 
