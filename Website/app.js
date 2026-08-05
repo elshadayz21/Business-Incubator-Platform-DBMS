@@ -11,6 +11,8 @@ import pool from "./config/db.js";
 import { GlobalRouter } from "./routes/index.js";
 import adminApiRoutes from "./routes/admin-api.js";
 import path from "path";
+import { publicRoutes } from "./routes/public.routes.js";
+// import { getSuggestedMentorsController, assignMentorController } from "./controllers/project/project.controller.js";
 import {
     get404,
     get500,
@@ -101,8 +103,8 @@ app.get(/^\/admin(\/.*)?$/, (req, res) => {
 });
 
 // Attach the ML routes directly!
-app.get("/api/admin/projects/:id/suggested-mentors", getSuggestedMentorsController);
-app.post("/api/admin/projects/:id/assign-mentor", assignMentorController);
+// app.get("/api/admin/projects/:id/suggested-mentors", getSuggestedMentorsController);
+// app.post("/api/admin/projects/:id/assign-mentor", assignMentorController);
 
 app.use(get404);
 app.use(get500);

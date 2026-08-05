@@ -197,8 +197,17 @@ export const login = async (req, res, next) => {
       redirectUrl = "/v1/auth/profile";
     }
 
+    const userDataJson = JSON.stringify({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    });
+
     res.send(`
       <script>
+        sessionStorage.setItem('isLoggedIn', 'true');
+        sessionStorage.setItem('user', JSON.stringify(${userDataJson}));
         localStorage.setItem('isLoggedIn', 'true');
         window.location.href = '${redirectUrl}';
       </script>

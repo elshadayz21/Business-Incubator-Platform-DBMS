@@ -78,11 +78,48 @@
     const status = document.getElementById('newsletter-status');
     if (!form || !status) return;
 
-    form.addEventListener('submit', (event) => {
+    form.addEventListener('submit', async (event) => {
       event.preventDefault();
-      if (!form.reportValidity()) return;
-      status.textContent = 'Thanks — we will keep you close to the next cohort.';
-      form.reset();
+
+      const emailInput = document.getElementById('newsletter');
+      if (!emailInput) return;
+      const email = emailInput.value;
+
+      // Simple check to make sure it's not empty
+      if (!email) {
+        status.textContent = '❌ Please enter an email address.';
+        return;
+      }
+
+      const button = form.querySelector('button[type="submit"]');
+
+      // Change button to loading state
+      button.disabled = true;
+      button.textContent = 'Subscribing...';
+      status.textContent = '';
+
+      try {
+        // Send to our real backend API!
+        const response = await fetch('/api/public/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        const data = await response.json();
+
+        if (response.ok) {
+          status.textContent = '✅ ' + data.message;
+          form.reset();
+        } else {
+          status.textContent = '❌ ' + (data.message || 'Subscription failed.');
+        }
+      } catch (error) {
+        status.textContent = '❌ Network error. Please try again.';
+      } finally {
+        // Reset button
+        button.disabled = false;
+        button.textContent = 'Subscribe';
+      }
     });
   })();
 </script>
