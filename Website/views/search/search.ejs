@@ -32,13 +32,22 @@
                     <div class="relative flex-1">
                         <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-muted text-base" aria-hidden="true"></i>
                         <input 
+                            id="search-query-input"
                             type="text" 
                             name="q" 
-                            value="<%= q %>" 
                             placeholder="Type keywords (e.g. Tech, FinTech, UI/UX, AI)..." 
-                            class="w-full rounded-xl border border-line bg-surface pl-11 pr-4 py-4 text-base font-semibold text-ink outline-none transition placeholder:text-slate-400 focus:border-cyan focus:ring-2 focus:ring-cyan/20 focus:bg-white"
+                            class="w-full rounded-xl border border-line bg-surface pl-11 pr-10 py-4 text-base font-semibold text-ink outline-none transition placeholder:text-slate-400 focus:border-cyan focus:ring-2 focus:ring-cyan/20 focus:bg-white"
                             required
                         />
+                        <button 
+                            type="button" 
+                            id="clear-search-btn" 
+                            aria-label="Clear search text"
+                            class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-cyan-dark transition cursor-pointer p-1 rounded-full hover:bg-cyan-soft focus:outline-none"
+                            title="Clear search text"
+                        >
+                            <i class="fa-solid fa-circle-xmark text-lg"></i>
+                        </button>
                     </div>
                     <button 
                         type="submit" 
@@ -159,5 +168,31 @@
     </main>
 
     <%- include('../partials/footer.ejs') %>
+
+    <script>
+      (() => {
+        const input = document.getElementById('search-query-input');
+        const clearBtn = document.getElementById('clear-search-btn');
+        if (!input || !clearBtn) return;
+
+        const updateClearBtnVisibility = () => {
+          if (input.value.trim().length > 0) {
+            clearBtn.classList.remove('hidden');
+          } else {
+            clearBtn.classList.add('hidden');
+          }
+        };
+
+        updateClearBtnVisibility();
+
+        input.addEventListener('input', updateClearBtnVisibility);
+
+        clearBtn.addEventListener('click', () => {
+          input.value = '';
+          updateClearBtnVisibility();
+          input.focus();
+        });
+      })();
+    </script>
 </body>
 </html>
