@@ -328,3 +328,132 @@ export const projectDetailController = async (req, res, next) => {
     });
   }
 };
+
+
+
+import pool from "../../config/db.js";
+
+// --- TF-IDF Matching Logic ---
+const tokenize = (text) => {
+  if (!text) return [];
+  return text.toLowerCase()
+      .replace(/[^a-z0-9\s]/g, '')
+      .split(/\s+/)
+      .filter(t => t.length > 2 && !['the', 'and', 'for', 'with', 'that', 'this', 'are', 'from'].includes(t));
+};
+
+export const getSuggestedMentorsController = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const limit = parseInt(req.query.limit) || 5;
+
+    // 1. Fetch the project
+    const projectRes = await pool.query("SELECT * FROM projects WHERE id = $1", [id]);
+    if (projectRes.rows.length === 0) return res.status(404).json({ error: "Project not found" });
+    const project = projectRes.rows[0];
+
+    // 2. Fetch all mentors
+    const mentorRes = await pool.query("SELECT * FROM mentors WHERE status = 'active'");
+    const mentors = mentorRes.rows;
+
+    if (mentors.length === 0) return res.json([]);
+
+    // 3. Combine project text fields for corpus
+    const projectText = [project.name, project.domain, project.tech_stack, project.short_description, project.problem, project.solution].join(" ");
+    const projectTokens = tokenize(projectText);
+
+    // 4. Build Corpus for IDF
+    const allDocs = [projectTokens, ...mentors.map(m => tokenize([m.expertise, m.bio, m.name].join(" ")))];
+    const idf = {};
+    const totalDocs = allDocs.length;
+
+    allDocs.forEach(doc => {
+      const uniqueTokens = new Set(doc);
+      uniqueTokens.forEach(token => {
+        idf[token] = (idf[token] || 0) + 1;
+      });
+    });
+    Object.keys(idf).forEach(token => { idf[token] = Math.log(totalDocs / idf[token]); });
+
+    // 5. Calculate TF-IDF vector for project
+    const projectTf = {};
+    projectTokens.forEach(token => { projectTf[token] = (projectTf[token] || 0) + 1; });
+
+    const projectVector = {};
+    Object.keys(projectTf).forEach(token => {
+      projectVector[token] = projectTf[token] * (idf[token] || 0);
+    });
+
+    let magProject = Math.sqrt(Object.values(projectVector).reduce((sum, val) => sum + val * val, 0));
+
+    // 6. Calculate TF-IDF for each mentor & Cosine Similarity
+    const scoredMentors = mentors.map(mentor => {
+      const mentorText = [mentor.expertise, mentor.bio, mentor.name].join(" ");
+      const mentorTokens = tokenize(mentorText);
+
+      const mentorTf = {};
+      mentorTokens.forEach(token => { mentorTf[token] = (mentorTf[token] || 0) + 1; });
+
+      const mentorVector = {};
+      Object.keys(mentorTf).forEach(token => {
+        mentorVector[token] = mentorTf[token] * (idf[token] || 0);
+      });
+
+      let dotProduct = 0;
+      for (let token in projectVector) {
+        if (mentorVector[token]) {
+          dotProduct += projectVector[token] * mentorVector[token];
+        }
+      }
+
+      let magMentor = Math.sqrt(Object.values(mentorVector).reduce((sum, val) => sum + val * val, 0));
+      let similarity = 0;
+      if (magProject > 0 && magMentor > 0) {
+        similarity = dotProduct / (magProject * magMentor);
+      }
+
+      return {
+        id: mentor.id,
+        name: mentor.name,
+        expertise: mentor.expertise,
+        matchScore: similarity
+      };
+    });
+
+    // 7. Sort by score and return top N
+    scoredMentors.sort((a, b) => b.matchScore - a.matchScore);
+    const topMentors = scoredMentors.slice(0, limit);
+
+    res.json(topMentors);
+
+  } catch (error) {
+    console.error("Error in suggested-mentors:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+export const assignMentorController = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { mentorId } = req.body;
+
+    // 1. Check if already assigned
+    const check = await pool.query(
+        "SELECT * FROM mentor_project_assignments WHERE project_id = $1 AND mentor_id = $2",
+        [id, mentorId]
+    );
+    if (check.rows.length > 0) {
+      return res.status(409).json({ error: "Mentor already assigned to this project" });
+    }
+
+    // 2. Assign the mentor
+    await pool.query(
+        "INSERT INTO mentor_project_assignments (project_id, mentor_id) VALUES ($1, $2)",
+        [id, mentorId]
+    );
+
+    res.status(200).json({ success: true, message: "Mentor assigned successfully" });
+  } catch (error) {
+    console.error("Error assigning mentor:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};

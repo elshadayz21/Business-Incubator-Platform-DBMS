@@ -1,4 +1,5 @@
 import "dotenv/config";
+console.log("HOST IS:", process.env.DB_HOST); // <-- Add this lin
 import app from "./app.js";
 import pool from "./config/db.js";
 import { exec } from "child_process";
@@ -10,7 +11,7 @@ async function testConnection() {
     const res = await pool.query("SELECT NOW()");
     console.log("PostgreSQL connected:", res.rows[0]);
   } catch (err) {
-    console.error("DB connection error:", err.message);
+    console.error("DB connection error:", err);
     throw err;
   }
 }
@@ -30,6 +31,6 @@ testConnection()
       openBrowser(`http://localhost:${port}`);
     });
   })
-  .catch((err) => {
-    console.error("Failed to connect DB or start server:", err.message);
-  });
+    .catch((err) => {
+      console.error("Failed to connect DB or start server:", err); // <-- now it will show the full error
+    });
