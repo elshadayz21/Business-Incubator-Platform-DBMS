@@ -27,7 +27,7 @@ testConnection()
     app.listen(port, () => {
       console.log(`Server is running on http://localhost:${port}`);
       console.log(`Admin panel: http://localhost:${port}/admin`);
-      openBrowser(`http://localhost:${port}/admin`);
+      openBrowser(`http://localhost:${port}`);
     });
   })
   .catch((err) => {
