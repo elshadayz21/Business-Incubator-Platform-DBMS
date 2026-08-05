@@ -19,9 +19,6 @@ import {
 import { initWorkshopJobs } from "./utils/jobs.js";
 import "./subscribers/subscribers.js";
 
-// Import the new ML controllers
-import { getSuggestedMentorsController, assignMentorController } from "./controllers/project/project.controller.js";
-
 const app = express();
 const pgSession = connectPgSimpleImport(session);
 
@@ -94,9 +91,14 @@ app.get("/", (req, res) => {
 
 app.use("/v1", GlobalRouter);
 app.use("/api/admin", adminApiRoutes);
+app.use("/api/public", publicRoutes);
 
 app.get("/admin{/*path}", (req, res) => {
     res.sendFile(path.resolve("public/admin/index.html"));
+});
+//for contact us
+app.get("/contact", (req, res) => {
+    res.render("contact");
 });
 
 // Attach the ML routes directly!
