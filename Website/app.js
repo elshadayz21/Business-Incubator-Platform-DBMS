@@ -11,6 +11,7 @@ import pool from "./config/db.js";
 import { GlobalRouter } from "./routes/index.js";
 import adminApiRoutes from "./routes/admin-api.js";
 import path from "path";
+import { publicRoutes } from "./routes/public.routes.js";
 // import { getSuggestedMentorsController, assignMentorController } from "./controllers/project/project.controller.js";
 import {
     get404,
@@ -19,9 +20,6 @@ import {
 } from "./controllers/error/error.controller.js";
 import { initWorkshopJobs } from "./utils/jobs.js";
 import "./subscribers/subscribers.js";
-
-// Import the new ML controllers
-import { getSuggestedMentorsController, assignMentorController } from "./controllers/project/project.controller.js";
 
 const app = express();
 const pgSession = connectPgSimpleImport(session);
@@ -102,10 +100,15 @@ app.get("/", (req, res) => {
 
 app.use("/v1", GlobalRouter);
 app.use("/api/admin", adminApiRoutes);
+app.use("/api/public", publicRoutes);
 
 app.get(/^\/admin(\/.*)?$/, (req, res) => {
     res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     res.sendFile(path.resolve("public/admin/index.html"));
+});
+//for contact us
+app.get("/contact", (req, res) => {
+    res.render("contact");
 });
 
 // Attach the ML routes directly!
