@@ -1,13 +1,11 @@
-import pkg from "pg";
-const { Pool } = pkg;
+import { Pool } from "pg";
 
 const pool = new Pool({
-  user: process.env.DB_USER,
-  host: process.env.DB_HOST,
-  database: process.env.DB_NAME,
-  password: process.env.DB_PASS,
-  port: process.env.DB_PORT,
+  user: "postgres.mnysgjtrtlsafospupte",
+  host: "aws-0-eu-central-1.pooler.supabase.com",
+  database: "postgres",
+  password: "TikiFant@hun92%99", // Put your real password here!
+  port: 5432,
 });
-
 
 export default pool;
