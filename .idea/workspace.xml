@@ -1,7 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="4204fed5-5824-41ab-b44f-a262431d1f19" name="Changes" comment="" />
+    <list default="true" id="4204fed5-5824-41ab-b44f-a262431d1f19" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/Website/admin-backend/inbox/inbox.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Website/admin-ui/src/features/admin/inbox/inbox.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Website/admin-ui/src/features/admin/Sidebar.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Website/admin-ui/src/features/admin/Sidebar.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Website/admin-ui/src/features/admin/admin.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Website/admin-ui/src/features/admin/admin.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Website/routes/admin-api.js" beforeDir="false" afterPath="$PROJECT_DIR$/Website/routes/admin-api.js" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -11,6 +18,7 @@
     <option name="RECENT_TEMPLATES">
       <list>
         <option value="JavaScript File" />
+        <option value="JSX File" />
       </list>
     </option>
   </component>
@@ -42,6 +50,7 @@
     "RunOnceActivity.git.unshallow": "true",
     "RunOnceActivity.typescript.service.memoryLimit.init": "true",
     "codeWithMe.voiceChat.enabledByDefault": "false",
+    "git-widget-placeholder": "admin-inbox",
     "ignore.virus.scanning.warn.message": "true",
     "kotlin-language-version-configured": "true",
     "last_opened_file_path": "C:/Users/pc/OneDrive/Documents/GitHub/Business-Incubator-Platform-DBMS/Website/routes",
@@ -49,7 +58,9 @@
     "node.js.selected.package.eslint": "(autodetect)",
     "nodejs_interpreter_path": "C:/Users/pc/AppData/Roaming/JetBrains/IntelliJIdea2026.1/node/versions/22.23.1/node",
     "nodejs_package_manager_path": "npm",
+    "npm.dev (1).executor": "Run",
     "npm.dev.executor": "Run",
+    "npm.preview.executor": "Run",
     "ts.external.directory.path": "C:\\Users\\pc\\AppData\\Local\\Programs\\IntelliJ IDEA\\plugins\\javascript-plugin\\jsLanguageServicesImpl\\external",
     "vue.rearranger.settings.migration": "true"
   }
@@ -66,12 +77,16 @@
       <recent name="C:\Users\pc\OneDrive\Documents\GitHub\Business-Incubator-Platform-DBMS\Website\routes\admin" />
     </key>
   </component>
-  <component name="RunManager">
-    <configuration default="true" type="JetRunConfigurationType">
-      <module name="Business-Incubator-Platform-DBMS" />
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
+  <component name="RunManager" selected="npm.preview">
+    <configuration name="dev (1)" type="js.build_tools.npm" temporary="true" nameIsGenerated="true">
+      <package-json value="$PROJECT_DIR$/Website/admin-ui/package.json" />
+      <command value="run" />
+      <scripts>
+        <script value="dev" />
+      </scripts>
+      <node-interpreter value="project" />
+      <envs />
+      <method v="2" />
     </configuration>
     <configuration name="dev" type="js.build_tools.npm" temporary="true" nameIsGenerated="true">
       <package-json value="$PROJECT_DIR$/Business-Incubator-DB-System/Desktop/package.json" />
@@ -83,8 +98,20 @@
       <envs />
       <method v="2" />
     </configuration>
+    <configuration name="preview" type="js.build_tools.npm" temporary="true" nameIsGenerated="true">
+      <package-json value="$PROJECT_DIR$/Website/admin-ui/package.json" />
+      <command value="run" />
+      <scripts>
+        <script value="preview" />
+      </scripts>
+      <node-interpreter value="project" />
+      <envs />
+      <method v="2" />
+    </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="npm.preview" />
+        <item itemvalue="npm.dev (1)" />
         <item itemvalue="npm.dev" />
         <item itemvalue="npm.dev" />
       </list>
@@ -124,7 +151,9 @@
       <workItem from="1785846929483" duration="5129000" />
       <workItem from="1785852692119" duration="9073000" />
       <workItem from="1785872731351" duration="18000" />
-      <workItem from="1785911308005" duration="308000" />
+      <workItem from="1785911308005" duration="11036000" />
+      <workItem from="1785923049765" duration="152000" />
+      <workItem from="1785946496763" duration="2856000" />
     </task>
     <servers />
   </component>
