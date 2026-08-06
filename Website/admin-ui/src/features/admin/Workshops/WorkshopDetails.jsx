@@ -4,19 +4,16 @@ import {
   Users,
   MapPin,
   User,
-  Clock,
   BookOpen,
   Star,
   CheckCircle,
-  XCircle,
-  BarChart3,
   ClipboardList,
 } from "lucide-react";
 
 const WorkshopDetails = ({ workshop }) => {
   const formatDate = (dateString) => {
     if (!dateString) return "-";
-    return new Date(dateString).toLocaleDateString("en-US", {
+    return new Date(dateString).toLocaleDateString("en-GB", {
       weekday: "short",
       year: "numeric",
       month: "short",
@@ -33,254 +30,175 @@ const WorkshopDetails = ({ workshop }) => {
       : 0;
 
   const feedbackResponses = enrollments.filter(
-    (e) => e.feedbackRating || e.feedback_rating,
+    (e) => e.feedbackRating || e.feedback_rating
   );
   const averageFeedback =
     feedbackResponses.length > 0
       ? (
           feedbackResponses.reduce(
             (sum, e) => sum + (e.feedbackRating || e.feedback_rating || 0),
-            0,
+            0
           ) / feedbackResponses.length
         ).toFixed(1)
       : 0;
 
   return (
-    <div className="p-2 space-y-8 bg-[#FFFDF5] font-sans">
-      {/* Overview Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column: Description & Mentor */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white border-4 border-black p-6 shadow-[6px_6px_0_0_#000]">
-            <div className="flex items-center gap-3 mb-4 border-b-4 border-black pb-2 w-fit">
-              <BookOpen size={24} strokeWidth={3} className="text-[#4f46e5]" />
-              <h3 className="text-xl font-black uppercase tracking-tight">
-                Workshop Description
-              </h3>
-            </div>
-            <p className="text-lg font-bold text-gray-800 leading-relaxed italic">
-              "
-              {workshop.description ||
-                "No description provided for this session."}
-              "
-            </p>
+    <div className="space-y-6 font-sans">
+      {/* Overview Card */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div className="lg:col-span-2 bg-white border border-[#D6E4EA] rounded-2xl p-6 shadow-xs space-y-4">
+          <div className="flex items-center gap-2 text-[#006F9E] font-bold text-xs border-b border-[#D6E4EA] pb-3">
+            <BookOpen size={16} />
+            <span>Curriculum Overview</span>
           </div>
+          <p className="text-sm text-[#111827] leading-relaxed italic">
+            "{workshop.description || "No description provided for this session."}"
+          </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white border-4 border-black p-6 shadow-[4px_4px_0_0_#000]">
-              <div className="flex items-center gap-3 mb-2 opacity-60">
-                <User size={18} strokeWidth={3} />
-                <span className="text-xs font-black uppercase tracking-widest">
-                  Assigned Mentor
-                </span>
-              </div>
-              <p className="text-2xl font-black uppercase text-black">
-                {workshop.mentor || workshop.mentor_name || "UNASSIGNED"}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+            <div className="bg-[#F6FAFC] border border-[#D6E4EA] rounded-xl p-3.5">
+              <span className="text-[11px] font-bold text-[#526274] block mb-1">
+                Instructor
+              </span>
+              <p className="font-extrabold text-sm text-[#111827] flex items-center gap-1.5">
+                <User size={14} className="text-[#00ADEF]" />
+                {workshop.mentor || workshop.mentor_name || "Unassigned"}
               </p>
             </div>
 
-            <div className="bg-white border-4 border-black p-6 shadow-[4px_4px_0_0_#000]">
-              <div className="flex items-center gap-3 mb-2 opacity-60">
-                <MapPin size={18} strokeWidth={3} />
-                <span className="text-xs font-black uppercase tracking-widest">
-                  Location
-                </span>
-              </div>
-              <p className="text-2xl font-black uppercase text-black">
-                {workshop.location || "REMOTE / TBD"}
+            <div className="bg-[#F6FAFC] border border-[#D6E4EA] rounded-xl p-3.5">
+              <span className="text-[11px] font-bold text-[#526274] block mb-1">
+                Location
+              </span>
+              <p className="font-extrabold text-sm text-[#111827] flex items-center gap-1.5">
+                <MapPin size={14} className="text-[#E38524]" />
+                {workshop.location || "Remote / TBD"}
               </p>
             </div>
           </div>
         </div>
 
-        {/* Right Column: Schedule Card */}
-        <div className="bg-[#eff6ff] border-4 border-black p-6 shadow-[6px_6px_0_0_#1e3a8a] flex flex-col justify-between">
-          <div className="flex items-center gap-3 mb-6">
-            <Calendar size={24} strokeWidth={3} className="text-[#1e3a8a]" />
-            <h3 className="text-xl font-black uppercase text-[#1e3a8a]">
-              Timing
-            </h3>
-          </div>
+        {/* Schedule Card */}
+        <div className="bg-[#EAF8FC] border border-[#00ADEF]/20 rounded-2xl p-6 flex flex-col justify-between shadow-xs">
+          <div>
+            <div className="flex items-center gap-2 text-[#006F9E] font-bold text-sm border-b border-[#00ADEF]/20 pb-3 mb-4">
+              <Calendar size={18} />
+              <span>Timing & Schedule</span>
+            </div>
 
-          <div className="space-y-4 flex-grow">
-            <div className="flex justify-between items-center border-b-2 border-black/10 pb-2">
-              <span className="font-black text-xs uppercase text-gray-500">
-                Starts
-              </span>
-              <span className="font-bold text-black uppercase">
-                {formatDate(workshop.startDate || workshop.start_date)}
-              </span>
-            </div>
-            <div className="flex justify-between items-center border-b-2 border-black/10 pb-2">
-              <span className="font-black text-xs uppercase text-gray-500">
-                Ends
-              </span>
-              <span className="font-bold text-black uppercase">
-                {formatDate(workshop.endDate || workshop.end_date)}
-              </span>
-            </div>
-            <div className="flex justify-between items-center border-b-2 border-black/10 pb-2">
-              <span className="font-black text-xs uppercase text-gray-500">
-                Time Window
-              </span>
-              <span className="font-black text-black">
-                {workshop.startTime || workshop.start_time || "-"} ➔{" "}
-                {workshop.endTime || workshop.end_time || "-"}
-              </span>
+            <div className="space-y-3 text-xs">
+              <div className="flex justify-between items-center">
+                <span className="text-[#526274] font-medium">Starts</span>
+                <span className="font-bold text-[#111827]">
+                  {formatDate(workshop.startDate || workshop.start_date)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-[#526274] font-medium">Ends</span>
+                <span className="font-bold text-[#111827]">
+                  {formatDate(workshop.endDate || workshop.end_date)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center pt-1 border-t border-[#00ADEF]/15">
+                <span className="text-[#526274] font-medium">Time Window</span>
+                <span className="font-bold text-[#006F9E]">
+                  {workshop.startTime || workshop.start_time || "-"} ➔{" "}
+                  {workshop.endTime || workshop.end_time || "-"}
+                </span>
+              </div>
             </div>
           </div>
 
-          <div className="mt-6 bg-black text-white p-3 text-center font-black uppercase text-sm shadow-[3px_3px_0_0_#4f46e5]">
-            Timezone: Cairo (GMT+2)
+          <div className="mt-4 bg-white/80 rounded-xl p-2.5 text-center text-xs font-bold text-[#006F9E] border border-[#00ADEF]/20">
+            Status: <span className="uppercase text-[#E38524] ml-1">{workshop.status || "scheduled"}</span>
           </div>
         </div>
       </div>
 
-      {/* Analytics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Capacity */}
-        <div className="bg-white border-4 border-black p-6 shadow-[6px_6px_0_0_#000]">
-          <div className="flex items-center gap-2 mb-4">
-            <Users size={20} strokeWidth={3} className="text-[#4f46e5]" />
-            <h4 className="font-black uppercase text-sm tracking-widest">
-              Enrollment Status
-            </h4>
+      {/* Analytics Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+        <div className="bg-white border border-[#D6E4EA] rounded-2xl p-5 shadow-xs">
+          <div className="flex items-center gap-2 text-[#526274] text-xs font-bold mb-2">
+            <Users size={16} className="text-[#00ADEF]" />
+            <span>Capacity Utilization</span>
           </div>
-          <div className="flex items-end gap-2 mb-4">
-            <span className="text-5xl font-black text-black">
-              {parseInt(workshop.enrolledCount || workshop.enrolled_count) || 0}
-            </span>
-            <span className="text-xl font-bold text-gray-400 mb-1">
-              / {parseInt(workshop.capacity) || 0}
-            </span>
-          </div>
-          <div className="w-full bg-gray-200 h-6 border-2 border-black mb-2 overflow-hidden">
-            <div
-              className="bg-[#4f46e5] h-full border-r-2 border-black transition-all"
-              style={{
-                width: `${Math.min(((parseInt(workshop.enrolledCount || workshop.enrolled_count) || 0) / (parseInt(workshop.capacity) || 1)) * 100, 100)}%`,
-              }}
-            ></div>
-          </div>
+          <p className="text-2xl font-extrabold text-[#111827] font-['Space_Grotesk']">
+            {parseInt(workshop.enrolledCount || workshop.enrolled_count) || 0} /{" "}
+            <span className="text-[#526274]">{parseInt(workshop.capacity) || 0}</span>
+          </p>
         </div>
 
-        {/* Attendance Rate */}
-        <div className="bg-[#f0fdf4] border-4 border-black p-6 shadow-[6px_6px_0_0_#16a34a]">
-          <div className="flex items-center gap-2 mb-4 text-[#16a34a]">
-            <CheckCircle size={20} strokeWidth={3} />
-            <h4 className="font-black uppercase text-sm tracking-widest">
-              Attendance Rate
-            </h4>
+        <div className="bg-white border border-[#D6E4EA] rounded-2xl p-5 shadow-xs">
+          <div className="flex items-center gap-2 text-[#526274] text-xs font-bold mb-2">
+            <CheckCircle size={16} className="text-emerald-600" />
+            <span>Attendance Rate</span>
           </div>
-          <p className="text-5xl font-black text-black mb-2">
+          <p className="text-2xl font-extrabold text-emerald-700 font-['Space_Grotesk']">
             {attendanceRate}%
           </p>
-          <p className="font-bold text-sm text-[#16a34a] uppercase">
-            {attendanceCount} Students Present
-          </p>
         </div>
 
-        {/* Feedback */}
-        <div className="bg-[#fffbeb] border-4 border-black p-6 shadow-[6px_6px_0_0_#f59e0b]">
-          <div className="flex items-center gap-2 mb-4 text-[#f59e0b]">
-            <Star size={20} strokeWidth={3} />
-            <h4 className="font-black uppercase text-sm tracking-widest">
-              Avg Feedback
-            </h4>
+        <div className="bg-white border border-[#D6E4EA] rounded-2xl p-5 shadow-xs">
+          <div className="flex items-center gap-2 text-[#526274] text-xs font-bold mb-2">
+            <Star size={16} className="text-[#E38524]" />
+            <span>Average Rating</span>
           </div>
-          <p className="text-5xl font-black text-black mb-2">
-            {averageFeedback === 0 ? "N/A" : `${averageFeedback}`}
-          </p>
-          <p className="font-bold text-sm text-[#d97706] uppercase">
-            From {feedbackResponses.length} Responses
+          <p className="text-2xl font-extrabold text-[#E38524] font-['Space_Grotesk']">
+            {averageFeedback === 0 ? "N/A" : `${averageFeedback} / 5`}
           </p>
         </div>
       </div>
 
-      {/* Attendees Table Section */}
-      <div className="bg-white border-4 border-black shadow-[8px_8px_0_0_#000] overflow-hidden">
-        <div className="bg-[#0f172a] p-4 border-b-4 border-black flex items-center gap-3">
-          <ClipboardList className="text-white" size={24} />
-          <h3 className="text-white font-black uppercase tracking-tight">
-            Enrolled Entrepreneurs
+      {/* Enrollments Table */}
+      <div className="bg-white border border-[#D6E4EA] rounded-2xl shadow-xs overflow-hidden">
+        <div className="p-4 border-b border-[#D6E4EA] bg-[#F6FAFC] flex items-center gap-2">
+          <ClipboardList size={16} className="text-[#00ADEF]" />
+          <h3 className="font-bold text-xs text-[#111827] uppercase tracking-wider">
+            Enrolled Entrepreneurs &amp; Feedback
           </h3>
         </div>
 
         {enrollments.length > 0 ? (
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="bg-gray-100 border-b-2 border-black">
-                  <th className="px-6 py-4 font-black uppercase text-xs border-r-2 border-black/10">
-                    Full Name
-                  </th>
-                  <th className="px-6 py-4 font-black uppercase text-xs border-r-2 border-black/10">
-                    Email Address
-                  </th>
-                  <th className="px-6 py-4 font-black uppercase text-xs border-r-2 border-black/10 text-center">
-                    Attendance
-                  </th>
-                  <th className="px-6 py-4 font-black uppercase text-xs border-r-2 border-black/10 text-center">
-                    Rating
-                  </th>
-                  <th className="px-6 py-4 font-black uppercase text-xs">
-                    Comment
-                  </th>
+                <tr className="bg-white border-b border-[#D6E4EA] text-[#526274] font-bold">
+                  <th className="p-3.5">Name</th>
+                  <th className="p-3.5">Email</th>
+                  <th className="p-3.5 text-center">Attendance</th>
+                  <th className="p-3.5 text-center">Rating</th>
+                  <th className="p-3.5">Comment</th>
                 </tr>
               </thead>
-              <tbody className="divide-y-2 divide-black/5">
+              <tbody className="divide-y divide-[#D6E4EA]">
                 {enrollments.map((attendee) => (
-                  <tr
-                    key={attendee.id}
-                    className="hover:bg-[#FFFDF5] transition-colors"
-                  >
-                    <td className="px-6 py-4 font-black text-black uppercase border-r-2 border-black/5">
-                      {attendee.entrepreneurName ||
-                        attendee.entrepreneur_name ||
-                        attendee.name ||
-                        "-"}
+                  <tr key={attendee.id} className="hover:bg-[#F6FAFC]">
+                    <td className="p-3.5 font-bold text-[#111827]">
+                      {attendee.entrepreneurName || attendee.name || "-"}
                     </td>
-                    <td className="px-6 py-4 font-bold text-gray-500 lowercase border-r-2 border-black/5">
-                      {attendee.entrepreneurEmail ||
-                        attendee.entrepreneur_email ||
-                        attendee.email ||
-                        "-"}
+                    <td className="p-3.5 text-[#526274]">
+                      {attendee.entrepreneurEmail || attendee.email || "-"}
                     </td>
-                    <td className="px-6 py-4 text-center border-r-2 border-black/5">
-                      {attendee.attended ? (
-                        <span className="bg-[#dcfce7] text-[#166534] border-2 border-[#166534] px-3 py-1 font-black text-[10px] uppercase shadow-[2px_2px_0_0_#166534]">
-                          Present
-                        </span>
+                    <td className="p-3.5 text-center">
+                      <span
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                          attendee.attended
+                            ? "bg-emerald-100 text-emerald-800"
+                            : "bg-slate-100 text-slate-600"
+                        }`}
+                      >
+                        {attendee.attended ? "Present" : "Absent"}
+                      </span>
+                    </td>
+                    <td className="p-3.5 text-center font-bold text-[#E38524]">
+                      {attendee.feedbackRating || attendee.feedback_rating ? (
+                        <span>★ {attendee.feedbackRating || attendee.feedback_rating}</span>
                       ) : (
-                        <span className="bg-gray-100 text-gray-400 border-2 border-gray-400 px-3 py-1 font-black text-[10px] uppercase shadow-[2px_2px_0_0_gray]">
-                          Absent
-                        </span>
+                        <span className="text-[#526274] font-normal">-</span>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-center border-r-2 border-black/5">
-                      <div className="flex justify-center items-center gap-1 font-black text-black">
-                        {attendee.feedbackRating || attendee.feedback_rating ? (
-                          <>
-                            {" "}
-                            <Star
-                              size={14}
-                              fill="currentColor"
-                              className="text-[#f59e0b]"
-                            />{" "}
-                            {attendee.feedbackRating ||
-                              attendee.feedback_rating}{" "}
-                          </>
-                        ) : (
-                          "-"
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-sm font-bold text-gray-600 italic line-clamp-1 max-w-xs">
-                        {attendee.feedbackComment || attendee.feedback_comment
-                          ? `"${attendee.feedbackComment || attendee.feedback_comment}"`
-                          : "No comment"}
-                      </p>
+                    <td className="p-3.5 text-[#526274] italic truncate max-w-xs">
+                      {attendee.feedbackComment || attendee.feedback_comment || "No comment"}
                     </td>
                   </tr>
                 ))}
@@ -288,27 +206,10 @@ const WorkshopDetails = ({ workshop }) => {
             </table>
           </div>
         ) : (
-          <div className="p-12 text-center bg-white border-dashed border-4 border-gray-200 m-4">
-            <p className="font-black text-gray-400 uppercase tracking-widest">
-              No active enrollments found
-            </p>
+          <div className="p-8 text-center text-[#526274] text-xs italic">
+            No active enrollments for this session.
           </div>
         )}
-      </div>
-
-      {/* Current Status Footer */}
-      <div className="flex justify-center pt-4">
-        <div
-          className={`px-12 py-5 border-4 border-black font-black text-3xl uppercase tracking-tighter shadow-[8px_8px_0_0_#000] transform -rotate-1 ${
-            workshop.status === "ongoing"
-              ? "bg-[#f59e0b] text-black"
-              : workshop.status === "completed"
-                ? "bg-[#0d9488] text-white"
-                : "bg-[#4f46e5] text-white"
-          }`}
-        >
-          {workshop.status || "scheduled"}
-        </div>
       </div>
     </div>
   );

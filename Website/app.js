@@ -34,6 +34,13 @@ app.use(cookieParser());
 app.use(cors({ origin: true, credentials: true }));
 
 app.use(express.static("public"));
+app.use("/admin", express.static(path.resolve("public/admin"), {
+    setHeaders: (res, filePath) => {
+        if (filePath.endsWith(".html")) {
+            res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        }
+    }
+}));
 
 import { setupMiddleware } from "./middleware/setup.middleware.js";
 app.use(setupMiddleware);

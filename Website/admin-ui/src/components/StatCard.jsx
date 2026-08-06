@@ -1,35 +1,34 @@
-import React from 'react';
-import { ArrowRight } from 'lucide-react';
+import React from "react";
+import { TrendingUp, ArrowUpRight } from "lucide-react";
 
-const StatCard = ({ title, value, icon: IconComponent, bgClass, textClass }) => {
+const StatCard = ({ title, value, icon: IconComponent, badgeText = "+12% this month", accentColor = "cyan" }) => {
+  const isOrange = accentColor === "orange";
+  
   return (
-    <div
-      className={`relative border-4 border-black p-6 shadow-[6px_6px_0px_0px_#000] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_#000] transition-all duration-200 group ${bgClass}`}
-    >
-      <div className="flex justify-between items-start mb-4">
-        <div className="p-3 border-2 border-black bg-white shadow-[2px_2px_0px_0px_#000]">
-          {/* Check if icon exists to prevent crashes */}
-          {IconComponent && (
-            <IconComponent 
-              className="text-black" 
-              size={24} 
-              strokeWidth={2.5} 
-            />
-          )}
+    <div className="bg-white rounded-2xl border border-[#D6E4EA] p-5 shadow-xs hover:shadow-md transition-all group">
+      <div className="flex items-center justify-between mb-4">
+        <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${
+          isOrange ? "bg-[#FFF1E3] text-[#E38524] border border-[#E38524]/20" : "bg-[#EAF8FC] text-[#006F9E] border border-[#00ADEF]/20"
+        }`}>
+          {IconComponent && <IconComponent size={22} />}
         </div>
-        {/* Decorative Arrow */}
-        <div className="bg-white border-2 border-black px-2 py-0.5 transform rotate-2">
-          <ArrowRight size={16} className="text-black" />
-        </div>
+
+        <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full ${
+          isOrange ? "bg-[#FFF1E3] text-[#E38524]" : "bg-[#EAF8FC] text-[#006F9E]"
+        }`}>
+          <TrendingUp size={12} />
+          {badgeText}
+        </span>
       </div>
-      
-      <h3 className={`text-3xl font-black mb-1 tracking-tight ${textClass}`}>
-        {value}
-      </h3>
-      
-      <p className={`text-sm font-bold uppercase tracking-wider ${textClass} opacity-90`}>
-        {title}
-      </p>
+
+      <div className="space-y-1">
+        <h3 className="text-3xl font-extrabold text-[#111827] font-['Space_Grotesk'] tracking-tight">
+          {value}
+        </h3>
+        <p className="text-xs font-bold uppercase tracking-wider text-[#526274]">
+          {title}
+        </p>
+      </div>
     </div>
   );
 };

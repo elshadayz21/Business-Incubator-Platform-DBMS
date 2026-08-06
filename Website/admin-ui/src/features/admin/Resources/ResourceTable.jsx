@@ -5,7 +5,6 @@ import {
   LayoutGrid,
   Armchair,
   Monitor,
-  MoreHorizontal,
   Loader2,
   Inbox,
   Plus,
@@ -21,177 +20,139 @@ const ResourceTable = ({
   onDelete,
 }) => {
   const getTypeBadge = (type) => {
-    const baseStyle =
-      "inline-flex items-center gap-1.5 px-3 py-1 text-xs font-black border-2 border-black uppercase tracking-wide shadow-[2px_2px_0_0_black]";
     switch (type) {
       case "meeting_room":
         return {
           icon: Armchair,
           label: "Meeting Room",
-          style: `${baseStyle} bg-purple-400 text-black`,
+          style: "bg-purple-50 text-purple-700 border-purple-200",
         };
       case "equipment":
         return {
           icon: Monitor,
           label: "Equipment",
-          style: `${baseStyle} bg-orange-400 text-black`,
+          style: "bg-[#FFF1E3] text-[#E38524] border-[#E38524]/20",
         };
       case "workspace":
       default:
         return {
           icon: LayoutGrid,
           label: "Workspace",
-          style: `${baseStyle} bg-blue-400 text-black`,
+          style: "bg-[#EAF8FC] text-[#006F9E] border-[#00ADEF]/20",
         };
     }
   };
 
   if (loading)
     return (
-      <div className="flex flex-col items-center justify-center py-20 bg-white border-4 border-black border-dashed">
-        <Loader2
-          className="text-black animate-spin mb-4"
-          size={40}
-          strokeWidth={3}
-        />
-        <p className="text-black font-black text-xl uppercase tracking-tighter">
-          Loading resources...
-        </p>
+      <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-[#D6E4EA]">
+        <Loader2 className="text-[#00ADEF] animate-spin mb-3" size={32} />
+        <p className="text-[#526274] font-bold text-sm">Loading resources...</p>
       </div>
     );
 
   if (!resources || resources.length === 0)
     return (
-      <div className="flex flex-col items-center justify-center py-24 bg-white border-4 border-black border-dashed text-center shadow-[8px_8px_0_0_#000]">
-        <div className="p-6 bg-gray-100 border-2 border-black rounded-full mb-6">
-          <Inbox className="text-black" size={48} strokeWidth={1.5} />
+      <div className="flex flex-col items-center justify-center py-16 bg-white rounded-2xl border border-[#D6E4EA] text-center p-6">
+        <div className="p-4 bg-[#EAF8FC] rounded-full text-[#00ADEF] mb-3">
+          <Inbox size={36} />
         </div>
-        <h2 className="text-2xl font-black text-black uppercase mb-2 tracking-tight">
-          No resources found
-        </h2>
-        <p className="text-gray-600 text-lg font-medium max-w-sm mb-8">
-          Try adjusting your search or add a new resource to your inventory.
+        <h3 className="text-lg font-bold text-[#111827]">No resources found</h3>
+        <p className="text-xs text-[#526274] mt-1 max-w-sm mb-6">
+          Try adjusting your search criteria or add a new resource.
         </p>
         <button
           onClick={onAddClick}
-          className="flex items-center gap-2 bg-[#4f46e5] text-white px-8 py-3 font-black uppercase border-2 border-black shadow-[4px_4px_0_0_black] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#E38524] text-white text-xs font-bold uppercase"
         >
-          <Plus size={20} strokeWidth={3} /> Add First Resource
+          <Plus size={16} /> Add First Resource
         </button>
       </div>
     );
 
   return (
-    <div className="bg-white border-4 border-black shadow-[8px_8px_0_0_#000] overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse min-w-[1000px]">
-          <thead>
-            <tr className="bg-[#0f172a] text-white border-b-4 border-black">
-              <th className="p-5 font-black uppercase text-sm border-r-2 border-white/20">
-                Resource Name
-              </th>
-              <th className="p-5 font-black uppercase text-sm border-r-2 border-white/20">
-                Type
-              </th>
-              <th className="p-5 font-black uppercase text-sm border-r-2 border-white/20">
-                Location
-              </th>
-              <th className="p-5 font-black uppercase text-sm border-r-2 border-white/20">
-                Capacity
-              </th>
-              <th className="p-5 font-black uppercase text-sm border-r-2 border-white/20 text-center">
-                Status
-              </th>
-              <th className="p-5 font-black uppercase text-sm text-center">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y-2 divide-black">
-            {resources.map((res) => {
-              const badge = getTypeBadge(res.type);
-              const BadgeIcon = badge.icon;
-              return (
-                <tr
-                  key={res.id}
-                  className="hover:bg-blue-50 transition-colors group"
-                >
-                  <td className="p-5 border-r-2 border-black">
-                    <div className="font-black text-black text-lg uppercase tracking-tight">
-                      {res.name}
-                    </div>
-                  </td>
-                  <td className="p-5 border-r-2 border-black">
-                    <span className={badge.style}>
-                      <BadgeIcon size={14} strokeWidth={2.5} />
-                      {badge.label}
-                    </span>
-                  </td>
-                  <td className="p-5 border-r-2 border-black">
-                    <div className="flex items-center gap-2 text-black font-bold text-sm uppercase">
-                      <MapPin
-                        size={16}
-                        className="text-[#4f46e5]"
-                        strokeWidth={2.5}
-                      />
-                      {res.location}
-                    </div>
-                  </td>
-                  <td className="p-5 border-r-2 border-black text-black font-black text-lg uppercase">
-                    <div className="flex items-center gap-2">
-                      <Users
-                        size={18}
-                        className="text-[#0d9488]"
-                        strokeWidth={2.5}
-                      />
-                      {res.capacity}{" "}
-                      <span className="text-xs text-gray-500 font-bold">
-                        Seats
-                      </span>
-                    </div>
-                  </td>
-                  <td className="p-5 text-center border-r-2 border-black">
-                    <span
-                      className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-black border-2 border-black uppercase shadow-[2px_2px_0_0_black] ${
-                        res.status === "available"
-                          ? "bg-[#22c55e] text-black"
-                          : "bg-gray-200 text-gray-500"
-                      }`}
+    <div className="overflow-x-auto font-sans">
+      <table className="w-full text-left border-collapse min-w-[850px]">
+        <thead>
+          <tr className="bg-[#F6FAFC] border-b border-[#D6E4EA] text-[#526274] text-xs font-bold uppercase tracking-wider">
+            <th className="p-4">Resource Name</th>
+            <th className="p-4">Category</th>
+            <th className="p-4">Location</th>
+            <th className="p-4">Capacity</th>
+            <th className="p-4 text-center">Status</th>
+            <th className="p-4 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-[#D6E4EA] text-sm">
+          {resources.map((res) => {
+            const badge = getTypeBadge(res.type);
+            const BadgeIcon = badge.icon;
+            return (
+              <tr key={res.id} className="hover:bg-[#F6FAFC] transition-colors">
+                <td className="p-4">
+                  <div className="font-bold text-[#111827] text-sm">
+                    {res.name}
+                  </div>
+                </td>
+
+                <td className="p-4">
+                  <span
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${badge.style}`}
+                  >
+                    <BadgeIcon size={12} />
+                    {badge.label}
+                  </span>
+                </td>
+
+                <td className="p-4 text-xs font-medium text-[#526274]">
+                  <div className="flex items-center gap-1.5">
+                    <MapPin size={13} className="text-[#00ADEF]" />
+                    {res.location || "Main Center"}
+                  </div>
+                </td>
+
+                <td className="p-4 text-xs font-bold text-[#111827]">
+                  <div className="flex items-center gap-1.5">
+                    <Users size={13} className="text-[#E38524]" />
+                    {res.capacity} Seats
+                  </div>
+                </td>
+
+                <td className="p-4 text-center">
+                  <span
+                    className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold ${
+                      res.status === "available"
+                        ? "bg-emerald-50 text-emerald-700 border border-emerald-300"
+                        : "bg-slate-100 text-slate-600 border border-slate-300"
+                    }`}
+                  >
+                    {res.status === "available" ? "Available" : "Maintenance"}
+                  </span>
+                </td>
+
+                <td className="p-4 text-right">
+                  <div className="flex items-center justify-end gap-2">
+                    <button
+                      onClick={() => onEdit && onEdit(res)}
+                      className="p-2 text-[#006F9E] hover:bg-[#EAF8FC] rounded-xl border border-[#D6E4EA] transition"
+                      title="Edit Resource"
                     >
-                      <span
-                        className={`w-2 h-2 border border-black rounded-full ${
-                          res.status === "available"
-                            ? "bg-white"
-                            : "bg-gray-400"
-                        }`}
-                      ></span>
-                      {res.status === "available" ? "Available" : "Maintenance"}
-                    </span>
-                  </td>
-                  <td className="p-5">
-                    <div className="flex gap-2 justify-center">
-                      <button
-                        onClick={() => onEdit && onEdit(res)}
-                        className="p-2 bg-white text-black border-2 border-black shadow-[2px_2px_0_0_black] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1px_1px_0_0_black] transition-all"
-                        title="Edit Resource"
-                      >
-                        <Edit2 size={18} strokeWidth={2.5} />
-                      </button>
-                      <button
-                        onClick={() => onDelete && onDelete(res.id)}
-                        className="p-2 bg-red-500 text-white border-2 border-black shadow-[2px_2px_0_0_black] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1px_1px_0_0_black] transition-all"
-                        title="Delete Resource"
-                      >
-                        <Trash2 size={18} strokeWidth={2.5} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+                      <Edit2 size={16} />
+                    </button>
+                    <button
+                      onClick={() => onDelete && onDelete(res.id)}
+                      className="p-2 text-rose-600 hover:bg-rose-50 rounded-xl border border-rose-200 transition"
+                      title="Delete Resource"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 };

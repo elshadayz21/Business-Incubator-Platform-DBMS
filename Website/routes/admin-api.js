@@ -36,7 +36,12 @@ import {
   getProjectsStats,
   toggleProjectApproved,
 } from "../admin-backend/projects/projects.js";
-
+// for admin inbox
+import {
+  getAllSubmissions,
+  deleteSubmission,
+} from "../admin-backend/inbox/inbox.js";
+//.............
 import {
   getAllFundingRequests,
   getFundingDashboard,
@@ -289,6 +294,36 @@ router.delete(
   asyncHandler(async (req, res) =>
     res.json(await deleteFundingRequest(req.params.id)),
   ),
+);
+
+// Inbox (Contact & Newsletter)
+router.get(
+    "/inbox",
+    asyncHandler(async (req, res) => res.json(await getAllSubmissions())),
+);
+router.delete(
+    "/inbox/:id",
+    asyncHandler(async (req, res) =>
+        res.json(await deleteSubmission(req.params.id)),
+    ),
+);
+
+
+//for announcement
+// Announcements (CMS)
+router.get(
+    "/announcements",
+    asyncHandler(async (req, res) => res.json(await getAllAnnouncements())),
+);
+router.post(
+    "/announcements",
+    asyncHandler(async (req, res) => res.json(await createAnnouncement(req.body))),
+);
+router.delete(
+    "/announcements/:id",
+    asyncHandler(async (req, res) =>
+        res.json(await deleteAnnouncement(req.params.id)),
+    ),
 );
 
 export default router;
