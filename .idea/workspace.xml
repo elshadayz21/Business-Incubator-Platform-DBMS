@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="44dcb0c3-1c97-4a32-9ea5-b2e6d127d529" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/Website/admin-backend/projects/projects.js" beforeDir="false" afterPath="$PROJECT_DIR$/Website/admin-backend/projects/projects.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Website/admin-ui/src/features/admin/projects/project-detailes.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Website/admin-ui/src/features/admin/projects/project-detailes.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Website/routes/admin-api.js" beforeDir="false" afterPath="$PROJECT_DIR$/Website/routes/admin-api.js" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="DEPENDENCY_CHECKER_PROBLEMS_TAB" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "git-widget-placeholder": "fix-ai-mentors"
+  }
+}]]></component>
+  <component name="TaskManager">
+    <servers />
+  </component>
+</project>
