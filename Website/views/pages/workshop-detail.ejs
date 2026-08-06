@@ -1,115 +1,153 @@
 <!DOCTYPE html>
 <html lang="en">
 <%- include('../partials/head') %>
-<body class="bg-[#FFFDF5] flex flex-col min-h-screen">
+
+<body class="bg-surface text-ink flex min-h-screen flex-col font-sans">
     <%- include('../partials/header.ejs') %>
-    <main class="flex-grow">
-        <div class="container mx-auto px-4 py-16">
-            <a href="/v1/workshop" class="text-indigo-700 font-bold hover:underline mb-6 inline-flex items-center gap-2">
-                <i class="fas fa-arrow-left"></i> Back to Workshops
+
+    <main class="flex-1 px-6 py-12 lg:px-10">
+        <div class="mx-auto max-w-6xl">
+            <a href="/v1/workshop" class="inline-flex items-center gap-2 text-sm font-bold text-cyan-dark transition hover:text-orange">
+                <i class="fa-solid fa-arrow-left text-xs" aria-hidden="true"></i>
+                Back to Workshops
             </a>
-            <!-- Workshop Header -->
-            <div class="bg-white border-4 border-black rounded-xl shadow-neo p-8 mb-8">
-                <div class="flex justify-between items-start mb-4">
-                    <div>
-                        <h1 class="text-5xl font-black text-black mb-2 font-display"><%= workshop.title %></h1>
-                        <div class="flex gap-4 items-center flex-wrap">
-                            <span class="bg-indigo-700 text-white font-bold px-4 py-2 uppercase tracking-wider text-sm"><%= workshop.status || 'General' %></span>
-                            <span class="text-lg font-bold text-gray-700">
-                                <i class="fas fa-users text-indigo-700 mr-2"></i><%= workshop.enrolled_count || 0 %>/<%= workshop.capacity || 30 %> Enrolled
-                            </span>
-                            <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold
-                                <%= workshop.status === 'active' ? 'bg-green-100 border-2 border-green-800 text-green-800' : 
-                                    workshop.status === 'completed' ? 'bg-gray-100 border-2 border-gray-800 text-gray-800' : 
-                                    'bg-blue-100 border-2 border-blue-800 text-blue-800' %>">
-                                <span class="w-2 h-2 rounded-full <%= workshop.status === 'active' ? 'bg-green-600' : 'bg-gray-600' %> <%= workshop.status === 'active' ? 'animate-pulse' : '' %>"></span>
-                                <%= workshop.status.charAt(0).toUpperCase() + workshop.status.slice(1) %>
-                            </span>
+
+            <!-- Workshop Hero -->
+            <section class="relative mt-8 overflow-hidden rounded-[28px] bg-gradient-to-br from-cyan via-cyan-mid to-cyan-deep p-8 text-white sm:p-12">
+                <div class="pointer-events-none absolute -left-20 -top-16 h-[340px] w-[460px] rounded-[48%] border-[55px] border-white/10" aria-hidden="true"></div>
+                <div class="pointer-events-none absolute -right-28 bottom-[-200px] h-[420px] w-[520px] rounded-[50%] border-[70px] border-white/10" aria-hidden="true"></div>
+
+                <div class="relative">
+                    <div class="mb-5 flex flex-wrap items-center gap-3">
+                        <% if (workshop.category) { %>
+                            <span class="rounded-full bg-orange px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white"><%= workshop.category %></span>
+                        <% } %>
+                        <span class="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white/80">
+                            <span class="h-2 w-2 rounded-full <%= workshop.status === 'active' ? 'bg-green-400 animate-pulse' : 'bg-white/60' %>" aria-hidden="true"></span>
+                            <%= workshop.status ? workshop.status.charAt(0).toUpperCase() + workshop.status.slice(1) : 'General' %>
+                        </span>
+                    </div>
+
+                    <div class="flex flex-col justify-between gap-8 md:flex-row md:items-start">
+                        <div class="max-w-[680px]">
+                            <h1 class="max-w-[680px] text-4xl font-extrabold leading-[1.05] tracking-[-.045em] sm:text-5xl"><%= workshop.title %></h1>
+                            <p class="mt-5 max-w-[620px] text-base leading-8 text-white/85"><%= workshop.description %></p>
+
+                            <div class="mt-8 flex flex-wrap items-center gap-3">
+                                <% if (user) { %>
+                                    <% if (isEnrolled) { %>
+                                        <button id="enrollBtn" class="inline-flex items-center gap-2 rounded-md bg-red-500 px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 focus:ring-offset-cyan-deep">
+                                            <i class="fa-solid fa-xmark text-xs" aria-hidden="true"></i>
+                                            Unenroll
+                                        </button>
+                                    <% } else { %>
+                                        <button id="enrollBtn" class="inline-flex items-center gap-2 rounded-md bg-orange px-6 py-3 text-sm font-bold text-white shadow-[0_10px_24px_rgba(141,67,10,.24)] transition hover:-translate-y-0.5 hover:bg-orange-dark focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-cyan-deep">
+                                            <i class="fa-solid fa-check-circle text-xs" aria-hidden="true"></i>
+                                            Enroll Now
+                                        </button>
+                                    <% } %>
+                                <% } else { %>
+                                    <a href="<%= routes.loginRoute %>" class="inline-flex items-center gap-2 rounded-md bg-white px-6 py-3 text-sm font-bold text-cyan-dark shadow-sm transition hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-cyan-deep">
+                                        <i class="fa-solid fa-arrow-right-to-bracket text-xs" aria-hidden="true"></i>
+                                        Login to Enroll
+                                    </a>
+                                <% } %>
+                            </div>
                         </div>
                     </div>
-                    <!-- Enroll Button -->
-                    <% if (user) { %>
-                        <% if (isEnrolled) { %>
-                            <button id="enrollBtn" class="bg-red-600 hover:bg-red-700 text-white font-black px-8 py-3 rounded-lg transition duration-200 flex items-center gap-2 shadow-neo border-2 border-red-800">
-                                <i class="fas fa-times-circle"></i> Unenroll
-                            </button>
-                        <% } else { %>
-                            <button id="enrollBtn" class="bg-green-600 hover:bg-green-700 text-white font-black px-8 py-3 rounded-lg transition duration-200 flex items-center gap-2 shadow-neo border-2 border-green-800">
-                                <i class="fas fa-check-circle"></i> Enroll Now
-                            </button>
-                        <% } %>
-                    <% } else { %>
-                        <a href="/auth/login" class="bg-indigo-700 hover:bg-indigo-800 text-white font-black px-8 py-3 rounded-lg transition duration-200 flex items-center gap-2 shadow-neo border-2 border-indigo-900">
-                            <i class="fas fa-sign-in-alt"></i> Login to Enroll
-                        </a>
-                    <% } %>
-                </div>
 
-                <p class="text-xl text-gray-700 mb-6 font-medium leading-relaxed"><%= workshop.description %></p>
+                    <!-- Info tiles -->
+                    <div class="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                        <div class="flex items-center gap-3 rounded-xl bg-white/10 p-4">
+                            <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-orange text-sm"><i class="fa-solid fa-chalkboard-user" aria-hidden="true"></i></span>
+                            <div class="min-w-0">
+                                <p class="text-[10px] font-bold uppercase tracking-wider text-white/70">Instructor</p>
+                                <p class="mt-0.5 truncate text-sm font-bold"><%= workshop.mentor_name %></p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 rounded-xl bg-white/10 p-4">
+                            <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-orange text-sm"><i class="fa-solid fa-location-dot" aria-hidden="true"></i></span>
+                            <div class="min-w-0">
+                                <p class="text-[10px] font-bold uppercase tracking-wider text-white/70">Location</p>
+                                <p class="mt-0.5 truncate text-sm font-bold"><%= workshop.location %></p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 rounded-xl bg-white/10 p-4">
+                            <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-orange text-sm"><i class="fa-regular fa-calendar" aria-hidden="true"></i></span>
+                            <div class="min-w-0">
+                                <p class="text-[10px] font-bold uppercase tracking-wider text-white/70">Date</p>
+                                <p class="mt-0.5 text-sm font-bold">
+                                    <% if (workshop.start_date && workshop.end_date) { %>
+                                        <%= new Date(workshop.start_date).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'}) %>
+                                        to <%= new Date(workshop.end_date).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'}) %>
+                                    <% } else { %>
+                                        TBD
+                                    <% } %>
+                                </p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 rounded-xl bg-white/10 p-4">
+                            <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-orange text-sm"><i class="fa-regular fa-clock" aria-hidden="true"></i></span>
+                            <div class="min-w-0">
+                                <p class="text-[10px] font-bold uppercase tracking-wider text-white/70">Time</p>
+                                <p class="mt-0.5 text-sm font-bold">
+                                    <% if (workshop.start_time && workshop.end_time) { %>
+                                        <%= workshop.start_time %> - <%= workshop.end_time %>
+                                    <% } else { %>
+                                        TBD
+                                    <% } %>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <h3 class="text-sm font-bold text-gray-500 uppercase tracking-widest mb-2">Instructor</h3>
-                        <p class="text-xl font-bold text-black"><%= workshop.mentor_name %></p>
-                    </div>
-                    <div>
-                        <h3 class="text-sm font-bold text-gray-500 uppercase tracking-widest mb-2">Location</h3>
-                        <p class="text-xl font-bold text-black"><i class="fas fa-map-marker-alt text-red-600 mr-2"></i><%= workshop.location %></p>
-                    </div>
-                    <div>
-                        <h3 class="text-sm font-bold text-gray-500 uppercase tracking-widest mb-2">Date</h3>
-                        <p class="text-xl font-bold text-black"><i class="fas fa-calendar text-indigo-700 mr-2"></i>
-                            <% if (workshop.start_date && workshop.end_date) { %>
-                                <%= new Date(workshop.start_date).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'}) %> 
-                                to <%= new Date(workshop.end_date).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'}) %>
-                            <% } else { %>
-                                TBD
-                            <% } %>
-                        </p>
-                    </div>
-                    <div>
-                        <h3 class="text-sm font-bold text-gray-500 uppercase tracking-widest mb-2">Time</h3>
-                        <p class="text-xl font-bold text-black"><i class="fas fa-clock text-amber-600 mr-2"></i>
-                            <% if (workshop.start_time && workshop.end_time) { %>
-                                <%= workshop.start_time %> - <%= workshop.end_time %>
-                            <% } else { %>
-                                TBD
-                            <% } %>
-                        </p>
+                    <!-- Enrollment progress -->
+                    <div class="mt-10 rounded-2xl bg-white p-5 text-ink shadow-[0_18px_40px_rgba(0,63,102,.22)]">
+                        <div class="mb-3 flex items-center justify-between gap-4">
+                            <p class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-widest text-muted">
+                                <i class="fa-solid fa-users text-cyan-dark" aria-hidden="true"></i>
+                                Enrollment progress
+                            </p>
+                            <p class="text-sm font-extrabold text-cyan-dark"><%= workshop.enrolled_count || 0 %> / <%= workshop.capacity || 30 %> seats</p>
+                        </div>
+                        <div class="h-3 overflow-hidden rounded-full bg-surface">
+                            <% let pct = Math.min(100, Math.round(((workshop.enrolled_count || 0) / (workshop.capacity || 30)) * 100)); %>
+                            <div class="h-full rounded-full bg-gradient-to-r from-cyan to-orange transition-all duration-500" style="width: <%= pct %>%;"></div>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </section>
         </div>
     </main>
 
     <%- include('../partials/footer.ejs') %>
-    
+
     <script>
         // Enrollment functionality
         document.getElementById('enrollBtn')?.addEventListener('click', async function(e) {
             e.preventDefault();
-            
+
             const workshopId = '<%= workshop.id %>';
             const isCurrentlyEnrolled = <%= isEnrolled ? 'true' : 'false' %>;
             const method = isCurrentlyEnrolled ? 'DELETE' : 'POST';
-            
+
             try {
                 // Show loading state
                 const btn = this;
                 const originalText = btn.innerHTML;
                 btn.disabled = true;
                 btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-                
+
                 const options = {
                     method: method,
                     headers: {
                         'Content-Type': 'application/json',
                     }
                 };
-                
+
                 const response = await fetch(`/v1/workshop/${workshopId}/attend`, options);
                 const data = await response.json();
-                
+
                 if (response.ok) {
                     // Show success message
                     alert(data.message || 'Success!');
