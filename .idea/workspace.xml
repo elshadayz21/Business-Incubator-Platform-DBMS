@@ -2,12 +2,11 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="4204fed5-5824-41ab-b44f-a262431d1f19" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/Website/admin-backend/announcements/announcements.js" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Website/admin-ui/src/features/admin/Announcements/Announcements.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Website/admin-ui/src/features/admin/Sidebar.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Website/admin-ui/src/features/admin/Sidebar.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Website/admin-ui/src/features/admin/admin.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Website/admin-ui/src/features/admin/admin.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Website/routes/admin-api.js" beforeDir="false" afterPath="$PROJECT_DIR$/Website/routes/admin-api.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Website/routes/public.routes.js" beforeDir="false" afterPath="$PROJECT_DIR$/Website/routes/public.routes.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Website/views/partials/public-announcements.ejs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Website/admin-ui/src/features/admin/Announcements/Announcements.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Website/admin-ui/src/features/admin/Announcements/Announcements.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Website/views/home/home.ejs" beforeDir="false" afterPath="$PROJECT_DIR$/Website/views/home/home.ejs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Website/views/index.ejs" beforeDir="false" afterPath="$PROJECT_DIR$/Website/views/index.ejs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -50,7 +49,7 @@
     &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
     &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;announcements-cms&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;public-announcements&quot;,
     &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
     &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
     &quot;last_opened_file_path&quot;: &quot;C:/Users/pc/OneDrive/Documents/GitHub/Business-Incubator-Platform-DBMS/Website/routes&quot;,
@@ -154,6 +153,7 @@
       <workItem from="1785911308005" duration="11036000" />
       <workItem from="1785923049765" duration="152000" />
       <workItem from="1785946496763" duration="2856000" />
+      <workItem from="1785998990019" duration="3297000" />
     </task>
     <servers />
   </component>

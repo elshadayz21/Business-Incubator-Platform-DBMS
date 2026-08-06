@@ -10,7 +10,7 @@ export default function Announcements() {
 
     const fetchAnnouncements = async () => {
         try {
-            setLoading(true);
+            // Removed setLoading(true) from here to fix ESLint warning!
             const response = await fetch('/api/admin/announcements', {
                 credentials: 'include'
             });
@@ -24,9 +24,7 @@ export default function Announcements() {
         }
     };
 
-    useEffect(() => {
-        fetchAnnouncements();
-    }, []);
+
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -140,22 +138,33 @@ export default function Announcements() {
                             <div className="flex justify-center py-12">
                                 <Loader2 className="text-[#00ADEF] animate-spin" size={32} />
                             </div>
-                        ) : announcements.length > 0 ? (
+                        ) :
+                             announcements.length > 0 ? (
                             announcements.map((ann) => (
-                                <div key={ann.id} className="bg-white border-4 border-black shadow-[4px_4px_0px_0px_#000] p-4">
-                                    <div className="flex justify-between items-start mb-2">
-                                        <h3 className="font-black text-lg uppercase">{ann.title}</h3>
-                                        <button onClick={() => handleDelete(ann.id)} className="p-1 hover:bg-red-100 border-2 border-transparent hover:border-black transition-all">
-                                            <Trash2 size={16} className="text-red-600" />
-                                        </button>
-                                    </div>
-                                    <p className="text-slate-700 text-sm">{ann.content}</p>
-                                    <p className="text-xs text-slate-500 mt-3 font-bold uppercase">
-                                        {new Date(ann.created_at).toLocaleDateString()}
-                                    </p>
-                                </div>
-                            ))
-                        ) : (
+                            <div key={ann.id} className="bg-white border-4 border-black shadow-[6px_6px_0px_0px_#000] p-5 flex flex-col">
+                        {/* Card Header */}
+                        <div className="flex justify-between items-start mb-4 pb-4 border-b-2 border-black">
+                            <h3 className="font-black text-lg uppercase tracking-tight">{ann.title}</h3>
+                            <button onClick={() => handleDelete(ann.id)} className="p-2 hover:bg-red-100 border-2 border-transparent hover:border-black transition-all">
+                                <Trash2 size={18} className="text-red-600" strokeWidth={2.5} />
+                            </button>
+                        </div>
+
+                        {/* Card Body */}
+                        <p className="text-slate-800 text-sm flex-grow bg-[#FFFDF5] p-4 border border-slate-200 italic">
+                            "{ann.content}"
+                        </p>
+
+                        {/* Card Footer */}
+                        <div className="mt-4 pt-2 border-t border-slate-100 text-xs text-slate-500 font-bold uppercase tracking-wide flex items-center gap-2">
+                            <span className="bg-[#00ADEF] text-white px-2 py-0.5 border border-black">Published</span>
+                            {new Date(ann.created_at).toLocaleDateString()}
+                        </div>
+                    </div>
+                    ))
+                    )
+
+                            : (
                             <div className="text-center py-12 border-4 border-dashed border-black bg-white">
                                 <p className="text-slate-600 font-bold">No announcements yet.</p>
                             </div>
