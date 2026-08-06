@@ -35,6 +35,8 @@ import {
   getProjectsByStatus,
   getProjectsStats,
   toggleProjectApproved,
+  getSuggestedMentors,
+  assignMentor,
 } from "../admin-backend/projects/projects.js";
 // for admin inbox
 import {
@@ -325,4 +327,14 @@ router.delete(
     ),
 );
 
+
+// AI Mentor Matching Routes
+router.get(
+    "/projects/:id/suggested-mentors",
+    asyncHandler(async (req, res) => res.json(await getSuggestedMentors(req.params.id)))
+);
+router.post(
+    "/projects/:id/assign-mentor",
+    asyncHandler(async (req, res) => res.json(await assignMentor(req.params.id, req.body.mentorId)))
+);
 export default router;
