@@ -113,22 +113,16 @@
             <p class="text-xs font-extrabold uppercase tracking-[.2em] text-orange">From the center</p>
             <h2 class="mt-2 text-3xl font-extrabold tracking-[-.03em] text-cyan-dark">Latest updates</h2>
           </div>
-            <a class="text-xs font-bold text-cyan-dark underline underline-offset-4 transition hover:text-orange" href="/v1/announcements">View all</a>
+          <a class="text-xs font-bold text-cyan-dark underline underline-offset-4 transition hover:text-orange" href="/v1/about#announcements">View all</a>
         </div>
         <div class="divide-y divide-line border-y border-line">
-          <% if (announcements && announcements.length > 0) { %>
-          <% announcements.forEach(a => { %>
-            <a class="group flex gap-4 py-4" href="/v1/announcements/<%= a.id %>">
-              <span class="w-20 shrink-0 text-xs font-semibold text-muted">
-                <%= new Date(a.published_at).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' }) %>
-              </span>
-              <span class="text-sm font-semibold leading-6 text-ink transition group-hover:text-cyan-dark"><%= a.title %></span>
-              <i class="fa-solid fa-arrow-up-right-from-square ml-auto mt-1 shrink-0 text-xs text-cyan" aria-hidden="true"></i>
-            </a>
-          <% }) %>
-        <% } else { %>
-          <p class="py-6 text-sm text-muted italic">No announcements published yet.</p>
-        <% } %>
+          <a class="group flex gap-4 py-4" href="/v1/about#news-1"><span class="w-20 shrink-0 text-xs font-semibold text-muted">18 Jun 2026</span><span class="text-sm font-semibold leading-6 text-ink transition group-hover:text-cyan-dark">DxValley opens applications for Batch 04 startup and MSME cohorts</span><i class="fa-solid fa-arrow-up-right-from-square ml-auto mt-1 shrink-0 text-xs text-cyan" aria-hidden="true"></i></a>
+          <a class="group flex gap-4 py-4" href="/v1/about#news-2"><span class="w-20 shrink-0 text-xs font-semibold text-muted">09 Jun 2026</span><span class="text-sm font-semibold leading-6 text-ink transition group-hover:text-cyan-dark">What a strong first customer looks like for an early-stage team</span><i class="fa-solid fa-arrow-up-right-from-square ml-auto mt-1 shrink-0 text-xs text-cyan" aria-hidden="true"></i></a>
+          <a class="group flex gap-4 py-4" href="/v1/about#news-3"><span class="w-20 shrink-0 text-xs font-semibold text-muted">28 May 2026</span><span class="text-sm font-semibold leading-6 text-ink transition group-hover:text-cyan-dark">Meet the mentors joining our next founder learning sprint</span><i class="fa-solid fa-arrow-up-right-from-square ml-auto mt-1 shrink-0 text-xs text-cyan" aria-hidden="true"></i></a>
+          <a class="group flex gap-4 py-4" href="/v1/about#news-4"><span class="w-20 shrink-0 text-xs font-semibold text-muted">16 May 2026</span><span class="text-sm font-semibold leading-6 text-ink transition group-hover:text-cyan-dark">Inside the validation room: turning interviews into better decisions</span><i class="fa-solid fa-arrow-up-right-from-square ml-auto mt-1 shrink-0 text-xs text-cyan" aria-hidden="true"></i></a>
+          <a class="group flex gap-4 py-4" href="/v1/about#news-5"><span class="w-20 shrink-0 text-xs font-semibold text-muted">02 May 2026</span><span class="text-sm font-semibold leading-6 text-ink transition group-hover:text-cyan-dark">A field guide to building for Ethiopia’s next million customers</span><i class="fa-solid fa-arrow-up-right-from-square ml-auto mt-1 shrink-0 text-xs text-cyan" aria-hidden="true"></i></a>
+          <a class="group flex gap-4 py-4" href="/v1/about#news-6"><span class="w-20 shrink-0 text-xs font-semibold text-muted">21 Apr 2026</span><span class="text-sm font-semibold leading-6 text-ink transition group-hover:text-cyan-dark">Founders, mentors, and partners gather for the DxValley community day</span><i class="fa-solid fa-arrow-up-right-from-square ml-auto mt-1 shrink-0 text-xs text-cyan" aria-hidden="true"></i></a>
+        </div>
       </div>
     </div>
   </section>

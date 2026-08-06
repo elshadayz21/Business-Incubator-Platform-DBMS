@@ -8,8 +8,11 @@ import {
   Coins,
   Users,
   LogOut,
-  ArrowRight,
-  Megaphone
+  ChevronRight,
+  ShieldCheck,
+  Building2,
+  Inbox as InboxIcon,
+  Megaphone,
 } from "lucide-react";
 
 const Sidebar = ({
@@ -21,12 +24,13 @@ const Sidebar = ({
 
   const navItems = [
     { id: 1, icon: LayoutDashboard, label: "Dashboard", badge: null },
-    { id: 2, icon: BarChart3, label: "Mentors", badge: null },
-    { id: 3, icon: Users, label: "Projects", badge: null },
-    { id: 4, icon: Package, label: "Workshops", badge: null },
-    { id: 5, icon: ShoppingCart, label: "Resources", badge: null },
-    { id: 6, icon: FileText, label: "Funding", badge: "New" },
-    { id: 7, icon: Megaphone, label: "Announcements", badge: null },
+    { id: 2, icon: FolderKanban, label: "Projects", badge: null },
+    { id: 3, icon: BarChart3, label: "Mentors", badge: null },
+    { id: 4, icon: GraduationCap, label: "Workshops", badge: null },
+    { id: 5, icon: Boxes, label: "Resources", badge: null },
+    { id: 6, icon: Coins, label: "Funding", badge: "New" },
+    { id: 7, icon: InboxIcon, label: "Inbox", badge: null },
+    { id: 8, icon: Megaphone, label: "Announcements", badge: "New" },
     ...(userRole?.toLowerCase() === "superadmin"
       ? [{ id: 9, icon: Users, label: "Users", badge: "Admin" }]
       : []),

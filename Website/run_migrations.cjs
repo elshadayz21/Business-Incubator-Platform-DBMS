@@ -11,41 +11,6 @@ const pool = new Pool({
   port: process.env.DB_PORT,
 });
 
-// Error codes for items that already exist in PostgreSQL
-const SKIPPABLE_ERRORS = [
-  "42701", // duplicate_column
-  "42P07", // duplicate_table (relation already exists)
-  "42P06", // duplicate_schema
-  "42P16", // invalid_table_definition
-  "42710", // duplicate_object (e.g. constraint/primary key already exists)
-];
-
-async function executeSqlFile(filePath) {
-  const sql = fs.readFileSync(filePath, "utf-8");
-
-  // Split query into individual SQL statements
-  const statements = sql
-    .split(";")
-    .map((s) => s.trim())
-    .filter(Boolean);
-
-  for (const stmt of statements) {
-    try {
-      await pool.query(stmt);
-    } catch (err) {
-      if (
-        SKIPPABLE_ERRORS.includes(err.code) ||
-        err.message?.toLowerCase().includes("already exists")
-      ) {
-        // Safe to skip if table/constraint/column already exists
-        continue;
-      } else {
-        throw err;
-      }
-    }
-  }
-}
-
 async function run() {
   // 1. Run the base schema
   const schemaPath = path.join(
@@ -56,7 +21,8 @@ async function run() {
     "db.sql",
   );
   console.log("Running base schema:", schemaPath);
-  await executeSqlFile(schemaPath);
+  const schemaSql = fs.readFileSync(schemaPath, "utf-8");
+  await pool.query(schemaSql);
   console.log("✅ Base schema applied");
 
   // 2. Run every migration file in order
@@ -67,18 +33,35 @@ async function run() {
     "database",
     "migrations",
   );
+  const files = fs
+    .readdirSync(migrationsDir)
+    .filter((f) => f.endsWith(".sql"))
+    .sort();
 
-  if (fs.existsSync(migrationsDir)) {
-    const files = fs
-      .readdirSync(migrationsDir)
-      .filter((f) => f.endsWith(".sql"))
-      .sort();
+  for (const file of files) {
+    console.log(`Running migration: ${file}`);
+    const sql = fs.readFileSync(path.join(migrationsDir, file), "utf-8");
+    const statements = sql
+      .split(";")
+      .map((s) => s.trim())
+      .filter(Boolean);
 
-    for (const file of files) {
-      console.log(`Running migration: ${file}`);
-      await executeSqlFile(path.join(migrationsDir, file));
-      console.log(`✅ Executed ${file}`);
+    for (const stmt of statements) {
+      try {
+        await pool.query(stmt);
+      } catch (err) {
+        const skippable = ["42701", "42P07", "42P06", "42P16"];
+        if (
+          skippable.includes(err.code) ||
+          err.message?.includes("already exists")
+        ) {
+          console.log("  ⏭️  Skipped (already exists)");
+        } else {
+          throw err;
+        }
+      }
     }
+    console.log(`✅ Executed ${file}`);
   }
 
   console.log("🎉 All done — schema + migrations applied.");

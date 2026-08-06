@@ -5,8 +5,6 @@ import {
   getWorkshopsPage,
   getWorkshopDetailPage,
   bookMentorSession,
-  getAnnouncementsPage,
-  getAnnouncementDetailPage,
 } from "../../controllers/pages/pages.controller.js";
 import { isAuth } from "../../middleware/auth.middlware.js";
 
@@ -17,7 +15,5 @@ router.get("/mentors", getMentorsPage);
 router.post("/mentors/book", isAuth, bookMentorSession);
 router.get("/workshop", getWorkshopsPage);
 router.get("/workshop/:id", getWorkshopDetailPage);
-router.get("/announcements", getAnnouncementsPage);
-router.get("/announcements/:id", getAnnouncementDetailPage);
 
 export { router as PagesRouter };
