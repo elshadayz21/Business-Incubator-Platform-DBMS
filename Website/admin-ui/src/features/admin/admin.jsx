@@ -7,7 +7,6 @@ import Mentors from "./Mentors/Mentors";
 import Projects from "./projects/projects";
 import Funding from "./Funding/Funding";
 import Users from "./Users/Users";
-import Inbox from "./Inbox/Inbox";
 import Announcements from "./Announcements/Announcements";
 
 const Admin = () => {
@@ -34,6 +33,8 @@ const Admin = () => {
         return <Announcements />;
       case "Users":
         return <Users />;
+      case "Announcements":
+        return <Announcements />;
       default:
         return <Dashboard />;
     }

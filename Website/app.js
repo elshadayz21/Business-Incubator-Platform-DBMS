@@ -11,15 +11,14 @@ import pool from "./config/db.js";
 import { GlobalRouter } from "./routes/index.js";
 import adminApiRoutes from "./routes/admin-api.js";
 import path from "path";
-import { publicRoutes } from "./routes/public.routes.js";
-// import { getSuggestedMentorsController, assignMentorController } from "./controllers/project/project.controller.js";
 import {
-    get404,
-    get500,
-    get429,
+  get404,
+  get500,
+  get429,
 } from "./controllers/error/error.controller.js";
 import { initWorkshopJobs } from "./utils/jobs.js";
 import "./subscribers/subscribers.js";
+import { getPublishedAnnouncements } from "./admin-backend/content/announcements.js";
 
 const app = express();
 const pgSession = connectPgSimpleImport(session);
@@ -47,73 +46,68 @@ import { setupMiddleware } from "./middleware/setup.middleware.js";
 app.use(setupMiddleware);
 
 const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 100,
-    handler: (req, res, next, options) => {
-        get429(req, res);
-    },
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  handler: (req, res, next, options) => {
+    get429(req, res);
+  },
 
-    standardHeaders: true,
-    legacyHeaders: false,
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 app.use(limiter);
 
 app.use(
-    session({
-        store: new pgSession({
-            pool: pool,
-            tableName: "session",
-        }),
-        secret: process.env.SESSION_SECRET || "default-secret",
-        resave: false,
-        saveUninitialized: false,
-        name: "repodoctor.sid",
-        cookie: {
-            secure: process.env.NODE_ENV === "production",
-            httpOnly: true,
-            maxAge: 60 * 60 * 1000,
-            sameSite: "lax",
-        },
-        rolling: true,
+  session({
+    store: new pgSession({
+      pool: pool,
+      tableName: "session",
     }),
+    secret: process.env.SESSION_SECRET || "default-secret",
+    resave: false,
+    saveUninitialized: false,
+    name: "repodoctor.sid",
+    cookie: {
+      secure: process.env.NODE_ENV === "production",
+      httpOnly: true,
+      maxAge: 60 * 60 * 1000,
+      sameSite: "lax",
+    },
+    rolling: true,
+  }),
 );
 
 app.use(flash());
 
 app.use((req, res, next) => {
-    res.locals.routes = {
-        signupRoute: "/v1/auth/signup",
-        loginRoute: "/v1/auth/login",
-        mentors: "/v1/mentors",
-        about: "/v1/about",
-        workshops: "/v1/workshop",
-        projects: "/v1/projects",
-        funding: "/v1/funding",
-    };
-    res.locals.user = req.session?.userId ? { role: req.session.userRole } : null;
-    next();
+  res.locals.routes = {
+    signupRoute: "/v1/auth/signup",
+    loginRoute: "/v1/auth/login",
+    mentors: "/v1/mentors",
+    about: "/v1/about",
+    workshops: "/v1/workshop",
+    projects: "/v1/projects",
+    funding: "/v1/funding",
+  };
+  res.locals.user = req.session?.userId ? { role: req.session.userRole } : null;
+  next();
 });
 
-app.get("/", (req, res) => {
-    res.render("index");
+app.get("/", async (req, res, next) => {
+  try {
+    const announcements = await getPublishedAnnouncements(6);
+    res.render("index", { announcements });
+  } catch (err) {
+    next(err);
+  }
 });
 
 app.use("/v1", GlobalRouter);
 app.use("/api/admin", adminApiRoutes);
-app.use("/api/public", publicRoutes);
 
-app.get(/^\/admin(\/.*)?$/, (req, res) => {
-    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-    res.sendFile(path.resolve("public/admin/index.html"));
+app.get("/admin{/*path}", (req, res) => {
+  res.sendFile(path.resolve("public/admin/index.html"));
 });
-//for contact us
-app.get("/contact", (req, res) => {
-    res.render("contact");
-});
-
-// Attach the ML routes directly!
-// app.get("/api/admin/projects/:id/suggested-mentors", getSuggestedMentorsController);
-// app.post("/api/admin/projects/:id/assign-mentor", assignMentorController);
 
 app.use(get404);
 app.use(get500);

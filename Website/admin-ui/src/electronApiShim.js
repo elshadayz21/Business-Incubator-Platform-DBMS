@@ -57,6 +57,28 @@ window.electron = {
         url = "/api/admin/reports/feedback";
         break;
 
+        // Announcements
+      case 'announcements:get-all':
+        url = '/api/admin/announcements';
+        break;
+      case 'announcements:get-by-id':
+        url = `/api/admin/announcements/${args[0]}`;
+        break;
+      case 'announcements:create':
+        url = '/api/admin/announcements';
+        options.method = 'POST';
+        options.body = JSON.stringify(args[0]);
+        break;
+      case 'announcements:update':
+        url = `/api/admin/announcements/${args[0]}`;
+        options.method = 'PUT';
+        options.body = JSON.stringify(args[1]);
+        break;
+      case 'announcements:delete':
+        url = `/api/admin/announcements/${args[0]}`;
+        options.method = 'DELETE';
+        break;
+
       // Resources
       case "resources:get-all":
         url = "/api/admin/resources";

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+  <%- include('../partials/head') %>
+  <body class="flex min-h-screen flex-col bg-white font-sans text-ink">
+    <%- include('../partials/header') %>
+
+    <main class="flex-grow">
+      <section class="bg-surface">
+        <div class="mx-auto max-w-3xl px-6 py-16 lg:px-10">
+          <a href="/v1/announcements" class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-cyan-dark hover:text-orange">
+            <i class="fa-solid fa-arrow-left text-xs" aria-hidden="true"></i>
+            Back to Announcements
+          </a>
+
+          <p class="mt-8 text-xs font-bold uppercase tracking-wider text-muted">
+            <%= new Date(announcement.published_at).toLocaleDateString('en-US', { day: '2-digit', month: 'long', year: 'numeric' }) %>
+          </p>
+          <h1 class="mt-2 text-4xl font-extrabold leading-tight tracking-[-.03em] text-ink sm:text-5xl">
+            <%= announcement.title %>
+          </h1>
+
+          <% if (announcement.cover_image) { %>
+            <img src="<%= announcement.cover_image %>" alt="<%= announcement.title %>" class="mt-10 w-full rounded-2xl border border-line object-cover" />
+          <% } %>
+
+          <div class="mt-10 whitespace-pre-wrap text-lg leading-8 text-ink/90">
+            <%= announcement.body %>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <%- include('../partials/footer') %>
+  </body>
+</html>

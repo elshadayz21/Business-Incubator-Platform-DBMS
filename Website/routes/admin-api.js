@@ -57,12 +57,13 @@ import {
   updateUserRole,
   setUserStatus,
 } from "../admin-backend/users/users.js";
-//for Announcements
 import {
   getAllAnnouncements,
+  getAnnouncement,
   createAnnouncement,
+  updateAnnouncement,
   deleteAnnouncement,
-} from "../admin-backend/announcements/announcements.js";
+} from "../admin-backend/content/announcements.js";
 
 const router = Router();
 
@@ -115,7 +116,7 @@ router.put(
   asyncHandler(async (req, res) =>
     res.json(await setUserStatus(req.params.id, req.body.status)),
   ),
-);  
+);
 
 // Workshops
 router.get(
@@ -326,3 +327,35 @@ router.delete(
 );
 
 export default router;
+
+// Announcements
+router.get(
+  "/announcements",
+  asyncHandler(async (req, res) => res.json(await getAllAnnouncements())),
+);
+router.get(
+  "/announcements/:id",
+  asyncHandler(async (req, res) =>
+    res.json(await getAnnouncement(req.params.id)),
+  ),
+);
+router.post(
+  "/announcements",
+  asyncHandler(async (req, res) =>
+    res.json(
+      await createAnnouncement({ ...req.body, author_id: req.session.userId }),
+    ),
+  ),
+);
+router.put(
+  "/announcements/:id",
+  asyncHandler(async (req, res) =>
+    res.json(await updateAnnouncement(req.params.id, req.body)),
+  ),
+);
+router.delete(
+  "/announcements/:id",
+  asyncHandler(async (req, res) =>
+    res.json(await deleteAnnouncement(req.params.id)),
+  ),
+);
