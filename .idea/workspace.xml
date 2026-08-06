@@ -2,9 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="44dcb0c3-1c97-4a32-9ea5-b2e6d127d529" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/Website/admin-backend/projects/projects.js" beforeDir="false" afterPath="$PROJECT_DIR$/Website/admin-backend/projects/projects.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Website/admin-ui/src/features/admin/projects/project-detailes.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Website/admin-ui/src/features/admin/projects/project-detailes.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Website/routes/admin-api.js" beforeDir="false" afterPath="$PROJECT_DIR$/Website/routes/admin-api.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Website/admin-ui/src/features/admin/Announcements/Announcements.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Website/admin-ui/src/features/admin/Announcements/Announcements.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Website/admin-ui/src/features/admin/inbox/inbox.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Website/admin-ui/src/features/admin/inbox/inbox.jsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -19,7 +19,7 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
-    "git-widget-placeholder": "fix-ai-mentors"
+    "git-widget-placeholder": "update-inbox-ui"
   }
 }]]></component>
   <component name="TaskManager">
