@@ -1,14 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="4204fed5-5824-41ab-b44f-a262431d1f19" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/Website/admin-backend/announcements/announcements.js" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Website/admin-ui/src/features/admin/Announcements/Announcements.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Website/admin-ui/src/features/admin/Sidebar.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Website/admin-ui/src/features/admin/Sidebar.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Website/admin-ui/src/features/admin/admin.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Website/admin-ui/src/features/admin/admin.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Website/routes/admin-api.js" beforeDir="false" afterPath="$PROJECT_DIR$/Website/routes/admin-api.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Website/routes/public.routes.js" beforeDir="false" afterPath="$PROJECT_DIR$/Website/routes/public.routes.js" afterDir="false" />
-    </list>
+    <list default="true" id="4204fed5-5824-41ab-b44f-a262431d1f19" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
