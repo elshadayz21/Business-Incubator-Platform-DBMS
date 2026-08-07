@@ -1,3 +1,4 @@
+import ExcelJS from "exceljs";
 import { Router } from "express";
 import {
   getAllWorkshops,
@@ -344,4 +345,79 @@ router.post(
     "/projects/:id/assign-mentor",
     asyncHandler(async (req, res) => res.json(await assignMentor(req.params.id, req.body.mentorId)))
 );
+
+// Safe Multi-Tab Excel Export Route
+router.get(
+    "/reports/export/dashboard",
+    asyncHandler(async (req, res) => {
+      try {
+        // 1. Fetch data
+        const projects = await getAllProjects();
+        const mentors = await getAllMentors();
+
+        // Fetch funding and inbox safely
+        const fundingRaw = await getAllFundingRequests("");
+        const funding = Array.isArray(fundingRaw) ? fundingRaw : (fundingRaw?.data || []);
+
+        const inboxRaw = await getAllSubmissions();
+        const inbox = Array.isArray(inboxRaw) ? inboxRaw : [];
+
+        // 2. Create a new Excel workbook
+        const workbook = new ExcelJS.Workbook();
+
+        // Helper function to build sheets safely
+        const buildSheet = (sheetName, data, columns) => {
+          const ws = workbook.addWorksheet(sheetName);
+          ws.columns = columns;
+          ws.getRow(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF00ADEF" } };
+          ws.getRow(1).font = { bold: true, color: { argb: "FFFFFFFF" } };
+
+          if (Array.isArray(data)) {
+            data.forEach((row) => ws.addRow(row));
+          }
+        };
+
+        // 3. Build Tabs
+        buildSheet("Projects", projects, [
+          { header: "ID", key: "id", width: 5 },
+          { header: "Name", key: "name", width: 30 },
+          { header: "Domain", key: "domain", width: 20 },
+          { header: "Stage", key: "stage", width: 15 },
+        ]);
+
+        buildSheet("Mentors", mentors, [
+          { header: "ID", key: "id", width: 5 },
+          { header: "Name", key: "name", width: 30 },
+          { header: "Expertise", key: "expertise", width: 25 },
+          { header: "Email", key: "email", width: 30 },
+        ]);
+
+        buildSheet("Funding", funding, [
+          { header: "ID", key: "id", width: 5 },
+          { header: "Project ID", key: "project_id", width: 10 },
+          { header: "Amount", key: "amount", width: 15 },
+          { header: "Status", key: "status", width: 15 },
+        ]);
+
+        buildSheet("Inbox Messages", inbox, [
+          { header: "ID", key: "id", width: 5 },
+          { header: "Type", key: "type", width: 15 },
+          { header: "Name", key: "name", width: 25 },
+          { header: "Email", key: "email", width: 30 },
+          { header: "Message", key: "message", width: 50 },
+        ]);
+
+        // 4. Send the file
+        res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        res.setHeader("Content-Disposition", "attachment; filename=dxvalley_dashboard_report.xlsx");
+        await workbook.xlsx.write(res);
+        res.end();
+      } catch (error) {
+        console.error("Error exporting to Excel:", error);
+        res.status(500).json({ message: "Failed to generate Excel file." });
+      }
+    })
+);
+
 export default router;
+
