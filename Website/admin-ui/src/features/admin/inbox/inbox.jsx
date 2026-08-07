@@ -1,5 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { Mail, Trash2, Inbox as InboxIcon, Loader2, User, Tag } from "lucide-react";
+import {
+  Mail,
+  Trash2,
+  Inbox as InboxIcon,
+  Loader2,
+  User,
+  Sparkles,
+  Megaphone,
+  Users,
+} from "lucide-react";
 
 export default function Inbox() {
     const [messages, setMessages] = useState([]);
@@ -37,96 +46,135 @@ export default function Inbox() {
         }
     };
 
+    const contactCount = messages.filter((m) => m.type === 'contact').length;
+    const newsletterCount = messages.filter((m) => m.type !== 'contact').length;
+
     return (
-        <div className="flex-1 overflow-y-auto bg-[#FFFDF5] h-screen font-sans scrollbar-hide text-black">
-            <style jsx global>{`
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-      `}</style>
-
-            <div className="p-6 lg:p-10 max-w-[1920px] mx-auto">
-
-                {/* Header Section */}
-                <div className="mb-12">
-          <span className="bg-[#00ADEF] text-white px-3 py-1 font-bold text-sm uppercase tracking-wider mb-2 inline-block transform -rotate-1 border-2 border-black">
-            Communications
-          </span>
-                    <h1 className="text-5xl md:text-6xl font-black text-black mb-2 uppercase tracking-tighter">
-                        Admin{" "}
-                        <span className="bg-[#E38524] text-black px-2 border-4 border-black shadow-[4px_4px_0px_0px_#000] italic inline-block transform rotate-1">
-              Inbox
-            </span>
+        <div className="space-y-6">
+            {/* Header Banner */}
+            <div className="bg-gradient-to-r from-[#00ADEF] via-[#078CC8] to-[#0878B4] rounded-2xl p-6 sm:p-8 text-white shadow-sm relative overflow-hidden">
+                <div className="pointer-events-none absolute -right-16 -top-16 w-64 h-64 rounded-full border-30 border-white/10" />
+                <div className="relative z-10 space-y-3">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 text-xs font-bold uppercase tracking-wider text-white">
+                        <Sparkles size={12} className="text-[#E38524]" />
+                        DxValley Incubation Center • Communications
+                    </div>
+                    <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight font-['Space_Grotesk']">
+                        Admin Inbox
                     </h1>
-                    <p className="text-xl text-slate-600 font-medium border-l-4 border-[#00ADEF] pl-4 italic mt-4">
-                        View messages and newsletter sign-ups from the public site.
+                    <p className="text-sm text-white/85 max-w-2xl leading-relaxed">
+                        View messages and newsletter sign-ups submitted through the public site.
                     </p>
                 </div>
+            </div>
 
-                {/* Content Area */}
-                {loading ? (
-                    <div className="flex flex-col items-center justify-center py-24 bg-white border-4 border-black border-dashed">
-                        <Loader2 className="text-[#00ADEF] animate-spin mb-4" size={40} strokeWidth={2} />
-                        <p className="text-black font-black text-xl uppercase">Loading messages...</p>
+            {/* Summary Strip */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-2xl">
+                <div className="bg-white border border-[#D6E4EA] rounded-2xl p-4 flex items-center gap-4 shadow-xs">
+                    <div className="w-11 h-11 rounded-xl flex items-center justify-center bg-[#EAF8FC] text-[#006F9E] border border-[#00ADEF]/20">
+                        <Mail size={20} />
                     </div>
-                ) : messages.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {messages.map((msg) => (
-                            <div key={msg.id} className="bg-white border-4 border-black shadow-[6px_6px_0px_0px_#000] p-6 flex flex-col">
-
-                                {/* Card Header */}
-                                <div className="flex justify-between items-start mb-4 pb-4 border-b-2 border-black">
-                                    <div className={`px-3 py-1 text-xs font-black uppercase border-2 border-black ${msg.type === 'contact' ? 'bg-[#00ADEF] text-white' : 'bg-[#E38524] text-black'}`}>
-                                        {msg.type === 'contact' ? 'Contact Form' : 'Newsletter'}
-                                    </div>
-                                    <button
-                                        onClick={() => handleDelete(msg.id)}
-                                        className="p-2 hover:bg-red-100 border-2 border-transparent hover:border-black transition-all"
-                                    >
-                                        <Trash2 size={18} className="text-red-600" strokeWidth={2.5} />
-                                    </button>
-                                </div>
-
-                                {/* Card Body */}
-                                {msg.type === 'contact' ? (
-                                    <div className="flex-grow flex flex-col gap-3">
-                                        <div className="flex items-center gap-2 font-bold text-lg">
-                                            <User size={18} className="text-[#00ADEF]" strokeWidth={2.5} />
-                                            {msg.name || 'Unknown'}
-                                        </div>
-                                        <a href={`mailto:${msg.email}`} className="text-sm text-slate-600 underline break-all">
-                                            {msg.email}
-                                        </a>
-                                        <p className="mt-2 text-slate-800 bg-[#FFFDF5] p-4 border border-slate-200 text-sm flex-grow">
-                                            "{msg.message}"
-                                        </p>
-                                    </div>
-                                ) : (
-                                    <div className="flex-grow flex flex-col justify-center items-center text-center gap-2">
-                                        <Mail size={32} className="text-[#E38524]" strokeWidth={2.5} />
-                                        <p className="font-bold text-lg break-all">{msg.email}</p>
-                                        <p className="text-xs text-slate-500">Wants to subscribe to updates</p>
-                                    </div>
-                                )}
-
-                                {/* Card Footer */}
-                                <div className="mt-4 pt-2 border-t border-slate-100 text-xs text-slate-500 font-bold uppercase tracking-wide">
-                                    Received: {new Date(msg.created_at).toLocaleDateString()}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                ) : (
-                    <div className="flex flex-col items-center justify-center py-24 bg-white border-4 border-black border-dashed text-center">
-                        <div className="p-6 bg-gray-100 border-2 border-black rounded-full mb-6">
-                            <InboxIcon className="text-black" size={48} strokeWidth={1.5} />
-                        </div>
-                        <h2 className="text-2xl font-black text-black uppercase mb-2">Inbox is empty</h2>
-                        <p className="text-gray-600 text-lg font-medium max-w-sm">
-                            When visitors submit the contact or newsletter forms, they will appear here.
+                    <div>
+                        <p className="text-2xl font-extrabold text-[#111827] font-['Space_Grotesk']">
+                            {contactCount}
+                        </p>
+                        <p className="text-xs font-bold uppercase tracking-wider text-[#526274]">
+                            Contact Messages
                         </p>
                     </div>
-                )}
+                </div>
+                <div className="bg-white border border-[#D6E4EA] rounded-2xl p-4 flex items-center gap-4 shadow-xs">
+                    <div className="w-11 h-11 rounded-xl flex items-center justify-center bg-[#FFF1E3] text-[#E38524] border border-[#E38524]/20">
+                        <Users size={20} />
+                    </div>
+                    <div>
+                        <p className="text-2xl font-extrabold text-[#111827] font-['Space_Grotesk']">
+                            {newsletterCount}
+                        </p>
+                        <p className="text-xs font-bold uppercase tracking-wider text-[#526274]">
+                            Newsletter Sign-ups
+                        </p>
+                    </div>
+                </div>
             </div>
+
+            {/* Content Area */}
+            {loading ? (
+                <div className="flex flex-col items-center justify-center py-24 bg-white border border-[#D6E4EA] rounded-2xl shadow-xs">
+                    <Loader2 className="text-[#00ADEF] animate-spin mb-4" size={40} strokeWidth={2} />
+                    <p className="text-[#111827] font-bold text-lg font-['Space_Grotesk']">Loading messages...</p>
+                </div>
+            ) : messages.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    {messages.map((msg) => (
+                        <div key={msg.id} className="bg-white border border-[#D6E4EA] rounded-2xl p-5 shadow-xs hover:shadow-md transition-all flex flex-col">
+
+                            {/* Card Header */}
+                            <div className="flex justify-between items-start mb-4 pb-3 border-b border-[#D6E4EA]">
+                                <span className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full ${
+                                    msg.type === 'contact'
+                                        ? 'bg-[#EAF8FC] text-[#006F9E] border border-[#00ADEF]/20'
+                                        : 'bg-[#FFF1E3] text-[#E38524] border border-[#E38524]/20'
+                                }`}>
+                                    {msg.type === 'contact' ? (
+                                        <><Mail size={12} /> Contact Form</>
+                                    ) : (
+                                        <><Megaphone size={12} /> Newsletter</>
+                                    )}
+                                </span>
+                                <button
+                                    onClick={() => handleDelete(msg.id)}
+                                    title="Delete message"
+                                    className="p-2 rounded-lg text-[#526274] hover:bg-rose-50 hover:text-rose-600 transition-all"
+                                >
+                                    <Trash2 size={18} strokeWidth={2.5} />
+                                </button>
+                            </div>
+
+                            {/* Card Body */}
+                            {msg.type === 'contact' ? (
+                                <div className="flex-grow flex flex-col gap-3">
+                                    <div className="flex items-center gap-2 font-bold text-lg text-[#111827]">
+                                        <div className="w-8 h-8 rounded-full bg-[#EAF8FC] text-[#006F9E] flex items-center justify-center shrink-0">
+                                            <User size={16} strokeWidth={2.5} />
+                                        </div>
+                                        {msg.name || 'Unknown'}
+                                    </div>
+                                    <a href={`mailto:${msg.email}`} className="text-sm text-[#006F9E] hover:underline break-all">
+                                        {msg.email}
+                                    </a>
+                                    <p className="mt-2 text-sm text-[#526274] bg-[#F6FAFC] border border-[#D6E4EA] rounded-xl p-4 flex-grow leading-relaxed">
+                                        "{msg.message}"
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="flex-grow flex flex-col justify-center items-center text-center gap-2 py-4">
+                                    <div className="w-14 h-14 rounded-2xl bg-[#FFF1E3] text-[#E38524] flex items-center justify-center mb-1">
+                                        <Mail size={26} strokeWidth={2.5} />
+                                    </div>
+                                    <p className="font-bold text-lg text-[#111827] break-all">{msg.email}</p>
+                                    <p className="text-xs text-[#526274]">Wants to subscribe to updates</p>
+                                </div>
+                            )}
+
+                            {/* Card Footer */}
+                            <div className="mt-4 pt-3 border-t border-[#D6E4EA] text-[11px] text-[#526274] font-bold uppercase tracking-wide">
+                                Received: {new Date(msg.created_at).toLocaleDateString()}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <div className="flex flex-col items-center justify-center py-24 bg-white border border-[#D6E4EA] rounded-2xl shadow-xs text-center">
+                    <div className="w-16 h-16 rounded-2xl bg-[#EAF8FC] border border-[#00ADEF]/20 flex items-center justify-center mb-5">
+                        <InboxIcon className="text-[#00ADEF]" size={32} strokeWidth={1.5} />
+                    </div>
+                    <h2 className="text-2xl font-bold text-[#111827] font-['Space_Grotesk'] mb-2">Inbox is empty</h2>
+                    <p className="text-[#526274] font-medium max-w-sm">
+                        When visitors submit the contact or newsletter forms, they will appear here.
+                    </p>
+                </div>
+            )}
         </div>
     );
 }
