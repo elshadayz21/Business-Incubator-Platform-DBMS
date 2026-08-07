@@ -207,6 +207,7 @@ export const login = async (req, res, next) => {
       name: user.name,
       email: user.email,
       role: user.role,
+      profile_image: user.profile_image || null,
     });
 
     res.send(`
