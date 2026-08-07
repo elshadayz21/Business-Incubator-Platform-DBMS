@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   MapPin,
@@ -11,7 +11,9 @@ import {
   Save,
 } from "lucide-react";
 
-const AddResourceForm = ({ onClose, onSuccess }) => {
+const AddResourceForm = ({ onClose, onSuccess, initialData }) => {
+  const isEditing = Boolean(initialData);
+
   const [formData, setFormData] = useState({
     name: "",
     type: "workspace",
@@ -21,6 +23,17 @@ const AddResourceForm = ({ onClose, onSuccess }) => {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        name: initialData.name || "",
+        type: initialData.type || "workspace",
+        capacity: initialData.capacity || 1,
+        location: initialData.location || "",
+      });
+    }
+  }, [initialData]);
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -32,17 +45,25 @@ const AddResourceForm = ({ onClose, onSuccess }) => {
     setLoading(true);
     setError(null);
 
-    const payload = {
-      ...formData,
-      capacity: Number(formData.capacity),
-    };
-
     try {
-      await window.electron.invoke("resources:add", payload);
+      const payload = {
+        ...formData,
+        capacity: Number(formData.capacity),
+      };
+      if (isEditing) {
+        await window.electron.invoke("resources:update", {
+          id: initialData.id,
+          data: payload,
+        });
+      } else {
+        await window.electron.invoke("resources:add", payload);
+      }
       onSuccess();
     } catch (err) {
-      console.error("Failed to add resource", err);
-      setError("Failed to add resource. Please check inputs.");
+      console.error("Failed to save resource", err);
+      setError(
+        isEditing ? "Failed to update resource. Please check inputs." : "Failed to add resource. Please check inputs.",
+      );
     } finally {
       setLoading(false);
     }
@@ -145,7 +166,7 @@ const AddResourceForm = ({ onClose, onSuccess }) => {
           className="px-6 py-2.5 rounded-xl bg-[#E38524] text-white text-xs font-extrabold uppercase shadow-xs hover:bg-[#C97019] disabled:opacity-50 transition flex items-center gap-2"
         >
           {loading ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-          <span>Save Asset</span>
+          <span>{isEditing ? "Update Asset" : "Save Asset"}</span>
         </button>
       </div>
     </form>

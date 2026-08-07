@@ -15,9 +15,10 @@ import {
 import {
   getAllResources,
   addResource,
+  updateResource,
+  deleteResource,
   getPendingBookings,
   updateBookingStatus,
-  deleteResource,
   getResourceStats,
 } from "../admin-backend/resources/resources.js";
 
@@ -181,6 +182,12 @@ router.get(
 router.post(
   "/resources",
   asyncHandler(async (req, res) => res.json(await addResource(req.body))),
+);
+router.put(
+  "/resources/:id",
+  asyncHandler(async (req, res) =>
+    res.json(await updateResource(req.params.id, req.body.data)),
+  ),
 );
 router.delete(
   "/resources/:id",

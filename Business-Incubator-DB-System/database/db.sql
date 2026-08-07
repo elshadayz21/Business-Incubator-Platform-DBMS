@@ -52,7 +52,11 @@ CREATE TABLE "resources" (
   "name" varchar(255),
   "type" varchar(50),
   "description" text,
-  "created_at" timestamp DEFAULT (now())
+  "capacity" int DEFAULT 1,
+  "location" varchar(255) DEFAULT 'Main Center',
+  "status" varchar(50) DEFAULT 'available',
+  "created_at" timestamp DEFAULT (now()),
+  "updated_at" timestamp DEFAULT (now())
 );
 
 CREATE TABLE "project_resources" (

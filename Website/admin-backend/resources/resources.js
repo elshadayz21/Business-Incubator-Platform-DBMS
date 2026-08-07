@@ -45,22 +45,66 @@ export const addResource = async (data) => {
   }
 };
 
-// 3. Delete Resource
-export const deleteResource = async (id) => {
+// 3. Update Resource
+export const updateResource = async (id, data) => {
+  const { name, type, capacity, location } = data;
+
+  if (!name || !location) {
+    throw new Error("Resource name and location are required.");
+  }
+  if (!VALID_RESOURCE_TYPES.includes(type)) {
+    throw new Error(
+      `Invalid resource type: ${type}. Allowed: ${VALID_RESOURCE_TYPES.join(", ")}`,
+    );
+  }
+  if (!Number.isInteger(Number(capacity)) || Number(capacity) <= 0) {
+    throw new Error("Capacity must be a positive integer.");
+  }
+
   try {
     const res = await pool.query(
+      `UPDATE resources 
+       SET name = $1, type = $2, capacity = $3, location = $4, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $5 RETURNING *`,
+      [name, type, capacity, location, id],
+    );
+    if (res.rows.length === 0) {
+      throw new Error("Resource not found to update.");
+    }
+    return res.rows[0];
+  } catch (error) {
+    console.error(`Error in updateResource (${id}):`, error);
+    throw new Error("Failed to update resource.");
+  }
+};
+
+// 4. Delete Resource
+export const deleteResource = async (id) => {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    await client.query(
+      "DELETE FROM project_resources WHERE resource_id = $1",
+      [id],
+    );
+
+    const res = await client.query(
       "DELETE FROM resources WHERE id = $1 RETURNING id",
       [id],
     );
     if (res.rows.length === 0) {
       throw new Error("Resource not found to delete.");
     }
+
+    await client.query("COMMIT");
     return { success: true, id };
   } catch (error) {
+    await client.query("ROLLBACK");
     console.error(`Error in deleteResource (${id}):`, error);
-    throw new Error(
-      "Failed to delete resource. It might be linked to active bookings.",
-    );
+    throw new Error("Failed to delete resource.");
+  } finally {
+    client.release();
   }
 };
 

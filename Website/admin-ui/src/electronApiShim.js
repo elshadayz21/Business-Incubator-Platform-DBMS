@@ -70,6 +70,11 @@ window.electron = {
         url = `/api/admin/resources/${args[0]}`;
         options.method = "DELETE";
         break;
+      case "resources:update":
+        url = `/api/admin/resources/${args[0].id}`;
+        options.method = "PUT";
+        options.body = JSON.stringify(args[0].data);
+        break;
       case "resources:get-stats":
         url = "/api/admin/resources/stats";
         break;

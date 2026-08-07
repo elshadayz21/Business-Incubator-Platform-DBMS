@@ -10,7 +10,9 @@ import {
   Save,
 } from "lucide-react";
 
-const AddMentorForm = ({ onSuccess, onClose }) => {
+const AddMentorForm = ({ onSuccess, onClose, initialData }) => {
+  const isEditing = Boolean(initialData);
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -28,6 +30,19 @@ const AddMentorForm = ({ onSuccess, onClose }) => {
   const [workshops, setWorkshops] = useState([]);
 
   useEffect(() => {
+    if (initialData) {
+      setFormData({
+        name: initialData.name || "",
+        email: initialData.email || "",
+        expertise: initialData.expertise || "",
+        phone: initialData.phone || "",
+        status: initialData.status || "active",
+        assignedProject: "",
+        assignedWorkshop: "",
+      });
+      return;
+    }
+
     const fetchData = async () => {
       try {
         setProjects([
@@ -43,7 +58,7 @@ const AddMentorForm = ({ onSuccess, onClose }) => {
       }
     };
     fetchData();
-  }, []);
+  }, [initialData]);
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -62,11 +77,20 @@ const AddMentorForm = ({ onSuccess, onClose }) => {
     setError(null);
 
     try {
-      await window.electron.invoke("mentors:add", formData);
+      if (isEditing) {
+        await window.electron.invoke("mentors:update", {
+          id: initialData.id,
+          data: formData,
+        });
+      } else {
+        await window.electron.invoke("mentors:add", formData);
+      }
       onSuccess();
     } catch (err) {
       console.error(err);
-      setError("Failed to add mentor. Please try again.");
+      setError(
+        isEditing ? "Failed to update mentor. Please try again." : "Failed to add mentor. Please try again.",
+      );
     } finally {
       setLoading(false);
     }
@@ -194,7 +218,7 @@ const AddMentorForm = ({ onSuccess, onClose }) => {
           className="px-6 py-2.5 rounded-xl bg-[#E38524] text-white text-xs font-extrabold uppercase shadow-xs hover:bg-[#C97019] disabled:opacity-50 transition flex items-center gap-2"
         >
           {loading ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-          <span>Create Mentor</span>
+          <span>{isEditing ? "Update Mentor" : "Create Mentor"}</span>
         </button>
       </div>
     </form>
