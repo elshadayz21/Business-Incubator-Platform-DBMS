@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { Megaphone, Trash2, Loader2, Send, PlusCircle } from "lucide-react";
+import {
+  Megaphone,
+  Trash2,
+  Loader2,
+  Send,
+  PlusCircle,
+  Sparkles,
+  CalendarDays,
+} from "lucide-react";
 
 export default function Announcements() {
     const [announcements, setAnnouncements] = useState([]);
@@ -63,106 +71,135 @@ export default function Announcements() {
     };
 
     return (
-        <div className="flex-1 overflow-y-auto bg-[#FFFDF5] h-screen font-sans scrollbar-hide text-black">
-            <style jsx global>{`
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-      `}</style>
-
-            <div className="p-6 lg:p-10 max-w-[1920px] mx-auto">
-
-                {/* Header Section */}
-                <div className="mb-12">
-          <span className="bg-[#00ADEF] text-white px-3 py-1 font-bold text-sm uppercase tracking-wider mb-2 inline-block transform -rotate-1 border-2 border-black">
-            Content Management
-          </span>
-                    <h1 className="text-5xl md:text-6xl font-black text-black mb-2 uppercase tracking-tighter">
-                        Announcements{" "}
-                        <span className="bg-[#E38524] text-black px-2 border-4 border-black shadow-[4px_4px_0px_0px_#000] italic inline-block transform rotate-1">
-              CMS
-            </span>
+        <div className="space-y-6">
+            {/* Header Banner */}
+            <div className="bg-gradient-to-r from-[#00ADEF] via-[#078CC8] to-[#0878B4] rounded-2xl p-6 sm:p-8 text-white shadow-sm relative overflow-hidden">
+                <div className="pointer-events-none absolute -right-16 -top-16 w-64 h-64 rounded-full border-30 border-white/10" />
+                <div className="relative z-10 space-y-3">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 text-xs font-bold uppercase tracking-wider text-white">
+                        <Sparkles size={12} className="text-[#E38524]" />
+                        DxValley Incubation Center • Content Management
+                    </div>
+                    <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight font-['Space_Grotesk']">
+                        Announcements
                     </h1>
-                    <p className="text-xl text-slate-600 font-medium border-l-4 border-[#00ADEF] pl-4 italic mt-4">
+                    <p className="text-sm text-white/85 max-w-2xl leading-relaxed">
                         Publish news and updates to the public Entrepreneur homepage.
                     </p>
                 </div>
+            </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-                    {/* Create Form */}
-                    <div className="bg-white border-4 border-black shadow-[6px_6px_0px_0px_#000] p-6">
-                        <h2 className="text-2xl font-black uppercase mb-6 flex items-center gap-2">
-                            <PlusCircle size={24} className="text-[#E38524]" strokeWidth={2.5} />
+                {/* Create Form */}
+                <div className="bg-white border border-[#D6E4EA] rounded-2xl p-6 shadow-xs h-fit">
+                    <div className="mb-5 pb-4 border-b border-[#D6E4EA]">
+                        <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#006F9E] block mb-1">
+                            Create
+                        </span>
+                        <h2 className="text-xl font-bold text-[#111827] font-['Space_Grotesk'] flex items-center gap-2">
+                            <PlusCircle size={20} className="text-[#E38524]" strokeWidth={2.5} />
                             New Announcement
                         </h2>
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-bold mb-2">Title</label>
-                                <input
-                                    type="text"
-                                    value={title}
-                                    onChange={(e) => setTitle(e.target.value)}
-                                    required
-                                    className="w-full px-4 py-3 border-2 border-black bg-[#FFFDF5] focus:outline-none focus:ring-4 focus:ring-[#00ADEF] font-medium"
-                                    placeholder="e.g., Batch 04 Applications Open!"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-bold mb-2">Content</label>
-                                <textarea
-                                    value={content}
-                                    onChange={(e) => setContent(e.target.value)}
-                                    required
-                                    rows="5"
-                                    className="w-full px-4 py-3 border-2 border-black bg-[#FFFDF5] focus:outline-none focus:ring-4 focus:ring-[#00ADEF] font-medium"
-                                    placeholder="Write your announcement here..."
-                                />
-                            </div>
-                            <button
-                                type="submit"
-                                disabled={submitting}
-                                className="w-full py-3 bg-[#E38524] text-black border-2 border-black font-bold uppercase shadow-[3px_3px_0_0_black] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                            >
-                                {submitting ? 'Publishing...' : 'Publish Announcement'}
-                                <Send size={18} strokeWidth={2.5} />
-                            </button>
-                        </form>
                     </div>
-
-                    {/* List of Announcements */}
-                    <div className="space-y-4">
-                        <h2 className="text-2xl font-black uppercase mb-6 flex items-center gap-2">
-                            <Megaphone size={24} className="text-[#00ADEF]" strokeWidth={2.5} />
-                            Published
-                        </h2>
-
-                        {loading ? (
-                            <div className="flex justify-center py-12">
-                                <Loader2 className="text-[#00ADEF] animate-spin" size={32} />
-                            </div>
-                        ) : announcements.length > 0 ? (
-                            announcements.map((ann) => (
-                                <div key={ann.id} className="bg-white border-4 border-black shadow-[4px_4px_0px_0px_#000] p-4">
-                                    <div className="flex justify-between items-start mb-2">
-                                        <h3 className="font-black text-lg uppercase">{ann.title}</h3>
-                                        <button onClick={() => handleDelete(ann.id)} className="p-1 hover:bg-red-100 border-2 border-transparent hover:border-black transition-all">
-                                            <Trash2 size={16} className="text-red-600" />
-                                        </button>
-                                    </div>
-                                    <p className="text-slate-700 text-sm">{ann.content}</p>
-                                    <p className="text-xs text-slate-500 mt-3 font-bold uppercase">
-                                        {new Date(ann.created_at).toLocaleDateString()}
-                                    </p>
-                                </div>
-                            ))
-                        ) : (
-                            <div className="text-center py-12 border-4 border-dashed border-black bg-white">
-                                <p className="text-slate-600 font-bold">No announcements yet.</p>
-                            </div>
-                        )}
-                    </div>
-
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-[#526274] mb-2">
+                                Title
+                            </label>
+                            <input
+                                type="text"
+                                value={title}
+                                onChange={(e) => setTitle(e.target.value)}
+                                required
+                                className="w-full px-4 py-3 rounded-xl border border-[#D6E4EA] bg-[#F6FAFC] text-[#111827] font-medium focus:outline-none focus:ring-2 focus:ring-[#00ADEF] focus:border-[#00ADEF] transition-all placeholder:text-[#8AA0B4]"
+                                placeholder="e.g., Batch 04 Applications Open!"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-[#526274] mb-2">
+                                Content
+                            </label>
+                            <textarea
+                                value={content}
+                                onChange={(e) => setContent(e.target.value)}
+                                required
+                                rows="6"
+                                className="w-full px-4 py-3 rounded-xl border border-[#D6E4EA] bg-[#F6FAFC] text-[#111827] font-medium focus:outline-none focus:ring-2 focus:ring-[#00ADEF] focus:border-[#00ADEF] transition-all placeholder:text-[#8AA0B4] resize-none"
+                                placeholder="Write your announcement here..."
+                            />
+                        </div>
+                        <button
+                            type="submit"
+                            disabled={submitting}
+                            className="w-full py-3 rounded-xl bg-gradient-to-r from-[#00ADEF] to-[#0878B4] text-white font-bold uppercase tracking-wider hover:shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {submitting ? (
+                                <>
+                                    <Loader2 size={18} className="animate-spin" />
+                                    Publishing...
+                                </>
+                            ) : (
+                                <>
+                                    Publish Announcement
+                                    <Send size={18} strokeWidth={2.5} />
+                                </>
+                            )}
+                        </button>
+                    </form>
                 </div>
+
+                {/* List of Announcements */}
+                <div className="space-y-4">
+                    <div className="mb-5 pb-4 border-b border-[#D6E4EA]">
+                        <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#006F9E] block mb-1">
+                            Published
+                        </span>
+                        <h2 className="text-xl font-bold text-[#111827] font-['Space_Grotesk'] flex items-center gap-2">
+                            <Megaphone size={20} className="text-[#00ADEF]" strokeWidth={2.5} />
+                            Announcement List
+                        </h2>
+                    </div>
+
+                    {loading ? (
+                        <div className="flex justify-center py-16 bg-white border border-[#D6E4EA] rounded-2xl shadow-xs">
+                            <Loader2 className="text-[#00ADEF] animate-spin" size={32} />
+                        </div>
+                    ) : announcements.length > 0 ? (
+                        announcements.map((ann) => (
+                            <div key={ann.id} className="bg-white border border-[#D6E4EA] rounded-2xl p-5 shadow-xs hover:shadow-md transition-all">
+                                <div className="flex justify-between items-start mb-2 gap-3">
+                                    <div className="flex items-start gap-3 min-w-0">
+                                        <div className="w-10 h-10 rounded-xl bg-[#EAF8FC] text-[#006F9E] border border-[#00ADEF]/20 flex items-center justify-center shrink-0 mt-0.5">
+                                            <Megaphone size={18} />
+                                        </div>
+                                        <h3 className="font-bold text-lg text-[#111827] leading-snug">{ann.title}</h3>
+                                    </div>
+                                    <button
+                                        onClick={() => handleDelete(ann.id)}
+                                        title="Delete announcement"
+                                        className="p-2 rounded-lg text-[#526274] hover:bg-rose-50 hover:text-rose-600 transition-all shrink-0"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
+                                <p className="text-sm text-[#526274] pl-14 leading-relaxed">{ann.content}</p>
+                                <p className="inline-flex items-center gap-1.5 text-[11px] text-[#006F9E] mt-3 font-bold uppercase tracking-wide bg-[#EAF8FC] rounded-full px-2.5 py-1">
+                                    <CalendarDays size={12} />
+                                    {new Date(ann.created_at).toLocaleDateString()}
+                                </p>
+                            </div>
+                        ))
+                    ) : (
+                        <div className="flex flex-col items-center justify-center py-16 bg-white border border-[#D6E4EA] rounded-2xl shadow-xs text-center">
+                            <div className="w-14 h-14 rounded-2xl bg-[#FFF1E3] border border-[#E38524]/20 flex items-center justify-center mb-4">
+                                <Megaphone className="text-[#E38524]" size={26} />
+                            </div>
+                            <p className="text-[#526274] font-bold">No announcements yet.</p>
+                        </div>
+                    )}
+                </div>
+
             </div>
         </div>
     );
