@@ -16,9 +16,8 @@ export default function Inbox() {
 
     const fetchMessages = async () => {
         try {
-            setLoading(true);
             const response = await fetch('/api/admin/inbox', {
-                credentials: 'include' // Needed to pass the admin login cookie!
+                credentials: 'include'
             });
             const data = await response.json();
             setMessages(Array.isArray(data) ? data : []);
@@ -40,7 +39,7 @@ export default function Inbox() {
                 method: 'DELETE',
                 credentials: 'include'
             });
-            fetchMessages(); // Refresh the list after deleting
+            fetchMessages();
         } catch (error) {
             console.error("Error deleting message:", error);
         }

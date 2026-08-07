@@ -18,7 +18,6 @@ export default function Announcements() {
 
     const fetchAnnouncements = async () => {
         try {
-            setLoading(true);
             const response = await fetch('/api/admin/announcements', {
                 credentials: 'include'
             });
