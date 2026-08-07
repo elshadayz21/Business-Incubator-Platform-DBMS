@@ -13,6 +13,7 @@ import {
   Building2,
   Inbox as InboxIcon,
   Megaphone,
+  CircleUserRound,
 } from "lucide-react";
 
 const Sidebar = ({
@@ -21,6 +22,8 @@ const Sidebar = ({
   userRole = "admin",
 }) => {
   const currentUser = JSON.parse(sessionStorage.getItem("user") || "{}");
+
+  const profileImage = currentUser.profile_image || null;
 
   const navItems = [
     { id: 1, icon: LayoutDashboard, label: "Dashboard", badge: null },
@@ -64,11 +67,25 @@ const Sidebar = ({
         </div>
       </div>
 
-      {/* User Info Badge */}
-      <div className="px-4 py-3 bg-[#EAF8FC] border-b border-[#D6E4EA] flex items-center justify-between">
+      {/* User Info Badge - routes to profile page */}
+      <a
+        href="/v1/auth/profile"
+        title="View Profile"
+        className="px-4 py-3 bg-[#EAF8FC] border-b border-[#D6E4EA] flex items-center justify-between group hover:bg-white transition-all"
+      >
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-8 h-8 rounded-full bg-[#00ADEF] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
-            {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : "A"}
+          <div className="w-8 h-8 rounded-full bg-[#00ADEF] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs overflow-hidden group-hover:ring-2 group-hover:ring-[#E38524]/40 transition">
+            {profileImage ? (
+              <img
+                src={profileImage}
+                alt={currentUser.name || "Profile"}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              (currentUser.name
+                ? currentUser.name.charAt(0).toUpperCase()
+                : "A")
+            )}
           </div>
           <div className="min-w-0">
             <p className="text-xs font-bold text-[#111827] truncate">
@@ -80,7 +97,11 @@ const Sidebar = ({
             </p>
           </div>
         </div>
-      </div>
+        <CircleUserRound
+          size={16}
+          className="text-[#006F9E] group-hover:text-[#00ADEF] transition shrink-0"
+        />
+      </a>
 
       {/* Navigation Links */}
       <nav className="flex-1 p-3 overflow-y-auto space-y-1">
