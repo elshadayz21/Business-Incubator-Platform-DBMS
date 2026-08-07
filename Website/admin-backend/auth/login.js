@@ -16,6 +16,16 @@ export default async function loginRequest(credentials) {
     }
 
     console.log("3. User found in DB:", user.email);
+    console.log("3.5. Account status:", user.status);
+
+    if (user.status === "inactive") {
+      console.log("❌ Account is deactivated:", user.status);
+      return {
+        success: false,
+        message: "Account is deactivated. Please contact a superadmin.",
+      };
+    }
+
     console.log("4. Stored Password (Hash) in DB:", user.password);
 
     // 🔥 السطر ده هو الحل: هنخلي النظام يولد هاش جديد لنفس الباسورد عشان نشوف شكله إيه

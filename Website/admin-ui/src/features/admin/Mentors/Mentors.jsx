@@ -18,6 +18,7 @@ import StatCard from "../../../components/StatCard";
 const Mentors = () => {
   const [mentors, setMentors] = useState([]);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [editingMentor, setEditingMentor] = useState(null);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterExpertise, setFilterExpertise] = useState("all");
@@ -40,7 +41,24 @@ const Mentors = () => {
 
   const handleAddMentor = () => {
     setShowAddForm(false);
+    setEditingMentor(null);
     fetchMentors();
+  };
+
+  const handleEdit = (mentor) => {
+    setEditingMentor(mentor);
+    setShowAddForm(true);
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Delete this mentor? This cannot be undone.")) return;
+    try {
+      await window.electron.invoke("mentors:delete", id);
+      fetchMentors();
+    } catch (err) {
+      console.error("Failed to delete mentor:", err);
+      window.alert("Failed to delete mentor. Please try again.");
+    }
   };
 
   const filteredMentors = mentors.filter(
@@ -158,6 +176,8 @@ const Mentors = () => {
             mentors={filteredMentors}
             loading={false}
             onAddClick={() => setShowAddForm(true)}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
           />
         </div>
       ) : (
@@ -179,7 +199,7 @@ const Mentors = () => {
         </div>
       )}
 
-      {/* Add Mentor Modal */}
+      {/* Add/Edit Mentor Modal */}
       {showAddForm && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white w-full max-w-2xl max-h-[90vh] rounded-2xl border border-[#D6E4EA] shadow-xl flex flex-col overflow-hidden">
@@ -189,11 +209,14 @@ const Mentors = () => {
                   Expert Network
                 </span>
                 <h2 className="text-xl font-bold text-[#111827] font-['Space_Grotesk']">
-                  Add New Mentor Profile
+                  {editingMentor ? "Edit Mentor Profile" : "Add New Mentor Profile"}
                 </h2>
               </div>
               <button
-                onClick={() => setShowAddForm(false)}
+                onClick={() => {
+                  setShowAddForm(false);
+                  setEditingMentor(null);
+                }}
                 className="p-2 rounded-xl text-[#526274] hover:bg-[#F6FAFC] hover:text-[#111827] transition"
               >
                 <X size={20} />
@@ -201,7 +224,11 @@ const Mentors = () => {
             </div>
             <div className="overflow-y-auto flex-1 p-6 bg-[#F6FAFC]">
               <AddMentorForm
-                onClose={() => setShowAddForm(false)}
+                initialData={editingMentor}
+                onClose={() => {
+                  setShowAddForm(false);
+                  setEditingMentor(null);
+                }}
                 onSuccess={handleAddMentor}
               />
             </div>

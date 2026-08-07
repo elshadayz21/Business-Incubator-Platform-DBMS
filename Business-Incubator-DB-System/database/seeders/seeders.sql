@@ -37,8 +37,8 @@ INSERT INTO "users" ("name", "user_code", "email", "password", "role", "profile_
 ('Dina Salah', 'ENT010', 'dina.salah@startup.eg', '$2b$10$X8qJ9ZmK3L4vN2pR5sT6wO.uVxYz1aBcDeF7gHiJ9kLmN0oPqR8sT', 'entrepreneur', '/uploads/profile-images/profile-10.jpg'),
 
 -- Mentors/Trainers
-('Dr. Amr Mostafa', 'MENT01', 'amr.mostafa@incubator.eg', '$2b$10$X8qJ9ZmK3L4vN2pR5sT6wO.uVxYz1aBcDeF7gHiJ9kLmN0oPqR8sT', 'mentor', '/uploads/profile-images/mentor-1.jpg'),
-('Eng. Heba Nabil', 'MENT02', 'heba.nabil@incubator.eg', '$2b$10$X8qJ9ZmK3L4vN2pR5sT6wO.uVxYz1aBcDeF7gHiJ9kLmN0oPqR8sT', 'mentor', '/uploads/profile-images/mentor-2.jpg'),
+('Dr. Amr Mostafa', 'MENT01', 'amr.mostafa@incubator.eg', '$2b$10$X8qJ9ZmK3L4vN2pR5sT6wO.uVxYz1aBcDeF7gHiJ9kLmN0oPqR8sT', 'mentor', '/assets/images/default-avatar.svg'),
+('Eng. Heba Nabil', 'MENT02', 'heba.nabil@incubator.eg', '$2b$10$X8qJ9ZmK3L4vN2pR5sT6wO.uVxYz1aBcDeF7gHiJ9kLmN0oPqR8sT', 'mentor', '/assets/images/default-avatar.svg'),
 ('Prof. Tarek Zaki', 'MENT03', 'tarek.zaki@incubator.eg', '$2b$10$X8qJ9ZmK3L4vN2pR5sT6wO.uVxYz1aBcDeF7gHiJ9kLmN0oPqR8sT', 'mentor', NULL),
 
 -- Investors

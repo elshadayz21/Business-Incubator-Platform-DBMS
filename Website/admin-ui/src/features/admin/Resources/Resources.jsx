@@ -18,6 +18,7 @@ import StatCard from "../../../components/StatCard";
 const Resources = () => {
   const [resources, setResources] = useState([]);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [editingResource, setEditingResource] = useState(null);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("all");
@@ -40,7 +41,24 @@ const Resources = () => {
 
   const handleAddResource = async () => {
     setShowAddForm(false);
+    setEditingResource(null);
     fetchResources();
+  };
+
+  const handleEdit = (resource) => {
+    setEditingResource(resource);
+    setShowAddForm(true);
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Delete this resource? This cannot be undone.")) return;
+    try {
+      await window.electron.invoke("resources:delete", id);
+      fetchResources();
+    } catch (err) {
+      console.error("Failed to delete resource:", err);
+      window.alert("Failed to delete resource. Please try again.");
+    }
   };
 
   const filteredResources = resources.filter(
@@ -149,6 +167,8 @@ const Resources = () => {
             resources={filteredResources}
             loading={false}
             onAddClick={() => setShowAddForm(true)}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
           />
         </div>
       ) : (
@@ -169,7 +189,7 @@ const Resources = () => {
         </div>
       )}
 
-      {/* Add Resource Modal */}
+      {/* Add/Edit Resource Modal */}
       {showAddForm && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white w-full max-w-2xl max-h-[90vh] rounded-2xl border border-[#D6E4EA] shadow-xl flex flex-col overflow-hidden font-sans">
@@ -179,11 +199,14 @@ const Resources = () => {
                   Inventory Management
                 </span>
                 <h2 className="text-xl font-bold text-[#111827] font-['Space_Grotesk']">
-                  Add New Resource Asset
+                  {editingResource ? "Edit Resource Asset" : "Add New Resource Asset"}
                 </h2>
               </div>
               <button
-                onClick={() => setShowAddForm(false)}
+                onClick={() => {
+                  setShowAddForm(false);
+                  setEditingResource(null);
+                }}
                 className="p-2 rounded-xl text-[#526274] hover:bg-[#F6FAFC] hover:text-[#111827] transition"
               >
                 <X size={20} />
@@ -191,7 +214,11 @@ const Resources = () => {
             </div>
             <div className="overflow-y-auto flex-1 p-6 bg-[#F6FAFC]">
               <AddResourceForm
-                onClose={() => setShowAddForm(false)}
+                initialData={editingResource}
+                onClose={() => {
+                  setShowAddForm(false);
+                  setEditingResource(null);
+                }}
                 onSuccess={handleAddResource}
               />
             </div>

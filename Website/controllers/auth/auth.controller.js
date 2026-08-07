@@ -176,6 +176,11 @@ export const login = async (req, res, next) => {
       return res.redirect("/v1/auth/login");
     }
 
+    if (user.status === "inactive") {
+      req.flash("error", "Account is deactivated. Please contact an administrator.");
+      return res.redirect("/v1/auth/login");
+    }
+
     const isMatch = await comparePassword(password, user.password);
     if (!isMatch) {
       req.flash("error", "Invalid email or password");
@@ -202,6 +207,7 @@ export const login = async (req, res, next) => {
       name: user.name,
       email: user.email,
       role: user.role,
+      profile_image: user.profile_image || null,
     });
 
     res.send(`
