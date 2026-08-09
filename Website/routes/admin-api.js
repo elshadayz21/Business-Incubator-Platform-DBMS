@@ -354,6 +354,7 @@ router.get(
         // 1. Fetch data
         const projects = await getAllProjects();
         const mentors = await getAllMentors();
+        const workshops = await getAllWorkshops();
 
         // Fetch funding and inbox safely
         const fundingRaw = await getAllFundingRequests("");
@@ -390,6 +391,13 @@ router.get(
           { header: "Name", key: "name", width: 30 },
           { header: "Expertise", key: "expertise", width: 25 },
           { header: "Email", key: "email", width: 30 },
+        ]);
+        buildSheet("Workshops", workshops, [
+          { header: "ID", key: "id", width: 5 },
+          { header: "Title", key: "title", width: 30 },
+          { header: "Category", key: "category", width: 20 },
+          { header: "Schedule", key: "schedule", width: 25 },
+          { header: "Capacity", key: "capacity", width: 10 },
         ]);
 
         buildSheet("Funding", funding, [
