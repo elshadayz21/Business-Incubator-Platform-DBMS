@@ -87,6 +87,7 @@ app.use((req, res, next) => {
         mentors: "/v1/mentors",
         about: "/v1/about",
         workshops: "/v1/workshop",
+        gallery: "/v1/gallery",
         projects: "/v1/projects",
         funding: "/v1/funding",
     };
