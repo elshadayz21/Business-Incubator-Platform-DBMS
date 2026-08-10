@@ -118,3 +118,10 @@ export const getWorkshopDetailPage = async (req, res, next) => {
 export const getAboutPage = (req, res) => {
   res.render("pages/about", { title: "About DxValley | Incubation Center" });
 };
+
+// --- Terms & Conditions Page ---
+export const getTermsPage = (req, res) => {
+  res.render("pages/terms", {
+    title: "Terms & Conditions | DxValley Incubation Center",
+  });
+};
