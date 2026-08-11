@@ -6,6 +6,8 @@ import {
 } from "../../models/workshop/Workshop.js";
 import eventBus from "../../utils/eventBus.js";
 import pool from "../../config/db.js";
+import fs from "fs";
+import path from "path";
 
 // --- Mentors Page ---
 export const getMentorsPage = async (req, res, next) => {
@@ -114,7 +116,36 @@ export const getWorkshopDetailPage = async (req, res, next) => {
   }
 };
 
+// --- Gallery Page ---
+export const getGalleryPage = (req, res) => {
+  const galleryDir = path.join(process.cwd(), "public", "uploads", "gallery");
+  let photos = [];
+  try {
+    photos = fs.existsSync(galleryDir)
+      ? fs
+          .readdirSync(galleryDir)
+          .filter((file) => /\.(jpe?g|png|webp|gif)$/i.test(file))
+          .sort()
+          .map((file) => `/uploads/gallery/${file}`)
+      : [];
+  } catch (err) {
+    console.error("Gallery Page Error:", err);
+  }
+
+  res.render("pages/gallery", {
+    title: "Gallery | DxValley Incubation Center",
+    photos,
+  });
+};
+
 // --- About Page ---
 export const getAboutPage = (req, res) => {
   res.render("pages/about", { title: "About DxValley | Incubation Center" });
+};
+
+// --- Terms & Conditions Page ---
+export const getTermsPage = (req, res) => {
+  res.render("pages/terms", {
+    title: "Terms & Conditions | DxValley Incubation Center",
+  });
 };

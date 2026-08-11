@@ -4,6 +4,8 @@ import {
   getMentorsPage,
   getWorkshopsPage,
   getWorkshopDetailPage,
+  getTermsPage,
+  getGalleryPage,
   bookMentorSession,
 } from "../../controllers/pages/pages.controller.js";
 import { isAuth } from "../../middleware/auth.middlware.js";
@@ -11,9 +13,11 @@ import { isAuth } from "../../middleware/auth.middlware.js";
 const router = Router();
 
 router.get("/about", getAboutPage);
+router.get("/terms", getTermsPage);
 router.get("/mentors", getMentorsPage);
 router.post("/mentors/book", isAuth, bookMentorSession);
 router.get("/workshop", getWorkshopsPage);
 router.get("/workshop/:id", getWorkshopDetailPage);
+router.get("/gallery", getGalleryPage);
 
 export { router as PagesRouter };
