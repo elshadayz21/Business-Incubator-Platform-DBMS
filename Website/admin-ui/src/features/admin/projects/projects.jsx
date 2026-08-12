@@ -68,7 +68,10 @@ export default function Projects() {
   useEffect(() => {
     fetchProjects();
     fetchStats();
-  }, [fetchProjects, fetchStats]);
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+
+  }, []);
 
   const handleUpdateStatus = async (projectId, newStatus) => {
     try {
@@ -350,7 +353,7 @@ export default function Projects() {
       {/* Project Details Modal */}
       {showDetails && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white w-full max-w-4xl max-h-[90vh] rounded-2xl border border-[#D6E4EA] shadow-xl overflow-hidden flex flex-col">
+          <div className="bg-white w-full max-w-4xl max-h-[90vh] rounded-2xl border border-[#D6E4EA] shadow-xl overflow-y-auto flex flex-col">
             <ProjectDetails
               project={selectedProject}
               onClose={handleCloseDetails}
