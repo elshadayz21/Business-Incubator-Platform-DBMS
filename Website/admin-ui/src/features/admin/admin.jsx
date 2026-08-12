@@ -9,6 +9,7 @@ import Funding from "./Funding/Funding";
 import Users from "./Users/Users";
 import Inbox from "./Inbox/Inbox";
 import Announcements from "./Announcements/Announcements";
+import MassEmail from "./MassEmail/MassEmail";
 
 const Admin = () => {
   const [activeTab, setActiveTab] = useState("Dashboard");
@@ -32,6 +33,8 @@ const Admin = () => {
         return <Inbox />;         // for inbox
       case "Announcements":      // for announcements
         return <Announcements />;
+      case "Mass Email":         // for mass email (UR-B4)
+        return <MassEmail />;
       case "Users":
         return <Users />;
       default:
