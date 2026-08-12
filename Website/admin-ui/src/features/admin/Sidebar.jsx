@@ -13,6 +13,7 @@ import {
   Building2,
   Inbox as InboxIcon,
   Megaphone,
+  Mail,
   CircleUserRound,
 } from "lucide-react";
 
@@ -34,8 +35,9 @@ const Sidebar = ({
     { id: 6, icon: Coins, label: "Funding", badge: "New" },
     { id: 7, icon: InboxIcon, label: "Inbox", badge: null },
     { id: 8, icon: Megaphone, label: "Announcements", badge: "New" },
+    { id: 9, icon: Mail, label: "Mass Email", badge: null },
     ...(userRole?.toLowerCase() === "superadmin"
-      ? [{ id: 9, icon: Users, label: "Users", badge: "Admin" }]
+      ? [{ id: 10, icon: Users, label: "Users", badge: "Admin" }]
       : []),
   ];
 
