@@ -9,7 +9,9 @@ import Funding from "./Funding/Funding";
 import Users from "./Users/Users";
 import Inbox from "./Inbox/Inbox";
 import Announcements from "./Announcements/Announcements";
-import MassEmail from "./MassEmail/MassEmail";
+import StaticPages from "./StaticPages/StaticPages";
+import Cohorts from "./Cohorts/Cohorts";
+import Reports from "./Reports/Reports";
 
 const Admin = () => {
   const [activeTab, setActiveTab] = useState("Dashboard");
@@ -29,14 +31,18 @@ const Admin = () => {
         return <Projects />;
       case "Funding":
         return <Funding />;
-      case "Inbox":               //  for inbox
-        return <Inbox />;         // for inbox
-      case "Announcements":      // for announcements
+      case "Inbox": //  for inbox
+        return <Inbox />; // for inbox
+      case "Announcements": // for announcements
         return <Announcements />;
-      case "Mass Email":         // for mass email (UR-B4)
-        return <MassEmail />;
+      case "Static Pages":
+        return <StaticPages />;
       case "Users":
         return <Users />;
+      case "Cohorts":
+        return <Cohorts />;
+      case "Reports":
+        return <Reports />;
       default:
         return <Dashboard />;
     }

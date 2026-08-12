@@ -11,8 +11,31 @@ const pool = new Pool({
   port: process.env.DB_PORT,
 });
 
+const SKIPPABLE_CODES = ["42701", "42P07", "42P06", "42P16"];
+
+async function runStatements(sql, label) {
+  const statements = sql
+    .split(";")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  for (const stmt of statements) {
+    try {
+      await pool.query(stmt);
+    } catch (err) {
+      if (
+        SKIPPABLE_CODES.includes(err.code) ||
+        err.message?.includes("already exists")
+      ) {
+        console.log("  ⏭️  Skipped (already exists)");
+      } else {
+        throw err;
+      }
+    }
+  }
+  console.log(`✅ ${label} done`);
+}
+
 async function run() {
-  // 1. Run the base schema
   const schemaPath = path.join(
     __dirname,
     "..",
@@ -22,10 +45,8 @@ async function run() {
   );
   console.log("Running base schema:", schemaPath);
   const schemaSql = fs.readFileSync(schemaPath, "utf-8");
-  await pool.query(schemaSql);
-  console.log("✅ Base schema applied");
+  await runStatements(schemaSql, "Base schema");
 
-  // 2. Run every migration file in order
   const migrationsDir = path.join(
     __dirname,
     "..",
@@ -41,27 +62,7 @@ async function run() {
   for (const file of files) {
     console.log(`Running migration: ${file}`);
     const sql = fs.readFileSync(path.join(migrationsDir, file), "utf-8");
-    const statements = sql
-      .split(";")
-      .map((s) => s.trim())
-      .filter(Boolean);
-
-    for (const stmt of statements) {
-      try {
-        await pool.query(stmt);
-      } catch (err) {
-        const skippable = ["42701", "42P07", "42P06", "42P16"];
-        if (
-          skippable.includes(err.code) ||
-          err.message?.includes("already exists")
-        ) {
-          console.log("  ⏭️  Skipped (already exists)");
-        } else {
-          throw err;
-        }
-      }
-    }
-    console.log(`✅ Executed ${file}`);
+    await runStatements(sql, `Migration ${file}`);
   }
 
   console.log("🎉 All done — schema + migrations applied.");
