@@ -1,4 +1,3 @@
-import ExcelJS from "exceljs";
 import { Router } from "express";
 import {
   getAllWorkshops,
@@ -67,17 +66,38 @@ import {
   createAnnouncement,
   deleteAnnouncement,
 } from "../admin-backend/announcements/announcements.js";
-//for Mass Email (UR-B4)
 import {
-  getRecipientSources,
-  getRecipientsForSource,
-  getEmailTemplates,
-  createEmailTemplate,
-  updateEmailTemplate,
-  deleteEmailTemplate,
-  getEmailCampaigns,
-  sendCampaign,
-} from "../admin-backend/email/email.js";
+  getAllStaticPages,
+  getStaticPageById,
+  createStaticPage,
+  updateStaticPage,
+  deleteStaticPage,
+} from "../admin-backend/content/staticPages.js";
+import {
+  getAllCohorts,
+  getCohortById,
+  createCohort,
+  updateCohort,
+  deleteCohort,
+} from "../admin-backend/cohorts/cohorts.js";
+import {
+  getCohortMembers,
+  addCohortMember,
+  removeCohortMember,
+  getMentorAssignments,
+  createMentorAssignment,
+  deleteMentorAssignment,
+  getSessionsForAssignment,
+  createMentorSession,
+  getUsersByRole,
+} from "../admin-backend/mentorship/mentorship.js";
+import {
+  getReportSummary,
+  getReportRows,
+} from "../admin-backend/reports/reports.js";
+import ExcelJS from "exceljs";
+import { authorizeRole } from "../middleware/check_roles.middleware.js";
+import { ROLES } from "../utils/constants.js";
 
 const router = Router();
 
@@ -100,11 +120,44 @@ router.post(
   }),
 );
 
-import { authorizeRole } from "../middleware/check_roles.middleware.js";
-import { ROLES } from "../utils/constants.js";
-
 router.use(authorizeRole(ROLES.SUPERADMIN, ROLES.ADMIN));
 
+router.get(
+  "/reports/summary",
+  asyncHandler(async (req, res) => res.json(await getReportSummary())),
+);
+
+router.get(
+  "/reports/export",
+  asyncHandler(async (req, res) => {
+    const rows = await getReportRows();
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet("Cohort Report");
+
+    sheet.columns = [
+      { header: "Cohort", key: "cohort", width: 20 },
+      { header: "Type", key: "type", width: 12 },
+      { header: "Status", key: "status", width: 12 },
+      { header: "Name", key: "full_name", width: 24 },
+      { header: "Email", key: "email", width: 28 },
+      { header: "Stage", key: "current_stage", width: 14 },
+      { header: "Joined", key: "joined_at", width: 16 },
+    ];
+    sheet.getRow(1).font = { bold: true };
+    rows.forEach((row) => sheet.addRow(row));
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    );
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename=dxvalley-cohort-report.xlsx",
+    );
+    await workbook.xlsx.write(res);
+    res.end();
+  }),
+);
 // Users (Superadmin only)
 const superadminOnly = authorizeRole(ROLES.SUPERADMIN);
 router.get(
@@ -130,7 +183,7 @@ router.put(
   asyncHandler(async (req, res) =>
     res.json(await setUserStatus(req.params.id, req.body.status)),
   ),
-);  
+);
 
 // Workshops
 router.get(
@@ -318,173 +371,153 @@ router.delete(
 
 // Inbox (Contact & Newsletter)
 router.get(
-    "/inbox",
-    asyncHandler(async (req, res) => res.json(await getAllSubmissions())),
+  "/inbox",
+  asyncHandler(async (req, res) => res.json(await getAllSubmissions())),
 );
 router.delete(
-    "/inbox/:id",
-    asyncHandler(async (req, res) =>
-        res.json(await deleteSubmission(req.params.id)),
-    ),
+  "/inbox/:id",
+  asyncHandler(async (req, res) =>
+    res.json(await deleteSubmission(req.params.id)),
+  ),
 );
 
-
-//for announcement
 // Announcements (CMS)
 router.get(
-    "/announcements",
-    asyncHandler(async (req, res) => res.json(await getAllAnnouncements())),
+  "/announcements",
+  asyncHandler(async (req, res) => res.json(await getAllAnnouncements())),
 );
 router.post(
-    "/announcements",
-    asyncHandler(async (req, res) => res.json(await createAnnouncement(req.body))),
+  "/announcements",
+  asyncHandler(async (req, res) =>
+    res.json(await createAnnouncement(req.body)),
+  ),
 );
 router.delete(
-    "/announcements/:id",
-    asyncHandler(async (req, res) =>
-        res.json(await deleteAnnouncement(req.params.id)),
-    ),
+  "/announcements/:id",
+  asyncHandler(async (req, res) =>
+    res.json(await deleteAnnouncement(req.params.id)),
+  ),
 );
-
 
 // AI Mentor Matching Routes
 router.get(
-    "/projects/:id/suggested-mentors",
-    asyncHandler(async (req, res) => res.json(await getSuggestedMentors(req.params.id)))
+  "/projects/:id/suggested-mentors",
+  asyncHandler(async (req, res) =>
+    res.json(await getSuggestedMentors(req.params.id)),
+  ),
 );
 router.post(
-    "/projects/:id/assign-mentor",
-    asyncHandler(async (req, res) => res.json(await assignMentor(req.params.id, req.body.mentorId)))
+  "/projects/:id/assign-mentor",
+  asyncHandler(async (req, res) =>
+    res.json(await assignMentor(req.params.id, req.body.mentorId)),
+  ),
 );
 
-// Safe Multi-Tab Excel Export Route
 router.get(
-    "/reports/export/dashboard",
-    asyncHandler(async (req, res) => {
-      try {
-        // 1. Fetch data
-        const projects = await getAllProjects();
-        const mentors = await getAllMentors();
-        const workshops = await getAllWorkshops();
-
-        // Fetch funding and inbox safely
-        const fundingRaw = await getAllFundingRequests("");
-        const funding = Array.isArray(fundingRaw) ? fundingRaw : (fundingRaw?.data || []);
-
-        const inboxRaw = await getAllSubmissions();
-        const inbox = Array.isArray(inboxRaw) ? inboxRaw : [];
-
-        // 2. Create a new Excel workbook
-        const workbook = new ExcelJS.Workbook();
-
-        // Helper function to build sheets safely
-        const buildSheet = (sheetName, data, columns) => {
-          const ws = workbook.addWorksheet(sheetName);
-          ws.columns = columns;
-          ws.getRow(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF00ADEF" } };
-          ws.getRow(1).font = { bold: true, color: { argb: "FFFFFFFF" } };
-
-          if (Array.isArray(data)) {
-            data.forEach((row) => ws.addRow(row));
-          }
-        };
-
-        // 3. Build Tabs
-        buildSheet("Projects", projects, [
-          { header: "ID", key: "id", width: 5 },
-          { header: "Name", key: "name", width: 30 },
-          { header: "Domain", key: "domain", width: 20 },
-          { header: "Stage", key: "stage", width: 15 },
-        ]);
-
-        buildSheet("Mentors", mentors, [
-          { header: "ID", key: "id", width: 5 },
-          { header: "Name", key: "name", width: 30 },
-          { header: "Expertise", key: "expertise", width: 25 },
-          { header: "Email", key: "email", width: 30 },
-        ]);
-        buildSheet("Workshops", workshops, [
-          { header: "ID", key: "id", width: 5 },
-          { header: "Title", key: "title", width: 30 },
-          { header: "Category", key: "category", width: 20 },
-          { header: "Schedule", key: "schedule", width: 25 },
-          { header: "Capacity", key: "capacity", width: 10 },
-        ]);
-
-        buildSheet("Funding", funding, [
-          { header: "ID", key: "id", width: 5 },
-          { header: "Project ID", key: "project_id", width: 10 },
-          { header: "Amount", key: "amount", width: 15 },
-          { header: "Status", key: "status", width: 15 },
-        ]);
-
-        buildSheet("Inbox Messages", inbox, [
-          { header: "ID", key: "id", width: 5 },
-          { header: "Type", key: "type", width: 15 },
-          { header: "Name", key: "name", width: 25 },
-          { header: "Email", key: "email", width: 30 },
-          { header: "Message", key: "message", width: 50 },
-        ]);
-
-        // 4. Send the file
-        res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        res.setHeader("Content-Disposition", "attachment; filename=dxvalley_dashboard_report.xlsx");
-        await workbook.xlsx.write(res);
-        res.end();
-      } catch (error) {
-        console.error("Error exporting to Excel:", error);
-        res.status(500).json({ message: "Failed to generate Excel file." });
-      }
-    })
-);
-
-
-// Mass Email (UR-B4)
-router.get(
-    "/emails/sources",
-    asyncHandler(async (req, res) => res.json(await getRecipientSources())),
+  "/static-pages",
+  asyncHandler(async (req, res) => res.json(await getAllStaticPages())),
 );
 router.get(
-    "/emails/sources/:source/recipients",
-    asyncHandler(async (req, res) =>
-        res.json(await getRecipientsForSource(req.params.source)),
-    ),
-);
-router.get(
-    "/emails/templates",
-    asyncHandler(async (req, res) => res.json(await getEmailTemplates())),
+  "/static-pages/:id",
+  asyncHandler(async (req, res) =>
+    res.json(await getStaticPageById(req.params.id)),
+  ),
 );
 router.post(
-    "/emails/templates",
-    asyncHandler(async (req, res) => res.json(await createEmailTemplate(req.body))),
+  "/static-pages",
+  asyncHandler(async (req, res) => res.json(await createStaticPage(req.body))),
 );
 router.put(
-    "/emails/templates/:id",
-    asyncHandler(async (req, res) =>
-        res.json(await updateEmailTemplate(req.params.id, req.body)),
-    ),
+  "/static-pages/:id",
+  asyncHandler(async (req, res) =>
+    res.json(await updateStaticPage(req.params.id, req.body)),
+  ),
 );
 router.delete(
-    "/emails/templates/:id",
-    asyncHandler(async (req, res) =>
-        res.json(await deleteEmailTemplate(req.params.id)),
-    ),
+  "/static-pages/:id",
+  asyncHandler(async (req, res) =>
+    res.json(await deleteStaticPage(req.params.id)),
+  ),
+);
+
+router.get(
+  "/cohorts",
+  asyncHandler(async (req, res) => res.json(await getAllCohorts())),
 );
 router.get(
-    "/emails/campaigns",
-    asyncHandler(async (req, res) => res.json(await getEmailCampaigns())),
+  "/cohorts/:id",
+  asyncHandler(async (req, res) =>
+    res.json(await getCohortById(req.params.id)),
+  ),
 );
 router.post(
-    "/emails/send",
-    asyncHandler(async (req, res) =>
-        res.json(
-            await sendCampaign({
-                ...req.body,
-                senderId: req.session.userId,
-            }),
-        ),
-    ),
+  "/cohorts",
+  asyncHandler(async (req, res) => res.json(await createCohort(req.body))),
+);
+router.put(
+  "/cohorts/:id",
+  asyncHandler(async (req, res) =>
+    res.json(await updateCohort(req.params.id, req.body)),
+  ),
+);
+router.delete(
+  "/cohorts/:id",
+  asyncHandler(async (req, res) => res.json(await deleteCohort(req.params.id))),
+);
+router.get(
+  "/cohorts/:cohortId/members",
+  asyncHandler(async (req, res) =>
+    res.json(await getCohortMembers(req.params.cohortId)),
+  ),
+);
+router.post(
+  "/cohort-members",
+  asyncHandler(async (req, res) => res.json(await addCohortMember(req.body))),
+);
+router.delete(
+  "/cohort-members/:id",
+  asyncHandler(async (req, res) =>
+    res.json(await removeCohortMember(req.params.id)),
+  ),
+);
+
+router.get(
+  "/cohorts/:cohortId/mentor-assignments",
+  asyncHandler(async (req, res) =>
+    res.json(await getMentorAssignments(req.params.cohortId)),
+  ),
+);
+router.post(
+  "/mentor-assignments",
+  asyncHandler(async (req, res) =>
+    res.json(await createMentorAssignment(req.body)),
+  ),
+);
+router.delete(
+  "/mentor-assignments/:id",
+  asyncHandler(async (req, res) =>
+    res.json(await deleteMentorAssignment(req.params.id)),
+  ),
+);
+
+router.get(
+  "/mentor-assignments/:assignmentId/sessions",
+  asyncHandler(async (req, res) =>
+    res.json(await getSessionsForAssignment(req.params.assignmentId)),
+  ),
+);
+router.post(
+  "/mentor-sessions",
+  asyncHandler(async (req, res) =>
+    res.json(await createMentorSession(req.body)),
+  ),
+);
+
+router.get(
+  "/users-by-role/:role",
+  asyncHandler(async (req, res) =>
+    res.json(await getUsersByRole(req.params.role)),
+  ),
 );
 
 export default router;
-
