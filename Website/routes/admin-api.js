@@ -66,6 +66,17 @@ import {
   createAnnouncement,
   deleteAnnouncement,
 } from "../admin-backend/announcements/announcements.js";
+//for Mass Email (UR-B4)
+import {
+  getRecipientSources,
+  getRecipientsForSource,
+  getEmailTemplates,
+  createEmailTemplate,
+  updateEmailTemplate,
+  deleteEmailTemplate,
+  getEmailCampaigns,
+  sendCampaign,
+} from "../admin-backend/email/email.js";
 
 const router = Router();
 
@@ -344,4 +355,52 @@ router.post(
     "/projects/:id/assign-mentor",
     asyncHandler(async (req, res) => res.json(await assignMentor(req.params.id, req.body.mentorId)))
 );
+
+// Mass Email (UR-B4)
+router.get(
+    "/emails/sources",
+    asyncHandler(async (req, res) => res.json(await getRecipientSources())),
+);
+router.get(
+    "/emails/sources/:source/recipients",
+    asyncHandler(async (req, res) =>
+        res.json(await getRecipientsForSource(req.params.source)),
+    ),
+);
+router.get(
+    "/emails/templates",
+    asyncHandler(async (req, res) => res.json(await getEmailTemplates())),
+);
+router.post(
+    "/emails/templates",
+    asyncHandler(async (req, res) => res.json(await createEmailTemplate(req.body))),
+);
+router.put(
+    "/emails/templates/:id",
+    asyncHandler(async (req, res) =>
+        res.json(await updateEmailTemplate(req.params.id, req.body)),
+    ),
+);
+router.delete(
+    "/emails/templates/:id",
+    asyncHandler(async (req, res) =>
+        res.json(await deleteEmailTemplate(req.params.id)),
+    ),
+);
+router.get(
+    "/emails/campaigns",
+    asyncHandler(async (req, res) => res.json(await getEmailCampaigns())),
+);
+router.post(
+    "/emails/send",
+    asyncHandler(async (req, res) =>
+        res.json(
+            await sendCampaign({
+                ...req.body,
+                senderId: req.session.userId,
+            }),
+        ),
+    ),
+);
+
 export default router;
