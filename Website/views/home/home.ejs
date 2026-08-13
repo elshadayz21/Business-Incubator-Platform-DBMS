@@ -153,12 +153,11 @@
   </section>
 
 
-<script> //for announcements
+<script>
   (async () => {
     try {
-      // Call  backend API!
       const response = await fetch('/api/public/announcements');
-      const announcements = await response.json();
+      let announcements = await response.json();
 
       const container = document.getElementById('home-announcements-list');
       if (!container) return;
@@ -168,19 +167,31 @@
         return;
       }
 
-      //  HTML structure the frontend team used, but with real data!
-            // Generate horizontal cards with the real data!
-            container.innerHTML = announcements.map(ann => {
+
+            // Store the data in a global variable so we can access it on click!
+            window.announcementData = announcements;
+
+            container.innerHTML = announcements.map((ann, index) => {
               const dateStr = new Date(ann.created_at).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
-              return `
-                <a class="group flex flex-col gap-3 p-6 bg-white border border-line rounded-xl shadow-sm transition hover:shadow-md hover:-translate-y-1 hover:border-cyan/30" href="#">
-                  <div class="flex justify-between items-center">
-                    <span class="text-xs font-semibold text-muted">${dateStr}</span>
-                    <i class="fa-solid fa-arrow-up-right-from-square text-xs text-cyan transition group-hover:text-orange" aria-hidden="true"></i>
+                      const isOpenCall = ann.is_open_call;
+
+              if (isOpenCall) {
+                return `
+                  <div class="group flex gap-4 py-4 cursor-pointer rounded-xl hover:bg-[#F6FAFC] transition p-2" onclick="openApplicationModal(${index})">
+                    <span class="w-20 shrink-0 text-xs font-semibold text-muted">${dateStr}</span>
+                    <span class="text-sm font-semibold leading-6 text-ink transition group-hover:text-cyan-dark flex-grow">${ann.title}</span>
+                    <span class="ml-auto text-xs font-bold text-[#E38524] bg-[#FFF1E3] px-2 py-1 rounded-full border border-[#E38524]/20">Apply Now</span>
                   </div>
-                  <span class="text-base font-bold leading-6 text-ink transition group-hover:text-cyan-dark">${ann.title}</span>
-                </a>
-              `;
+                `;
+              } else {
+                return `
+                  <div class="group flex gap-4 py-4 cursor-pointer rounded-xl hover:bg-[#F6FAFC] transition p-2" onclick="openAnnouncementDetail(${index})">
+                    <span class="w-20 shrink-0 text-xs font-semibold text-muted">${dateStr}</span>
+                    <span class="text-sm font-semibold leading-6 text-ink transition group-hover:text-cyan-dark flex-grow">${ann.title}</span>
+                    <i class="fa-solid fa-arrow-up-right-from-square ml-auto mt-1 shrink-0 text-xs text-cyan" aria-hidden="true"></i>
+                  </div>
+                `;
+              }
             }).join('');
 
     } catch (error) {

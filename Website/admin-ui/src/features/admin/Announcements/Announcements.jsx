@@ -1,20 +1,24 @@
 import React, { useState, useEffect } from "react";
-import {
-  Megaphone,
-  Trash2,
-  Loader2,
-  Send,
-  PlusCircle,
-  Sparkles,
-  CalendarDays,
-} from "lucide-react";
+import { Megaphone, Trash2, Loader2, Send, PlusCircle, FileUp } from "lucide-react";
+
+
+
+import ReactQuill from "react-quill-new";
+import "react-quill-new/dist/quill.snow.css";
 
 export default function Announcements() {
     const [announcements, setAnnouncements] = useState([]);
     const [loading, setLoading] = useState(true);
     const [title, setTitle] = useState("");
     const [content, setContent] = useState("");
+    const [deadline, setDeadline] = useState("");
+    const [document, setDocument] = useState(null);
     const [submitting, setSubmitting] = useState(false);
+
+    // ADD THESE NEW ONES RIGHT HERE:
+    const [isOpenCall, setIsOpenCall] = useState(false);
+    const [capacity, setCapacity] = useState("");
+
 
     const fetchAnnouncements = async () => {
         try {
@@ -41,17 +45,38 @@ export default function Announcements() {
 
         setSubmitting(true);
         try {
-            await fetch('/api/admin/announcements', {
+            // 1. Create the FormData object first!
+            const formData = new FormData();
+            formData.append('title', title);
+            formData.append('content', content);
+
+            // 2. ADD THE NEW LINES HERE!
+            formData.append('is_open_call', isOpenCall);
+            if (capacity) formData.append('capacity', capacity);
+
+            if (deadline) formData.append('deadline', deadline);
+            if (document) formData.append('document', document);
+
+            // 3. Send the request
+            const response = await fetch('/api/admin/announcements', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
-                body: JSON.stringify({ title, content })
+                body: formData
             });
+
+            if (!response.ok) throw new Error("Failed to publish");
+
+            // 4. Reset form
             setTitle("");
             setContent("");
-            fetchAnnouncements(); // Refresh the list
+            setDeadline("");
+            setDocument(null);
+            setIsOpenCall(false); // Reset checkbox
+            setCapacity("");     // Reset capacity
+            fetchAnnouncements();
         } catch (error) {
             console.error("Error creating announcement:", error);
+            alert("Failed to publish announcement.");
         } finally {
             setSubmitting(false);
         }
@@ -70,135 +95,185 @@ export default function Announcements() {
     };
 
     return (
-        <div className="space-y-6">
-            {/* Header Banner */}
-            <div className="bg-gradient-to-r from-[#00ADEF] via-[#078CC8] to-[#0878B4] rounded-2xl p-6 sm:p-8 text-white shadow-sm relative overflow-hidden">
-                <div className="pointer-events-none absolute -right-16 -top-16 w-64 h-64 rounded-full border-30 border-white/10" />
-                <div className="relative z-10 space-y-3">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 text-xs font-bold uppercase tracking-wider text-white">
-                        <Sparkles size={12} className="text-[#E38524]" />
-                        DxValley Incubation Center • Content Management
-                    </div>
-                    <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight font-['Space_Grotesk']">
-                        Announcements
+        <div className="flex-1 overflow-y-auto bg-[#F6FAFC] h-screen font-sans text-[#111827]">
+            <div className="p-6 lg:p-10 max-w-[1920px] mx-auto">
+
+                {/* Header Section */}
+                <div className="mb-10">
+          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#006F9E] block mb-2">
+            Content Management
+          </span>
+                    <h1 className="text-4xl font-extrabold tracking-[-.04em] text-cyan-dark sm:text-5xl">
+                        Announcements CMS
                     </h1>
-                    <p className="text-sm text-white/85 max-w-2xl leading-relaxed">
-                        Publish news and updates to the public Entrepreneur homepage.
+                    <p className="mt-3 text-base text-[#526274] font-medium">
+                        Publish news, set deadlines for open calls, and attach documents.
                     </p>
                 </div>
-            </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
-                {/* Create Form */}
-                <div className="bg-white border border-[#D6E4EA] rounded-2xl p-6 shadow-xs h-fit">
-                    <div className="mb-5 pb-4 border-b border-[#D6E4EA]">
-                        <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#006F9E] block mb-1">
-                            Create
-                        </span>
-                        <h2 className="text-xl font-bold text-[#111827] font-['Space_Grotesk'] flex items-center gap-2">
-                            <PlusCircle size={20} className="text-[#E38524]" strokeWidth={2.5} />
+                    {/* Create Form */}
+                    <div className="bg-white border border-[#D6E4EA] rounded-2xl p-6 shadow-xs">
+                        <h2 className="text-lg font-bold text-[#111827] mb-6 flex items-center gap-2">
+                            <PlusCircle size={20} className="text-[#00ADEF]" />
                             New Announcement
                         </h2>
-                    </div>
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <div>
-                            <label className="block text-xs font-bold uppercase tracking-wider text-[#526274] mb-2">
-                                Title
-                            </label>
-                            <input
-                                type="text"
-                                value={title}
-                                onChange={(e) => setTitle(e.target.value)}
-                                required
-                                className="w-full px-4 py-3 rounded-xl border border-[#D6E4EA] bg-[#F6FAFC] text-[#111827] font-medium focus:outline-none focus:ring-2 focus:ring-[#00ADEF] focus:border-[#00ADEF] transition-all placeholder:text-[#8AA0B4]"
-                                placeholder="e.g., Batch 04 Applications Open!"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-bold uppercase tracking-wider text-[#526274] mb-2">
-                                Content
-                            </label>
-                            <textarea
-                                value={content}
-                                onChange={(e) => setContent(e.target.value)}
-                                required
-                                rows="6"
-                                className="w-full px-4 py-3 rounded-xl border border-[#D6E4EA] bg-[#F6FAFC] text-[#111827] font-medium focus:outline-none focus:ring-2 focus:ring-[#00ADEF] focus:border-[#00ADEF] transition-all placeholder:text-[#8AA0B4] resize-none"
-                                placeholder="Write your announcement here..."
-                            />
-                        </div>
-                        <button
-                            type="submit"
-                            disabled={submitting}
-                            className="w-full py-3 rounded-xl bg-gradient-to-r from-[#00ADEF] to-[#0878B4] text-white font-bold uppercase tracking-wider hover:shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            {submitting ? (
-                                <>
-                                    <Loader2 size={18} className="animate-spin" />
-                                    Publishing...
-                                </>
-                            ) : (
-                                <>
-                                    Publish Announcement
-                                    <Send size={18} strokeWidth={2.5} />
-                                </>
-                            )}
-                        </button>
-                    </form>
-                </div>
+                        <form onSubmit={handleSubmit} className="space-y-5">
 
-                {/* List of Announcements */}
-                <div className="space-y-4">
-                    <div className="mb-5 pb-4 border-b border-[#D6E4EA]">
-                        <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#006F9E] block mb-1">
-                            Published
-                        </span>
-                        <h2 className="text-xl font-bold text-[#111827] font-['Space_Grotesk'] flex items-center gap-2">
-                            <Megaphone size={20} className="text-[#00ADEF]" strokeWidth={2.5} />
-                            Announcement List
-                        </h2>
-                    </div>
+                            {/* Title Input */}
+                            <div>
+                                <label className="block text-xs font-bold text-[#526274] mb-2 uppercase tracking-wider">Title</label>
+                                <input
+                                    type="text"
+                                    value={title}
+                                    onChange={(e) => setTitle(e.target.value)}
+                                    required
+                                    className="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF] focus:border-transparent font-medium text-[#111827]"
+                                    placeholder="e.g., Batch 04 Applications Open!"
+                                />
+                            </div>
 
-                    {loading ? (
-                        <div className="flex justify-center py-16 bg-white border border-[#D6E4EA] rounded-2xl shadow-xs">
-                            <Loader2 className="text-[#00ADEF] animate-spin" size={32} />
-                        </div>
-                    ) : announcements.length > 0 ? (
-                        announcements.map((ann) => (
-                            <div key={ann.id} className="bg-white border border-[#D6E4EA] rounded-2xl p-5 shadow-xs hover:shadow-md transition-all">
-                                <div className="flex justify-between items-start mb-2 gap-3">
-                                    <div className="flex items-start gap-3 min-w-0">
-                                        <div className="w-10 h-10 rounded-xl bg-[#EAF8FC] text-[#006F9E] border border-[#00ADEF]/20 flex items-center justify-center shrink-0 mt-0.5">
-                                            <Megaphone size={18} />
-                                        </div>
-                                        <h3 className="font-bold text-lg text-[#111827] leading-snug">{ann.title}</h3>
-                                    </div>
-                                    <button
-                                        onClick={() => handleDelete(ann.id)}
-                                        title="Delete announcement"
-                                        className="p-2 rounded-lg text-[#526274] hover:bg-rose-50 hover:text-rose-600 transition-all shrink-0"
-                                    >
-                                        <Trash2 size={16} />
-                                    </button>
+                            {/* Deadline Input */}
+                            <div>
+                                <label className="block text-xs font-bold text-[#526274] mb-2 uppercase tracking-wider">Application Deadline (Optional)</label>
+                                <input
+                                    type="datetime-local"
+                                    value={deadline}
+                                    onChange={(e) => setDeadline(e.target.value)}
+                                    className="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF] focus:border-transparent font-medium text-[#111827]"
+                                />
+                            </div>
+
+
+
+                            {/* Open Call Checkbox */}
+                            <div className="flex items-center gap-3 py-2">
+                                <input
+                                    id="is_open_call"
+                                    type="checkbox"
+                                    checked={isOpenCall}
+                                    onChange={(e) => setIsOpenCall(e.target.checked)}
+                                    className="h-4 w-4 rounded border-gray-300 text-[#00ADEF] focus:ring-[#00ADEF]"
+                                />
+                                <label htmlFor="is_open_call" className="text-sm font-bold text-[#526274]">
+                                    Enable Application Form (Open Call)
+                                </label>
+                            </div>
+
+                            {/* Capacity Input (Only shows if Open Call is checked) */}
+                            {isOpenCall && (
+                                <div>
+                                    <label className="block text-xs font-bold text-[#526274] mb-2 uppercase tracking-wider">Application Capacity (Optional)</label>
+                                    <input
+                                        type="number"
+                                        value={capacity}
+                                        onChange={(e) => setCapacity(e.target.value)}
+                                        className="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF] focus:border-transparent font-medium text-[#111827]"
+                                        placeholder="e.g., 50 (Leave blank for unlimited)"
+                                    />
                                 </div>
-                                <p className="text-sm text-[#526274] pl-14 leading-relaxed">{ann.content}</p>
-                                <p className="inline-flex items-center gap-1.5 text-[11px] text-[#006F9E] mt-3 font-bold uppercase tracking-wide bg-[#EAF8FC] rounded-full px-2.5 py-1">
-                                    <CalendarDays size={12} />
-                                    {new Date(ann.created_at).toLocaleDateString()}
-                                </p>
-                            </div>
-                        ))
-                    ) : (
-                        <div className="flex flex-col items-center justify-center py-16 bg-white border border-[#D6E4EA] rounded-2xl shadow-xs text-center">
-                            <div className="w-14 h-14 rounded-2xl bg-[#FFF1E3] border border-[#E38524]/20 flex items-center justify-center mb-4">
-                                <Megaphone className="text-[#E38524]" size={26} />
-                            </div>
-                            <p className="text-[#526274] font-bold">No announcements yet.</p>
-                        </div>
-                    )}
-                </div>
+                            )}
 
+                            {/* Rich Text Editor */}
+                            <div>
+                                <label className="block text-xs font-bold text-[#526274] mb-2 uppercase tracking-wider">Content (Rich Text)</label>
+                                <div className="bg-white border border-[#D6E4EA] rounded-xl overflow-hidden">
+                                    <ReactQuill
+                                        theme="snow"
+                                        value={content}
+                                        onChange={setContent}
+                                        className="h-48 mb-12"
+                                        modules={{
+                                            toolbar: [
+                                                [{ 'header': [1, 2, 3, false] }],
+                                                ['bold', 'italic', 'underline', 'strike', { 'color': [] }, { 'background': [] }],
+                                                [{'list': 'ordered'}, {'list': 'bullet'}],
+                                                ['link'],
+                                                ['clean']
+                                            ]
+                                        }}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* File Upload */}
+                            <div>
+                                <label className="block text-xs font-bold text-[#526274] mb-2 uppercase tracking-wider">Attach Document (PDF, DOC, IMG)</label>
+                                <div className="flex items-center gap-3">
+                                    <label className="flex-1 cursor-pointer flex items-center gap-2 px-4 py-3 border border-dashed border-[#00ADEF] rounded-xl bg-[#EAF8FC] hover:bg-[#D6E4EA] transition">
+                                        <FileUp size={18} className="text-[#00ADEF]" />
+                                        <span className="text-sm font-bold text-[#006F9E]">
+                      {document ? document.name : "Choose a file..."}
+                    </span>
+                                        <input
+                                            type="file"
+                                            className="hidden"
+                                            onChange={(e) => setDocument(e.target.files[0])}
+                                            accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+                                        />
+                                    </label>
+                                </div>
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={submitting}
+                                className="w-full py-3 bg-[#00ADEF] text-white rounded-xl font-bold transition hover:bg-[#006F9E] disabled:opacity-50 flex items-center justify-center gap-2 mt-4"
+                            >
+                                {submitting ? 'Publishing...' : 'Publish Announcement'}
+                                <Send size={16} />
+                            </button>
+                        </form>
+                    </div>
+
+                    {/* List of Announcements */}
+                    <div className="space-y-4">
+                        <h2 className="text-lg font-bold text-[#111827] mb-6 flex items-center gap-2">
+                            <Megaphone size={20} className="text-[#E38524]" />
+                            Published
+                        </h2>
+
+                        {loading ? (
+                            <div className="flex justify-center py-12">
+                                <Loader2 className="animate-spin text-[#00ADEF]" size={32} />
+                            </div>
+                        ) : announcements.length > 0 ? (
+                            announcements.map((ann) => (
+                                <div key={ann.id} className="bg-white border border-[#D6E4EA] rounded-2xl p-5 shadow-xs flex flex-col transition hover:shadow-md">
+                                    <div className="flex justify-between items-start mb-3">
+                                        <h3 className="font-bold text-base text-[#111827]">{ann.title}</h3>
+                                        <button onClick={() => handleDelete(ann.id)} className="p-1.5 rounded-lg text-[#526274] hover:bg-red-50 hover:text-red-600 transition">
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </div>
+
+                                    {/* Render HTML content safely */}
+                                    <div
+                                        className="text-[#526274] text-sm bg-[#F6FAFC] p-4 rounded-xl border border-[#D6E4EA] flex-grow prose prose-sm max-w-none"
+                                        dangerouslySetInnerHTML={{ __html: ann.content }}
+                                    ></div>
+
+                                    {/* Document Link */}
+                                    {ann.document_url && (
+                                        <a href={ann.document_url} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-[#00ADEF] hover:underline">
+                                            <FileUp size={14} /> View Attached Document
+                                        </a>
+                                    )}
+
+                                    <div className="mt-3 pt-3 border-t border-[#D6E4EA] text-xs text-[#526274] font-medium">
+                                        {new Date(ann.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                                    </div>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="text-center py-12 bg-white border border-dashed border-[#D6E4EA] rounded-2xl">
+                                <p className="text-[#526274] font-medium">No announcements yet.</p>
+                            </div>
+                        )}
+                    </div>
+
+                </div>
             </div>
         </div>
     );
