@@ -2,24 +2,26 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="44dcb0c3-1c97-4a32-9ea5-b2e6d127d529" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/Website/views/partials/open-call.ejs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Website/admin-backend/announcements/announcements.js" beforeDir="false" afterPath="$PROJECT_DIR$/Website/admin-backend/announcements/announcements.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Website/admin-ui/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/Website/admin-ui/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Website/admin-ui/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/Website/admin-ui/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Website/admin-ui/src/features/admin/Announcements/Announcements.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Website/admin-ui/src/features/admin/Announcements/Announcements.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Website/admin-ui/src/features/admin/Reports/Reports.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Website/admin-ui/src/features/admin/Reports/Reports.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Website/admin-ui/vite.config.js" beforeDir="false" afterPath="$PROJECT_DIR$/Website/admin-ui/vite.config.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Website/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/Website/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Website/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/Website/package.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Website/admin-backend/applications/applications.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Website/admin-ui/src/features/admin/Applications/Applications.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Website/admin-ui/src/features/admin/Sidebar.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Website/admin-ui/src/features/admin/Sidebar.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Website/admin-ui/src/features/admin/admin.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Website/admin-ui/src/features/admin/admin.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Website/admin-ui/src/features/admin/inbox/inbox.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Website/admin-ui/src/features/admin/inbox/inbox.jsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Website/routes/admin-api.js" beforeDir="false" afterPath="$PROJECT_DIR$/Website/routes/admin-api.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Website/routes/public.routes.js" beforeDir="false" afterPath="$PROJECT_DIR$/Website/routes/public.routes.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Website/views/home/home.ejs" beforeDir="false" afterPath="$PROJECT_DIR$/Website/views/home/home.ejs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Website/views/index.ejs" beforeDir="false" afterPath="$PROJECT_DIR$/Website/views/index.ejs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="JavaScript File" />
+        <option value="JSX File" />
+      </list>
+    </option>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_BRANCH_BY_REPOSITORY">

@@ -22,7 +22,10 @@ const upload = multer({
   }
 });
 
-
+import {
+  getAllApplications,
+  updateApplicationStatus,
+} from "../admin-backend/applications/applications.js";
 
 
 import { Router } from "express";
@@ -659,6 +662,20 @@ router.get("/reports/summary", async (req, res) => {
     res.status(500).json({ message: "Failed to load report summary." });
   }
 });
+
+// Applications (Open Call Submissions)
+router.get(
+    "/applications",
+    asyncHandler(async (req, res) => res.json(await getAllApplications()))
+);
+
+router.put(
+    "/applications/:id/status",
+    asyncHandler(async (req, res) =>
+        res.json(await updateApplicationStatus(req.params.id, req.body.status))
+    )
+);
+
 export default router;
 
 

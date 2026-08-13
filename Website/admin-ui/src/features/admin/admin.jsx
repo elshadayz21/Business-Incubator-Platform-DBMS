@@ -12,6 +12,7 @@ import Announcements from "./Announcements/Announcements";
 import StaticPages from "./StaticPages/StaticPages";
 import Cohorts from "./Cohorts/Cohorts";
 import Reports from "./Reports/Reports";
+import Applications from "./Applications/Applications";
 
 const Admin = () => {
   const [activeTab, setActiveTab] = useState("Dashboard");
@@ -45,6 +46,8 @@ const Admin = () => {
         return <Reports />;
       default:
         return <Dashboard />;
+      case "Applications":
+        return <Applications />;
     }
   };
 

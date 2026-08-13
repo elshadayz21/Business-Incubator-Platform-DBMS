@@ -17,6 +17,7 @@ import {
   FileText,
   Layers,
   PieChart,
+  ClipboardList
 } from "lucide-react";
 
 const Sidebar = ({
@@ -40,8 +41,9 @@ const Sidebar = ({
     { id: 9, icon: FileText, label: "Static Pages", badge: null },
     { id: 10, icon: Layers, label: "Cohorts", badge: null },
     { id: 11, icon: PieChart, label: "Reports", badge: null },
+    { id: 12, icon: ClipboardList, label: "Applications", badge: "New" },
     ...(userRole?.toLowerCase() === "superadmin"
-      ? [{ id: 12, icon: Users, label: "Users", badge: "Admin" }]
+      ? [{ id: 13, icon: Users, label: "Users", badge: "Admin" }]
       : []),
   ];
 
