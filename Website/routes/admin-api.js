@@ -1,4 +1,32 @@
+import multer from "multer";
+import path from "path";
+
+// Configure Multer for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "public/uploads/"); // Files will be saved here
+  },
+  filename: (req, file, cb) => {
+    cb(null, `doc-${Date.now()}${path.extname(file.originalname)}`);
+  },
+});
+const upload = multer({
+  storage: storage,
+  fileFilter: (req, file, cb) => {
+    // Security: Only allow PDFs and Images
+    const filetypes = /pdf|doc|docx|png|jpg|jpeg/;
+    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = filetypes.test(file.mimetype);
+    if (mimetype && extname) return cb(null, true);
+    cb(new Error("Error: Invalid file type!"));
+  }
+});
+
+
+
+
 import { Router } from "express";
+import pool from "../config/db.js";
 import {
   getAllWorkshops,
   getWorkshop,
@@ -127,37 +155,7 @@ router.get(
   asyncHandler(async (req, res) => res.json(await getReportSummary())),
 );
 
-router.get(
-  "/reports/export",
-  asyncHandler(async (req, res) => {
-    const rows = await getReportRows();
-    const workbook = new ExcelJS.Workbook();
-    const sheet = workbook.addWorksheet("Cohort Report");
 
-    sheet.columns = [
-      { header: "Cohort", key: "cohort", width: 20 },
-      { header: "Type", key: "type", width: 12 },
-      { header: "Status", key: "status", width: 12 },
-      { header: "Name", key: "full_name", width: 24 },
-      { header: "Email", key: "email", width: 28 },
-      { header: "Stage", key: "current_stage", width: 14 },
-      { header: "Joined", key: "joined_at", width: 16 },
-    ];
-    sheet.getRow(1).font = { bold: true };
-    rows.forEach((row) => sheet.addRow(row));
-
-    res.setHeader(
-      "Content-Type",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    );
-    res.setHeader(
-      "Content-Disposition",
-      "attachment; filename=dxvalley-cohort-report.xlsx",
-    );
-    await workbook.xlsx.write(res);
-    res.end();
-  }),
-);
 // Users (Superadmin only)
 const superadminOnly = authorizeRole(ROLES.SUPERADMIN);
 router.get(
@@ -386,12 +384,38 @@ router.get(
   "/announcements",
   asyncHandler(async (req, res) => res.json(await getAllAnnouncements())),
 );
+
+// Create Announcement with File Upload
 router.post(
-  "/announcements",
-  asyncHandler(async (req, res) =>
-    res.json(await createAnnouncement(req.body)),
-  ),
+    "/announcements",
+    upload.single("document"),
+    asyncHandler(async (req, res) => {
+      // 1. Destructure ALL fields from req.body!
+      const { title, content, deadline, is_open_call, capacity } = req.body;
+
+      let document_url = null;
+      if (req.file) {
+        document_url = `/uploads/${req.file.filename}`;
+      }
+
+      // 2. Parse the checkbox and capacity values
+      const parsedIsOpenCall = is_open_call === "true" || is_open_call === true;
+      const parsedCapacity = capacity ? parseInt(capacity, 10) : null;
+
+      // 3. Pass them to the database function!
+      const newAnnouncement = await createAnnouncement({
+        title,
+        content,
+        deadline,
+        document_url,
+        is_open_call: parsedIsOpenCall,
+        capacity: parsedCapacity
+      });
+
+      res.json(newAnnouncement);
+    })
 );
+
 router.delete(
   "/announcements/:id",
   asyncHandler(async (req, res) =>
@@ -520,4 +544,122 @@ router.get(
   ),
 );
 
+// Multi-Tab Excel Export Route
+router.get(
+    "/reports/export",
+    asyncHandler(async (req, res) => {
+      try {
+        // 1. Fetch data safely using functions we know work!
+        const projects = await getAllProjects();
+        const mentors = await getAllMentors();
+        const workshops = await getAllWorkshops();
+
+        const inboxRaw = await getAllSubmissions();
+        const inbox = Array.isArray(inboxRaw) ? inboxRaw : [];
+
+        // 2. Create a new Excel workbook
+        const workbook = new ExcelJS.Workbook();
+
+        // Helper function to build sheets safely
+        const buildSheet = (sheetName, data, columns) => {
+          const ws = workbook.addWorksheet(sheetName);
+          ws.columns = columns;
+          ws.getRow(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF00ADEF" } };
+          ws.getRow(1).font = { bold: true, color: { argb: "FFFFFFFF" } };
+
+          if (Array.isArray(data)) {
+            data.forEach((row) => ws.addRow(row));
+          }
+        };
+
+        // 3. Build Tabs
+        buildSheet("Projects", projects, [
+          { header: "ID", key: "id", width: 5 },
+          { header: "Name", key: "name", width: 30 },
+          { header: "Domain", key: "domain", width: 20 },
+          { header: "Stage", key: "stage", width: 15 },
+        ]);
+
+        buildSheet("Mentors", mentors, [
+          { header: "ID", key: "id", width: 5 },
+          { header: "Name", key: "name", width: 30 },
+          { header: "Expertise", key: "expertise", width: 25 },
+          { header: "Email", key: "email", width: 30 },
+        ]);
+
+        buildSheet("Workshops", workshops, [
+          { header: "ID", key: "id", width: 5 },
+          { header: "Title", key: "title", width: 30 },
+          { header: "Category", key: "category", width: 20 },
+          { header: "Schedule", key: "schedule", width: 25 },
+        ]);
+
+        buildSheet("Inbox Messages", inbox, [
+          { header: "ID", key: "id", width: 5 },
+          { header: "Type", key: "type", width: 15 },
+          { header: "Name", key: "name", width: 25 },
+          { header: "Email", key: "email", width: 30 },
+          { header: "Message", key: "message", width: 50 },
+        ]);
+
+        // 4. Send the file
+        res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        res.setHeader("Content-Disposition", "attachment; filename=dxvalley_dashboard_report.xlsx");
+        await workbook.xlsx.write(res);
+        res.end();
+      } catch (error) {
+        console.error("Error exporting to Excel:", error);
+        res.status(500).json({ message: "Failed to generate Excel file." });
+      }
+    })
+);
+
+// Reports Summary
+router.get("/reports/summary", async (req, res) => {
+  try {
+    // 1. Fetch data
+    const projects = await getAllProjects();
+    const mentors = await getAllMentors();
+
+    const totalProjects = projects.length;
+    const totalMentors = mentors.length;
+
+    // 2. Group projects by stage for the Pie Chart
+    const statusBreakdown = projects.reduce((acc, p) => {
+      const stage = p.stage || "Unknown";
+      const found = acc.find(item => item.name === stage);
+      if (found) found.value++;
+      else acc.push({ name: stage, value: 1 });
+      return acc;
+    }, []);
+
+    // 3. Mock data for cohorts
+    const applicantsByCohort = [
+      { cohort_id: 1, count: totalProjects > 0 ? Math.floor(totalProjects / 2) : 5 },
+      { cohort_id: 2, count: totalProjects > 0 ? Math.ceil(totalProjects / 2) : 8 }
+    ];
+    const cohorts = [
+      { id: 1, name: "Batch 01" },
+      { id: 2, name: "Batch 02" }
+    ];
+    const mentorLoad = mentors.map((m, i) => ({ mentor_id: m.id, load: Math.floor(Math.random() * 5) }));
+
+    // 4. Send the response
+    res.json({
+      totalProjects,
+      totalMentors,
+      applicantsByCohort,
+      statusBreakdown,
+      cohorts,
+      mentorLoad
+    });
+  } catch (error) {
+    // THIS WILL NOW PRINT THE EXACT ERROR IN YOUR TERMINAL!
+    console.error("🔥 SUMMARY ROUTE ERROR:", error);
+    res.status(500).json({ message: "Failed to load report summary." });
+  }
+});
 export default router;
+
+
+

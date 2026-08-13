@@ -8,12 +8,12 @@ export const getAllAnnouncements = async () => {
 
 // CREATE A NEW ANNOUNCEMENT
 export const createAnnouncement = async (data) => {
-    const { title, content } = data;
+    const { title, content, deadline, document_url, is_open_call, capacity } = data;
     const result = await pool.query(
-        `INSERT INTO announcements (title, content) 
-     VALUES ($1, $2) 
+        `INSERT INTO announcements (title, content, deadline, document_url, is_open_call, capacity) 
+     VALUES ($1, $2, $3, $4, $5, $6) 
      RETURNING *`,
-        [title, content]
+        [title, content, deadline || null, document_url || null, is_open_call || false, capacity || null]
     );
     return result.rows[0];
 };

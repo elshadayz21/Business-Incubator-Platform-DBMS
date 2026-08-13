@@ -37,12 +37,65 @@ router.post("/subscribe", async (req, res) => {
 // GET ALL ANNOUNCEMENTS (Public)
 router.get("/announcements", async (req, res) => {
     try {
-        const result = await pool.query("SELECT * FROM announcements WHERE is_published = true ORDER BY created_at DESC LIMIT 5");
+        const result = await pool.query(`
+      SELECT a.*, 
+             (SELECT COUNT(*) FROM applications app WHERE app.announcement_id = a.id) as application_count 
+      FROM announcements a 
+      WHERE a.is_published = true 
+      ORDER BY a.created_at DESC 
+      LIMIT 5
+    `);
         res.status(200).json(result.rows);
     } catch (error) {
         console.error("Error fetching announcements:", error);
         res.status(500).json({ message: "Internal Server Error" });
     }
 });
+// POST: Application Form
+router.post("/apply", async (req, res) => {
+    try {
+        const { announcement_id, full_name, email, phone, background, startup_idea } = req.body;
 
+        // 1. Check if capacity is reached
+        const annRes = await pool.query("SELECT is_open_call, capacity, deadline FROM announcements WHERE id = $1", [announcement_id]);
+        if (annRes.rows.length === 0) return res.status(404).json({ message: "Announcement not found." });
+
+        const ann = annRes.rows[0];
+        if (!ann.is_open_call) return res.status(403).json({ message: "Applications are not enabled for this post." });
+        if (ann.deadline && new Date(ann.deadline) < new Date()) return res.status(403).json({ message: "The application deadline has passed." });
+
+        if (ann.capacity) {
+            const countRes = await pool.query("SELECT COUNT(*) FROM applications WHERE announcement_id = $1", [announcement_id]);
+            if (parseInt(countRes.rows[0].count) >= ann.capacity) {
+                return res.status(403).json({ message: "Maximum application capacity reached. Applications are now closed." });
+            }
+        }
+
+        // 2. Save the application
+        await pool.query(
+            `INSERT INTO applications (announcement_id, full_name, email, phone, background, startup_idea) 
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+            [announcement_id, full_name, email, phone, background, startup_idea]
+        );
+
+        res.status(201).json({ success: true, message: "Application submitted successfully!" });
+    } catch (error) {
+        console.error("Application form error:", error);
+        res.status(500).json({ success: false, message: "Internal Server Error" });
+    }
+});
+
+
+// GET: Active Open Calls (Announcements with a future deadline)
+router.get("/open-calls", async (req, res) => {
+    try {
+        const result = await pool.query(
+            "SELECT id, title, content, deadline FROM announcements WHERE deadline IS NOT NULL AND deadline > now() ORDER BY deadline ASC"
+        );
+        res.status(200).json(result.rows);
+    } catch (error) {
+        console.error("Error fetching open calls:", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+});
 export { router as publicRoutes };

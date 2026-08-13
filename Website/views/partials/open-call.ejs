@@ -1,0 +1,261 @@
+<!-- Application Modal (Hidden by default) -->
+<div id="application-modal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4 backdrop-blur-sm">
+  <div class="bg-white w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-xl flex flex-col">
+
+    <!-- Header (Content & Document) -->
+    <div class="bg-[#00ADEF] p-6 sticky top-0 z-10">
+      <div class="flex justify-between items-start">
+        <div class="flex-1">
+          <span id="modal-badge" class="hidden bg-white/20 text-white px-3 py-1 font-bold text-xs uppercase tracking-wider rounded-full">Open Call</span>
+          <h2 id="modal-title" class="text-2xl font-extrabold text-white mt-2"></h2>
+        </div>
+        <button onclick="closeApplicationModal()" class="text-white hover:bg-white/20 rounded-lg p-2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <!-- Rich Text Content -->
+      <div id="modal-content" class="text-white/90 mt-3 text-sm prose prose-sm max-w-none"></div>
+
+      <!-- Attached Document Link -->
+      <div id="modal-document" class="mt-4"></div>
+
+      <!-- Countdown -->
+      <div id="modal-countdown" class="flex gap-4 mt-4 text-white text-center text-sm font-bold"></div>
+    </div>
+
+    <!-- Action Area (Apply Now Button or Closed Message) -->
+    <div id="modal-action-area" class="p-6 text-center hidden">
+      <button onclick="showApplicationForm()" class="px-8 py-3 bg-[#E38524] text-white rounded-xl font-bold hover:bg-[#C97019] transition">
+        Apply Now
+      </button>
+    </div>
+
+    <!-- Application Form (Hidden until Apply is clicked) -->
+    <div id="form-container" class="hidden">
+      <form id="application-form" class="p-6 space-y-5 border-t border-[#D6E4EA]">
+        <h3 class="text-xl font-extrabold text-[#111827] mb-4">Application Form</h3>
+        <input type="hidden" id="modal-announcement-id">
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label class="block text-xs font-bold text-[#526274] mb-2 uppercase">Full Name</label>
+            <input type="text" id="full_name" required class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-[#526274] mb-2 uppercase">Email Address</label>
+            <input type="email" id="email" required class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label class="block text-xs font-bold text-[#526274] mb-2 uppercase">Phone Number</label>
+            <input type="text" id="phone" class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-[#526274] mb-2 uppercase">Background</label>
+            <input type="text" id="background" class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-[#526274] mb-2 uppercase">Startup Idea</label>
+          <textarea id="startup_idea" rows="4" required class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]"></textarea>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-[#526274] mb-2 uppercase">Attach Document (PDF, DOC, PNG, JPG - Max 5MB)</label>
+          <input type="file" id="document_upload" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" class="w-full text-sm text-[#526274] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[#EAF8FC] file:text-[#006F9E] file:font-bold hover:file:bg-[#D6E4EA]">
+        </div>
+
+        <div id="form-message" class="hidden p-4 rounded-xl text-sm font-bold text-center"></div>
+
+        <button type="submit" class="w-full py-4 bg-[#E38524] text-white rounded-xl font-bold hover:bg-[#C97019] transition">
+          Submit Application
+        </button>
+      </form>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  let countdownInterval;
+
+  window.openApplicationModal = (index) => {
+    const ann = window.announcementData[index];
+    if (!ann) return;
+
+    document.getElementById('modal-announcement-id').value = ann.id;
+    document.getElementById('modal-title').textContent = ann.title;
+    document.getElementById('modal-content').innerHTML = ann.content;
+
+    // Show Document Link if it exists
+    const docDiv = document.getElementById('modal-document');
+    if (ann.document_url) {
+      docDiv.innerHTML = `<a href="${ann.document_url}" target="_blank" class="inline-flex items-center gap-2 text-white hover:underline bg-white/10 px-4 py-2 rounded-lg mt-2 text-xs font-bold"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> View Attached Document</a>`;
+    } else {
+      docDiv.innerHTML = '';
+    }
+
+    // Show Badge & Countdown
+    document.getElementById('modal-badge').classList.remove('hidden');
+    document.getElementById('modal-action-area').classList.remove('hidden');
+    document.getElementById('form-container').classList.add('hidden');
+
+    const modal = document.getElementById('application-modal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+
+    // Countdown Logic
+    const deadlineDate = new Date(ann.deadline).getTime();
+    clearInterval(countdownInterval);
+
+    countdownInterval = setInterval(() => {
+      const now = new Date().getTime();
+      const distance = deadlineDate - now;
+
+      if (distance < 0) {
+        clearInterval(countdownInterval);
+        document.getElementById('modal-countdown').innerHTML = "<span class='bg-red-500 px-3 py-1 rounded-full'>APPLICATION CLOSED</span>";
+        document.getElementById('modal-action-area').classList.add('hidden'); // Hide apply button if closed
+        return;
+      }
+
+      const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+      document.getElementById('modal-countdown').innerHTML = `
+        <span>${days}d</span> : <span>${hours}h</span> : <span>${minutes}m</span> : <span>${seconds}s</span>
+      `;
+    }, 1000);
+  };
+
+  window.openAnnouncementDetail = (index) => {
+    const ann = window.announcementData[index];
+    if (!ann) return;
+
+    document.getElementById('modal-title').textContent = ann.title;
+    document.getElementById('modal-content').innerHTML = ann.content;
+
+    // Show Document Link if it exists
+    const docDiv = document.getElementById('modal-document');
+    if (ann.document_url) {
+      docDiv.innerHTML = `<a href="${ann.document_url}" target="_blank" class="inline-flex items-center gap-2 text-white hover:underline bg-white/10 px-4 py-2 rounded-lg mt-2 text-xs font-bold"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> View Attached Document</a>`;
+    } else {
+      docDiv.innerHTML = '';
+    }
+
+    // Hide Badge, Countdown, and Form for regular news
+    document.getElementById('modal-badge').classList.add('hidden');
+    document.getElementById('modal-countdown').innerHTML = '';
+    document.getElementById('modal-action-area').classList.add('hidden');
+    document.getElementById('form-container').classList.add('hidden');
+
+    const modal = document.getElementById('application-modal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+
+        // Check if capacity is reached
+        const currentCount = parseInt(ann.application_count || 0);
+        const maxCap = ann.capacity ? parseInt(ann.capacity) : null;
+
+        const actionArea = document.getElementById('modal-action-area');
+        if (maxCap && currentCount >= maxCap) {
+          // Capacity reached! Hide the Apply button and show a closed message.
+          actionArea.innerHTML = "<p class='text-red-600 font-bold bg-red-50 px-4 py-3 rounded-lg border border-red-200'>Maximum capacity reached. Applications are closed.</p>";
+        } else {
+          // Capacity is fine. Show the normal Apply button.
+          actionArea.innerHTML = "<button onclick='showApplicationForm()' class='px-8 py-3 bg-[#E38524] text-white rounded-xl font-bold hover:bg-[#C97019] transition'>Apply Now</button>";
+        }
+
+  };
+
+  window.showApplicationForm = () => {
+    document.getElementById('modal-action-area').classList.add('hidden'); // Hide Apply button
+    document.getElementById('form-container').classList.remove('hidden'); // Show Form
+    document.getElementById('form-container').scrollIntoView({ behavior: 'smooth' });
+  };
+
+  window.closeApplicationModal = () => {
+    const modal = document.getElementById('application-modal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    document.body.style.overflow = 'auto';
+    clearInterval(countdownInterval);
+  };
+
+  // Form Submission Logic (No changes here, just keeping it intact)
+  document.getElementById('application-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msgBox = document.getElementById('form-message');
+    const button = e.target.querySelector('button[type="submit"]');
+
+    button.disabled = true;
+    button.textContent = 'Submitting...';
+    msgBox.className = 'hidden';
+
+    const fileInput = document.getElementById('document_upload');
+    const file = fileInput.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        msgBox.className = 'p-4 rounded-xl text-sm font-bold text-center bg-red-100 text-red-800';
+        msgBox.textContent = '❌ File is too large. Max 5MB.';
+        msgBox.classList.remove('hidden');
+        button.disabled = false;
+        button.textContent = 'Submit Application';
+        return;
+      }
+      const allowedExtensions = ['.pdf', '.doc', '.docx', '.png', '.jpg', '.jpeg'];
+      const fileName = file.name.toLowerCase();
+      const isValid = allowedExtensions.some(ext => fileName.endsWith(ext));
+      if (!isValid) {
+        msgBox.className = 'p-4 rounded-xl text-sm font-bold text-center bg-red-100 text-red-800';
+        msgBox.textContent = '❌ Invalid file type. Only PDF, DOC, PNG, JPG allowed.';
+        msgBox.classList.remove('hidden');
+        button.disabled = false;
+        button.textContent = 'Submit Application';
+        return;
+      }
+    }
+
+    const data = {
+      announcement_id: document.getElementById('modal-announcement-id').value,
+      full_name: document.getElementById('full_name').value,
+      email: document.getElementById('email').value,
+      phone: document.getElementById('phone').value,
+      background: document.getElementById('background').value,
+      startup_idea: document.getElementById('startup_idea').value
+    };
+
+    try {
+      const response = await fetch('/api/public/apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      const result = await response.json();
+
+      if (response.ok) {
+        msgBox.className = 'p-4 rounded-xl text-sm font-bold text-center bg-green-100 text-green-800';
+        msgBox.textContent = '✅ ' + result.message;
+        msgBox.classList.remove('hidden');
+        document.getElementById('application-form').reset();
+      } else {
+        throw new Error(result.message || 'Failed to submit');
+      }
+    } catch (error) {
+      msgBox.className = 'p-4 rounded-xl text-sm font-bold text-center bg-red-100 text-red-800';
+      msgBox.textContent = '❌ ' + error.message;
+      msgBox.classList.remove('hidden');
+    } finally {
+      button.disabled = false;
+      button.textContent = 'Submit Application';
+    }
+  });
+</script>
