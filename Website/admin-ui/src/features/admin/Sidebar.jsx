@@ -14,6 +14,9 @@ import {
   Inbox as InboxIcon,
   Megaphone,
   CircleUserRound,
+  FileText,
+  Layers,
+  PieChart,
 } from "lucide-react";
 
 const Sidebar = ({
@@ -34,8 +37,11 @@ const Sidebar = ({
     { id: 6, icon: Coins, label: "Funding", badge: "New" },
     { id: 7, icon: InboxIcon, label: "Inbox", badge: null },
     { id: 8, icon: Megaphone, label: "Announcements", badge: "New" },
+    { id: 9, icon: FileText, label: "Static Pages", badge: null },
+    { id: 10, icon: Layers, label: "Cohorts", badge: null },
+    { id: 11, icon: PieChart, label: "Reports", badge: null },
     ...(userRole?.toLowerCase() === "superadmin"
-      ? [{ id: 9, icon: Users, label: "Users", badge: "Admin" }]
+      ? [{ id: 12, icon: Users, label: "Users", badge: "Admin" }]
       : []),
   ];
 
@@ -81,10 +87,10 @@ const Sidebar = ({
                 alt={currentUser.name || "Profile"}
                 className="w-full h-full object-cover"
               />
+            ) : currentUser.name ? (
+              currentUser.name.charAt(0).toUpperCase()
             ) : (
-              (currentUser.name
-                ? currentUser.name.charAt(0).toUpperCase()
-                : "A")
+              "A"
             )}
           </div>
           <div className="min-w-0">
