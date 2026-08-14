@@ -1,3 +1,5 @@
+
+import pool from "../../config/db.js";
 import {
   findUserByEmail,
   createUser,
@@ -37,6 +39,7 @@ export const signupPage = (req, res) =>
     pageRoute: "/v1/auth/signup",
     error: req.flash("error")[0] || null,
     success: req.flash("success")[0] || null,
+    token: req.query.token
   });
 
 export const loginPage = (req, res) =>
@@ -120,26 +123,48 @@ export const profilePage = async (req, res, next) => {
   }
 };
 
+
 export const register = async (req, res, next) => {
   try {
-    const { name, email, password } = req.body;
+    console.log("Backend received signup request:", req.body);
+    const { name, email, password, token } = req.body;
 
+    // 1. SECURITY CHECK: Ensure a token was provided
+    if (!token) {
+      req.flash("error", "Invitation token is required to sign up.");
+      return res.redirect("/v1/auth/signup");
+    }
+
+    // 2. Check if the token is valid, accepted, and not used
+    const tokenRes = await pool.query(
+        "SELECT * FROM applications WHERE invite_token = $1 AND status = 'Accepted' AND invite_used = false",
+        [token]
+    );
+
+    if (tokenRes.rows.length === 0) {
+      req.flash("error", "Invalid, expired, or already used invitation link.");
+      return res.redirect("/v1/auth/signup");
+    }
+
+    // 3. Validate inputs
     if (!name || !email || !password) {
       req.flash("error", "All fields are required");
-      return res.redirect("/v1/auth/signup");
+      return res.redirect(`/v1/auth/signup?token=${token}`);
     }
 
     if (password.length < 8) {
       req.flash("error", "Password must be at least 8 characters");
-      return res.redirect("/v1/auth/signup");
+      return res.redirect(`/v1/auth/signup?token=${token}`);
     }
 
+    // 4. Check if user already exists (Using your team's model function!)
     let user = await findUserByEmail(email);
     if (user) {
       req.flash("error", "User already exists with this email");
-      return res.redirect("/v1/auth/signup");
+      return res.redirect(`/v1/auth/signup?token=${token}`);
     }
 
+    // 5. Create the user (Using your team's model functions so password gets hashed!)
     const hashedPassword = await hashPassword(password);
     let user_code = generateUserCode();
 
@@ -150,13 +175,15 @@ export const register = async (req, res, next) => {
       password: hashedPassword,
     });
 
+    // 6. Mark the token as used so it can't be used again!
+    await pool.query("UPDATE applications SET invite_used = true WHERE invite_token = $1", [token]);
+
     req.flash("success", "Account created successfully! Please login.");
     res.redirect("/v1/auth/login");
+
   } catch (err) {
-    req.flash(
-      "error",
-      "An error occurred during registration. Please try again.",
-    );
+    console.error("Registration error:", err);
+    req.flash("error", "An error occurred during registration. Please try again.");
     res.redirect("/v1/auth/signup");
   }
 };

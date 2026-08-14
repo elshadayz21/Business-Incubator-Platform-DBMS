@@ -1,6 +1,7 @@
 import multer from "multer";
 import path from "path";
 
+
 // Configure Multer for file uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -28,6 +29,7 @@ import { getFormFields, saveFormFields } from "../admin-backend/applications/app
 import {
   getAllApplications,
   updateApplicationStatus,
+  sendMassInvites
 } from "../admin-backend/applications/applications.js";
 
 
@@ -689,6 +691,11 @@ router.get(
 router.post(
     "/announcements/:id/form-fields",
     asyncHandler(async (req, res) => res.json(await saveFormFields(req.params.id, req.body.fields)))
+);
+// Mass Email Route
+router.post(
+    "/applications/send-invites",
+    asyncHandler(async (req, res) => res.json(await sendMassInvites()))
 );
 
 export default router;

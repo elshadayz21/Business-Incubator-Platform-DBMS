@@ -5,6 +5,7 @@ export default function Applications() {
     const [applications, setApplications] = useState([]);
     const [loading, setLoading] = useState(true);
 
+
     const fetchApplications = async () => {
         try {
             const response = await fetch('/api/admin/applications', { credentials: 'include' });
@@ -15,6 +16,21 @@ export default function Applications() {
             setApplications([]);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleSendInvites = async () => {
+        if (!window.confirm("Send invitation emails to ALL accepted applicants?")) return;
+        try {
+            const response = await fetch('/api/admin/applications/send-invites', {
+                method: 'POST',
+                credentials: 'include'
+            });
+            const result = await response.json();
+            alert(result.message);
+        } catch (error) {
+            console.error("Error sending invites:", error);
+            alert("Failed to send invites.");
         }
     };
 
@@ -44,6 +60,13 @@ export default function Applications() {
                 <div className="mb-8">
                     <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#006F9E] block mb-2">Open Call Submissions</span>
                     <h1 className="text-3xl font-extrabold tracking-[-.04em] text-cyan-dark">Applications</h1>
+                    {/* ADD THIS BUTTON! */}
+                    <button
+                        onClick={handleSendInvites}
+                        className="px-4 py-2 bg-[#E38524] text-white rounded-xl font-bold text-xs hover:bg-[#C97019] transition"
+                    >
+                        Send Invites to Accepted
+                    </button>
                 </div>
 
                 {loading ? (
