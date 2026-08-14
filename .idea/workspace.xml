@@ -2,11 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="901bcf82-3eb7-452d-8742-e0e378cb8b0d" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/Website/utils/mailer.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Website/admin-backend/applications/applications.js" beforeDir="false" afterPath="$PROJECT_DIR$/Website/admin-backend/applications/applications.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Website/admin-ui/src/features/admin/Applications/Applications.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Website/admin-ui/src/features/admin/Applications/Applications.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Website/controllers/auth/auth.controller.js" beforeDir="false" afterPath="$PROJECT_DIR$/Website/controllers/auth/auth.controller.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Website/routes/admin-api.js" beforeDir="false" afterPath="$PROJECT_DIR$/Website/routes/admin-api.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Website/views/auth/signup.ejs" beforeDir="false" afterPath="$PROJECT_DIR$/Website/views/auth/signup.ejs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
