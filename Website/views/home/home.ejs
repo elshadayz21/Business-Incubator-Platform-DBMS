@@ -17,16 +17,17 @@
         <p class="mt-7 max-w-[610px] text-lg leading-8 text-white/85 sm:text-xl">
           We help bold ideas become investable, scalable businesses through structured cohorts, expert mentorship, and a community that keeps founders moving.
         </p>
-        <div class="mt-9 flex flex-col gap-3 sm:flex-row">
-          <a class="inline-flex items-center justify-center gap-3 rounded-md bg-orange px-6 py-3.5 text-sm font-extrabold text-white shadow-[0_10px_24px_rgba(141,67,10,.24)] transition hover:-translate-y-0.5 hover:bg-orange-dark focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-cyan-deep" href="<%= routes.signupRoute %>">
-            Apply to the next cohort
-            <i class="fa-solid fa-arrow-right text-xs" aria-hidden="true"></i>
-          </a>
-          <a class="inline-flex items-center justify-center gap-3 rounded-md border border-white/70 bg-white/5 px-6 py-3.5 text-sm font-bold text-white transition hover:bg-white hover:text-cyan-deep focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-cyan-deep" href="#programs">
-            Explore programs
-            <i class="fa-solid fa-chevron-right text-xs" aria-hidden="true"></i>
-          </a>
-        </div>
+                <div class="mt-9 flex flex-col gap-3 sm:flex-row">
+
+                  <a class="inline-flex items-center justify-center gap-3 rounded-md bg-orange px-6 py-3.5 text-sm font-extrabold text-white shadow-[0_10px_24px_rgba(141,67,10,.24)] transition hover:-translate-y-0.5 hover:bg-orange-dark focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-cyan-deep cursor-pointer" onclick="handleGlobalApply()">
+                    Apply to the next cohort
+                    <i class="fa-solid fa-arrow-right text-xs" aria-hidden="true"></i>
+                  </a>
+                  <a class="inline-flex items-center justify-center gap-3 rounded-md border border-white/70 bg-white/5 px-6 py-3.5 text-sm font-bold text-white transition hover:bg-white hover:text-cyan-deep focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-cyan-deep" href="#programs">
+                    Explore programs
+                    <i class="fa-solid fa-chevron-right text-xs" aria-hidden="true"></i>
+                  </a>
+                </div>
       </div>
 
       <div class="dv-reveal relative lg:justify-self-end" data-delay="140">
@@ -234,7 +235,10 @@
   <section id="apply" class="bg-cyan-soft">
     <div class="mx-auto flex max-w-7xl flex-col items-start justify-between gap-8 px-6 py-16 lg:flex-row lg:items-center lg:px-10 lg:py-20">
       <div><p class="text-xs font-extrabold uppercase tracking-[.2em] text-orange">Your next chapter starts here</p><h2 class="mt-3 max-w-[720px] text-4xl font-extrabold tracking-[-.04em] text-cyan-dark sm:text-5xl">Ready to turn your idea into impact?</h2><p class="mt-4 text-base text-muted">Applications are reviewed in cohorts. Bring the problem, the curiosity, and the courage to begin.</p></div>
-      <a class="inline-flex shrink-0 items-center gap-3 rounded-md bg-orange px-7 py-4 text-sm font-extrabold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-orange-dark focus:outline-none focus:ring-2 focus:ring-orange focus:ring-offset-2" href="<%= routes.signupRoute %>">Start your application <i class="fa-solid fa-arrow-right text-xs" aria-hidden="true"></i></a>
+      <a class="inline-flex shrink-0 items-center gap-3 rounded-md bg-orange px-7 py-4 text-sm font-extrabold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-orange-dark focus:outline-none focus:ring-2 focus:ring-orange focus:ring-offset-2"
+       onclick="handleGlobalApply()" class="... cursor-pointer">
+        Start your application
+       <i class="fa-solid fa-arrow-right text-xs" aria-hidden="true"></i></a>
     </div>
   </section>
 </main>
