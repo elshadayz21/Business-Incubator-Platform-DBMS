@@ -695,7 +695,10 @@ router.post(
 // Mass Email Route
 router.post(
     "/applications/send-invites",
-    asyncHandler(async (req, res) => res.json(await sendMassInvites()))
+    asyncHandler(async (req, res) => {
+      const { subject, body } = req.body;
+      res.json(await sendMassInvites(subject, body));
+    })
 );
 
 export default router;

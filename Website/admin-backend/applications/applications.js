@@ -55,8 +55,7 @@ export const saveFormFields = async (announcementId, fields) => {
 import { sendInvitationEmail } from "../../utils/mailer.js"; // Make sure this is at the very top of the file!
 
 // SEND INVITES TO ALL ACCEPTED APPLICANTS
-export const sendMassInvites = async () => {
-    // 1. Find all accepted applicants who haven't been invited yet
+export const sendMassInvites = async (subject, body) => {
     const result = await pool.query(
         "SELECT * FROM applications WHERE status = 'Accepted' AND invite_used = false AND invite_sent = false"
     );
@@ -69,11 +68,10 @@ export const sendMassInvites = async () => {
     let emailsSent = 0;
     let errors = 0;
 
-    // 2. Loop through them and send the email
     for (const app of acceptedApps) {
-        const emailSent = await sendInvitationEmail(app.email, app.invite_token);
+        // Pass subject and body to the mailer!
+        const emailSent = await sendInvitationEmail(app.email, app.invite_token, subject, body);
         if (emailSent) {
-            // Mark them as invited so we don't email them twice
             await pool.query("UPDATE applications SET invite_sent = true WHERE id = $1", [app.id]);
             emailsSent++;
         } else {

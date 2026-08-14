@@ -21,25 +21,26 @@ const transporter = nodemailer.createTransport({
  * @param {string} email - The applicant's email address.
  * @param {string} token - The unique invite token.
  */
-export const sendInvitationEmail = async (email, token) => {
+export const sendInvitationEmail = async (email, token, subject, body) => {
     try {
-        // NOTE: Change this URL to your Vercel URL when you deploy!
         const baseUrl = process.env.BASE_URL || "http://localhost:3000";
         const signupLink = `${baseUrl}/v1/auth/signup?token=${token}`;
+
+        // The button that will replace {link}
+        const linkButton = `<a href="${signupLink}" style="display: inline-block; background-color: #E38524; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 20px 0;">Complete Registration</a>`;
+
+        // Replace the placeholder with the button, and convert line breaks to HTML
+        const finalHtml = body.replace(/{link}/g, linkButton).replace(/\n/g, '<br>');
 
         const mailOptions = {
             from: `"DxValley Incubator" <${process.env.SMTP_USER}>`,
             to: email,
-            subject: "You're In! Welcome to DxValley 🚀",
+            subject: subject || "You're In! Welcome to DxValley 🚀",
             html: `
-        <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: auto;">
-          <h2 style="color: #00ADEF;">Congratulations!</h2>
-          <p>Your application to DxValley has been accepted.</p>
-          <p>To complete your registration and access the Founder Dashboard, please click the button below to set up your account:</p>
-          <a href="${signupLink}" style="display: inline-block; background-color: #E38524; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 20px 0;">
-            Complete Registration
-          </a>
-          <p style="font-size: 12px; color: #888;">If you did not apply to DxValley, please ignore this email.</p>
+        <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: auto; border: 1px solid #ddd; border-radius: 8px; padding: 20px;">
+          ${finalHtml}
+          <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+          <p style="font-size: 12px; color: #888; text-align: center;">© ${new Date().getFullYear()} DxValley Incubation Center. Cooperative Bank of Oromia.</p>
         </div>
       `,
         };
