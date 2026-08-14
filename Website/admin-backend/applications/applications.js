@@ -10,14 +10,20 @@ export const getAllApplications = async () => {
   `);
     return result.rows;
 };
-
 // UPDATE APPLICATION STATUS (Accept/Reject)
 export const updateApplicationStatus = async (id, status) => {
+    console.log("Updating application status:", id, status);
     const result = await pool.query(
         "UPDATE applications SET status = $1 WHERE id = $2 RETURNING *",
         [status, id]
     );
-    return result.rows[0];
+
+    const app = result.rows[0];
+    if (!app) return null;
+
+    // REMOVED the auto-email logic from here!
+
+    return app;
 };
 
 // GET CUSTOM FORM FIELDS FOR AN ANNOUNCEMENT
@@ -43,4 +49,40 @@ export const saveFormFields = async (announcementId, fields) => {
         );
     }
     return { success: true, message: "Form fields saved successfully" };
+};
+
+
+import { sendInvitationEmail } from "../../utils/mailer.js"; // Make sure this is at the very top of the file!
+
+// SEND INVITES TO ALL ACCEPTED APPLICANTS
+export const sendMassInvites = async () => {
+    // 1. Find all accepted applicants who haven't been invited yet
+    const result = await pool.query(
+        "SELECT * FROM applications WHERE status = 'Accepted' AND invite_used = false AND invite_sent = false"
+    );
+
+    const acceptedApps = result.rows;
+    if (acceptedApps.length === 0) {
+        return { success: false, message: "No new accepted applicants to email." };
+    }
+
+    let emailsSent = 0;
+    let errors = 0;
+
+    // 2. Loop through them and send the email
+    for (const app of acceptedApps) {
+        const emailSent = await sendInvitationEmail(app.email, app.invite_token);
+        if (emailSent) {
+            // Mark them as invited so we don't email them twice
+            await pool.query("UPDATE applications SET invite_sent = true WHERE id = $1", [app.id]);
+            emailsSent++;
+        } else {
+            errors++;
+        }
+    }
+
+    return {
+        success: true,
+        message: `Sent ${emailsSent} invitation email(s). ${errors} failed.`
+    };
 };
