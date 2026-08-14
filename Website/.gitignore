@@ -14,7 +14,7 @@ yarn-error.log*
 coverage
 *.local
 .vercel
-
+Website/public/admin/
 public/uploads
 elshaday-docs
 elshaday-docs/*

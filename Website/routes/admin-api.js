@@ -22,6 +22,9 @@ const upload = multer({
   }
 });
 
+
+import { getFormFields, saveFormFields } from "../admin-backend/applications/applications.js";
+
 import {
   getAllApplications,
   updateApplicationStatus,
@@ -674,6 +677,18 @@ router.put(
     asyncHandler(async (req, res) =>
         res.json(await updateApplicationStatus(req.params.id, req.body.status))
     )
+);
+
+
+// Form Builder Routes
+router.get(
+    "/announcements/:id/form-fields",
+    asyncHandler(async (req, res) => res.json(await getFormFields(req.params.id)))
+);
+
+router.post(
+    "/announcements/:id/form-fields",
+    asyncHandler(async (req, res) => res.json(await saveFormFields(req.params.id, req.body.fields)))
 );
 
 export default router;

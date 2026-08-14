@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Megaphone, Trash2, Loader2, Send, PlusCircle, FileUp } from "lucide-react";
+import { Megaphone, Trash2, Loader2, Send, PlusCircle, FileUp, X } from "lucide-react";
 
 
 
@@ -14,6 +14,8 @@ export default function Announcements() {
     const [deadline, setDeadline] = useState("");
     const [document, setDocument] = useState(null);
     const [submitting, setSubmitting] = useState(false);
+    const [editingFormId, setEditingFormId] = useState(null); // Tracks which announcement's form we are editing
+    const [formFields, setFormFields] = useState([]); // Stores the custom fields
 
     // ADD THESE NEW ONES RIGHT HERE:
     const [isOpenCall, setIsOpenCall] = useState(false);
@@ -91,6 +93,56 @@ export default function Announcements() {
             fetchAnnouncements();
         } catch (error) {
             console.error("Error deleting announcement:", error);
+        }
+    };
+
+
+    const handleBuildForm = async (ann) => {
+        if (editingFormId === ann.id) {
+            setEditingFormId(null); // Close if already open
+            return;
+        }
+        setEditingFormId(ann.id);
+        try {
+            const response = await fetch(`/api/admin/announcements/${ann.id}/form-fields`, { credentials: 'include' });
+            const data = await response.json();
+            setFormFields(Array.isArray(data) && data.length > 0 ? data : [{ label: '', field_type: 'text', options: '', required: false }]);
+        } catch (error) {
+            console.error("Error fetching form fields:", error);
+            setFormFields([{ label: '', field_type: 'text', options: '', required: false }]);
+        }
+    };
+
+    const addField = () => {
+        setFormFields([...formFields, { label: '', field_type: 'text', options: '', required: false }]);
+    };
+
+    const removeField = (index) => {
+        const updated = [...formFields];
+        updated.splice(index, 1);
+        setFormFields(updated);
+    };
+
+    const handleFieldChange = (index, key, value) => {
+        const updated = [...formFields];
+        updated[index][key] = value;
+        setFormFields(updated);
+    };
+
+    const handleSaveForm = async (annId) => {
+        try {
+            const response = await fetch(`/api/admin/announcements/${annId}/form-fields`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ fields: formFields })
+            });
+            if (!response.ok) throw new Error("Failed to save form");
+            alert("Form saved successfully!");
+            setEditingFormId(null);
+        } catch (error) {
+            console.error("Error saving form:", error);
+            alert("Failed to save form.");
         }
     };
 
@@ -239,6 +291,8 @@ export default function Announcements() {
                                 <Loader2 className="animate-spin text-[#00ADEF]" size={32} />
                             </div>
                         ) : announcements.length > 0 ? (
+
+
                             announcements.map((ann) => (
                                 <div key={ann.id} className="bg-white border border-[#D6E4EA] rounded-2xl p-5 shadow-xs flex flex-col transition hover:shadow-md">
                                     <div className="flex justify-between items-start mb-3">
@@ -248,17 +302,82 @@ export default function Announcements() {
                                         </button>
                                     </div>
 
-                                    {/* Render HTML content safely */}
                                     <div
-                                        className="text-[#526274] text-sm bg-[#F6FAFC] p-4 rounded-xl border border-[#D6E4EA] flex-grow prose prose-sm max-w-none"
+                                        className="text-[#526274] text-sm bg-[#F6FAFC] p-4 rounded-xl border border-[#D6E4EA] flex-grow italic"
                                         dangerouslySetInnerHTML={{ __html: ann.content }}
                                     ></div>
 
-                                    {/* Document Link */}
-                                    {ann.document_url && (
-                                        <a href={ann.document_url} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-[#00ADEF] hover:underline">
-                                            <FileUp size={14} /> View Attached Document
-                                        </a>
+                                    {/* Open Call Form Builder Button */}
+                                    {ann.is_open_call && (
+                                        <button
+                                            onClick={() => handleBuildForm(ann)}
+                                            className="mt-3 text-xs font-bold text-[#00ADEF] hover:underline self-start"
+                                        >
+                                            {editingFormId === ann.id ? "Close Form Builder" : "Build Application Form"}
+                                        </button>
+                                    )}
+
+                                    {/* Dynamic Form Builder UI */}
+                                    {editingFormId === ann.id && (
+                                        <div className="mt-4 p-4 bg-[#F6FAFC] border border-[#00ADEF]/30 rounded-xl space-y-3">
+                                            <h4 className="text-sm font-extrabold text-[#111827] uppercase tracking-wider">Custom Application Form</h4>
+
+                                            {formFields.map((field, index) => (
+                                                <div key={index} className="bg-white p-3 border border-[#D6E4EA] rounded-lg space-y-2">
+                                                    <div className="flex gap-2">
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Question (e.g., What is your revenue?)"
+                                                            value={field.label}
+                                                            onChange={(e) => handleFieldChange(index, 'label', e.target.value)}
+                                                            className="flex-1 px-3 py-2 border border-[#D6E4EA] rounded-md text-sm focus:ring-1 focus:ring-[#00ADEF]"
+                                                        />
+                                                        <select
+                                                            value={field.field_type}
+                                                            onChange={(e) => handleFieldChange(index, 'field_type', e.target.value)}
+                                                            className="px-3 py-2 border border-[#D6E4EA] rounded-md text-sm focus:ring-1 focus:ring-[#00ADEF]"
+                                                        >
+                                                            <option value="text">Short Text</option>
+                                                            <option value="textarea">Long Text</option>
+                                                            <option value="select">Dropdown</option>
+                                                            <option value="checkbox">Checkbox</option>
+                                                        </select>
+                                                        <button onClick={() => removeField(index)} className="text-red-500 hover:bg-red-50 p-2 rounded-md">
+                                                            <X size={16} />
+                                                        </button>
+                                                    </div>
+
+                                                    {field.field_type === 'select' && (
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Options (comma-separated: Yes, No, Maybe)"
+                                                            value={field.options}
+                                                            onChange={(e) => handleFieldChange(index, 'options', e.target.value)}
+                                                            className="w-full px-3 py-2 border border-[#D6E4EA] rounded-md text-sm focus:ring-1 focus:ring-[#00ADEF]"
+                                                        />
+                                                    )}
+
+                                                    <label className="flex items-center gap-2 text-xs font-bold text-[#526274]">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={field.required}
+                                                            onChange={(e) => handleFieldChange(index, 'required', e.target.checked)}
+                                                            className="h-4 w-4 rounded border-gray-300 text-[#00ADEF] focus:ring-[#00ADEF]"
+                                                        />
+                                                        Required
+                                                    </label>
+                                                </div>
+                                            ))}
+
+                                            <div className="flex gap-2 pt-2">
+                                                <button onClick={addField} className="flex-1 py-2 border border-dashed border-[#00ADEF] text-[#00ADEF] rounded-lg text-xs font-bold hover:bg-[#EAF8FC]">
+                                                    + Add Field
+                                                </button>
+                                                <button onClick={() => handleSaveForm(ann.id)} className="flex-1 py-2 bg-[#E38524] text-white rounded-lg text-xs font-bold hover:bg-[#C97019]">
+                                                    Save Form
+                                                </button>
+                                            </div>
+                                        </div>
                                     )}
 
                                     <div className="mt-3 pt-3 border-t border-[#D6E4EA] text-xs text-[#526274] font-medium">

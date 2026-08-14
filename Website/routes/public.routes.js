@@ -51,12 +51,13 @@ router.get("/announcements", async (req, res) => {
         res.status(500).json({ message: "Internal Server Error" });
     }
 });
+
 // POST: Application Form
 router.post("/apply", async (req, res) => {
     try {
-        const { announcement_id, full_name, email, phone, background, startup_idea } = req.body;
+        const { announcement_id, full_name, email, phone, background, startup_idea, answers } = req.body;
 
-        // 1. Check if capacity is reached
+        // 1. Check if capacity is reached (Same as before)
         const annRes = await pool.query("SELECT is_open_call, capacity, deadline FROM announcements WHERE id = $1", [announcement_id]);
         if (annRes.rows.length === 0) return res.status(404).json({ message: "Announcement not found." });
 
@@ -71,11 +72,11 @@ router.post("/apply", async (req, res) => {
             }
         }
 
-        // 2. Save the application
+        // 2. Save the application WITH the JSON answers!
         await pool.query(
-            `INSERT INTO applications (announcement_id, full_name, email, phone, background, startup_idea) 
-       VALUES ($1, $2, $3, $4, $5, $6)`,
-            [announcement_id, full_name, email, phone, background, startup_idea]
+            `INSERT INTO applications (announcement_id, full_name, email, phone, background, startup_idea, answers) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+            [announcement_id, full_name, email, phone, background, startup_idea, JSON.stringify(answers || {})]
         );
 
         res.status(201).json({ success: true, message: "Application submitted successfully!" });
@@ -98,4 +99,17 @@ router.get("/open-calls", async (req, res) => {
         res.status(500).json({ message: "Internal Server Error" });
     }
 });
+
+// GET: Fetch Custom Form Fields for an Announcement
+router.get("/form-fields/:announcementId", async (req, res) => {
+    try {
+        const result = await pool.query("SELECT id, label, field_type, options, required FROM form_fields WHERE announcement_id = $1 ORDER BY created_at ASC", [req.params.announcementId]);
+        res.status(200).json(result.rows);
+    } catch (error) {
+        console.error("Error fetching form fields:", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+});
+
+
 export { router as publicRoutes };
