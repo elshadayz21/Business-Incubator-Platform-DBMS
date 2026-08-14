@@ -86,6 +86,37 @@
 <script>
   let countdownInterval;
 
+    // 1. Smart Apply Button Logic
+    window.handleGlobalApply = () => {
+      if (window.announcementData && window.announcementData.length > 0) {
+        // Find all active Open Calls
+        const openCalls = window.announcementData.filter(ann => ann.is_open_call);
+
+        if (openCalls.length === 1) {
+          // If there is exactly 1 Open Call, open it directly!
+          const openCallIndex = window.announcementData.findIndex(ann => ann.id === openCalls[0].id);
+          openApplicationModal(openCallIndex);
+          return;
+        } else if (openCalls.length > 1) {
+          // If there are multiple Open Calls, scroll to the list so they can choose!
+          const updatesSection = document.getElementById('announcements');
+          if (updatesSection) {
+            updatesSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return;
+          }
+        }
+      }
+
+      // If there are 0 Open Calls, also scroll to the list (or show alert)
+      const updatesSection = document.getElementById('announcements');
+      if (updatesSection) {
+        updatesSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else {
+        alert('Applications are not open right now. Please check back soon!');
+      }
+    };
+
+  // 2. Open Call Modal Logic
   window.openApplicationModal = (index) => {
     const ann = window.announcementData[index];
     if (!ann) return;
@@ -102,10 +133,20 @@
       docDiv.innerHTML = '';
     }
 
-    // Show Badge & Countdown
+    // Show Badge & Action Area
     document.getElementById('modal-badge').classList.remove('hidden');
-    document.getElementById('modal-action-area').classList.remove('hidden');
+    const actionArea = document.getElementById('modal-action-area');
+    actionArea.classList.remove('hidden');
     document.getElementById('form-container').classList.add('hidden');
+
+    // Check if capacity is reached
+    const currentCount = parseInt(ann.application_count || 0);
+    const maxCap = ann.capacity ? parseInt(ann.capacity) : null;
+    if (maxCap && currentCount >= maxCap) {
+      actionArea.innerHTML = "<p class='text-red-600 font-bold bg-red-50 px-4 py-3 rounded-lg border border-red-200'>Maximum capacity reached. Applications are closed.</p>";
+    } else {
+      actionArea.innerHTML = "<button onclick='showApplicationForm()' class='px-8 py-3 bg-[#E38524] text-white rounded-xl font-bold hover:bg-[#C97019] transition'>Apply Now</button>";
+    }
 
     const modal = document.getElementById('application-modal');
     modal.classList.remove('hidden');
@@ -123,7 +164,7 @@
       if (distance < 0) {
         clearInterval(countdownInterval);
         document.getElementById('modal-countdown').innerHTML = "<span class='bg-red-500 px-3 py-1 rounded-full'>APPLICATION CLOSED</span>";
-        document.getElementById('modal-action-area').classList.add('hidden'); // Hide apply button if closed
+        document.getElementById('modal-action-area').classList.add('hidden');
         return;
       }
 
@@ -138,6 +179,7 @@
     }, 1000);
   };
 
+  // 3. Regular Announcement Modal (No form)
   window.openAnnouncementDetail = (index) => {
     const ann = window.announcementData[index];
     if (!ann) return;
@@ -145,7 +187,6 @@
     document.getElementById('modal-title').textContent = ann.title;
     document.getElementById('modal-content').innerHTML = ann.content;
 
-    // Show Document Link if it exists
     const docDiv = document.getElementById('modal-document');
     if (ann.document_url) {
       docDiv.innerHTML = `<a href="${ann.document_url}" target="_blank" class="inline-flex items-center gap-2 text-white hover:underline bg-white/10 px-4 py-2 rounded-lg mt-2 text-xs font-bold"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> View Attached Document</a>`;
@@ -153,7 +194,6 @@
       docDiv.innerHTML = '';
     }
 
-    // Hide Badge, Countdown, and Form for regular news
     document.getElementById('modal-badge').classList.add('hidden');
     document.getElementById('modal-countdown').innerHTML = '';
     document.getElementById('modal-action-area').classList.add('hidden');
@@ -163,94 +203,83 @@
     modal.classList.remove('hidden');
     modal.classList.add('flex');
     document.body.style.overflow = 'hidden';
-
-        // Check if capacity is reached
-        const currentCount = parseInt(ann.application_count || 0);
-        const maxCap = ann.capacity ? parseInt(ann.capacity) : null;
-
-        const actionArea = document.getElementById('modal-action-area');
-        if (maxCap && currentCount >= maxCap) {
-          // Capacity reached! Hide the Apply button and show a closed message.
-          actionArea.innerHTML = "<p class='text-red-600 font-bold bg-red-50 px-4 py-3 rounded-lg border border-red-200'>Maximum capacity reached. Applications are closed.</p>";
-        } else {
-          // Capacity is fine. Show the normal Apply button.
-          actionArea.innerHTML = "<button onclick='showApplicationForm()' class='px-8 py-3 bg-[#E38524] text-white rounded-xl font-bold hover:bg-[#C97019] transition'>Apply Now</button>";
-        }
-
   };
 
-  window.showApplicationForm = () => {
-    document.getElementById('modal-action-area').classList.add('hidden'); // Hide Apply button
-    document.getElementById('form-container').classList.remove('hidden'); // Show Form
-    document.getElementById('form-container').scrollIntoView({ behavior: 'smooth' });
-  };
+  // 4. Show Form & Fetch Custom Questions
+  window.showApplicationForm = async () => {
+    document.getElementById('modal-action-area').classList.add('hidden');
+    const formContainer = document.getElementById('form-container');
+    formContainer.classList.remove('hidden');
+    formContainer.scrollIntoView({ behavior: 'smooth' });
 
-    window.showApplicationForm = async () => {
-      document.getElementById('modal-action-area').classList.add('hidden'); // Hide Apply button
-      const formContainer = document.getElementById('form-container');
-      formContainer.classList.remove('hidden'); // Show Form
-      formContainer.scrollIntoView({ behavior: 'smooth' });
+    const customFieldsDiv = document.getElementById('custom-form-fields');
+    customFieldsDiv.innerHTML = '<p class="text-sm text-[#526274] font-bold">Loading questions...</p>';
 
-      // Fetch Custom Form Fields!
-      const customFieldsDiv = document.getElementById('custom-form-fields');
-      customFieldsDiv.innerHTML = '<p class="text-sm text-[#526274] font-bold">Loading questions...</p>';
+    const annId = document.getElementById('modal-announcement-id').value;
+    try {
+      const res = await fetch(`/api/public/form-fields/${annId}`);
+      const fields = await res.json();
 
-      const annId = document.getElementById('modal-announcement-id').value;
-      try {
-        const res = await fetch(`/api/public/form-fields/${annId}`);
-        const fields = await res.json();
-
-        if (fields.length === 0) {
-          customFieldsDiv.innerHTML = ''; // No custom questions, leave empty
-          return;
-        }
-
-        customFieldsDiv.innerHTML = fields.map(field => {
-          const isRequired = field.required ? 'required' : '';
-          const reqMark = field.required ? '<span class="text-red-500">*</span>' : '';
-
-          if (field.field_type === 'textarea') {
-            return `
-              <div>
-                <label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label>
-                <textarea name="custom_${field.id}" ${isRequired} class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]"></textarea>
-              </div>
-            `;
-          } else if (field.field_type === 'select') {
-            const opts = field.options.split(',').map(opt => `<option value="${opt.trim()}">${opt.trim()}</option>`).join('');
-            return `
-              <div>
-                <label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label>
-                <select name="custom_${field.id}" ${isRequired} class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]">
-                  <option value="">Select an option...</option>
-                  ${opts}
-                </select>
-              </div>
-            `;
-          } else if (field.field_type === 'checkbox') {
-            return `
-              <div class="flex items-center gap-3 py-2">
-                <input type="checkbox" name="custom_${field.id}" ${isRequired} class="h-4 w-4 rounded border-gray-300 text-[#00ADEF] focus:ring-[#00ADEF]">
-                <label class="text-sm font-bold text-[#526274]">${field.label} ${reqMark}</label>
-              </div>
-            `;
-          } else {
-            return `
-              <div>
-                <label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label>
-                <input type="text" name="custom_${field.id}" ${isRequired} class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]">
-              </div>
-            `;
-          }
-        }).join('');
-
-      } catch (error) {
-        console.error("Error loading custom fields:", error);
+      if (fields.length === 0) {
         customFieldsDiv.innerHTML = '';
+        return;
       }
-    };
 
-  // Form Submission Logic (No changes here, just keeping it intact)
+      customFieldsDiv.innerHTML = fields.map(field => {
+        const isRequired = field.required ? 'required' : '';
+        const reqMark = field.required ? '<span class="text-red-500">*</span>' : '';
+
+        if (field.field_type === 'textarea') {
+          return `
+            <div>
+              <label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label>
+              <textarea name="custom_${field.id}" ${isRequired} class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]"></textarea>
+            </div>
+          `;
+        } else if (field.field_type === 'select') {
+          const opts = field.options.split(',').map(opt => `<option value="${opt.trim()}">${opt.trim()}</option>`).join('');
+          return `
+            <div>
+              <label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label>
+              <select name="custom_${field.id}" ${isRequired} class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]">
+                <option value="">Select an option...</option>
+                ${opts}
+              </select>
+            </div>
+          `;
+        } else if (field.field_type === 'checkbox') {
+          return `
+            <div class="flex items-center gap-3 py-2">
+              <input type="checkbox" name="custom_${field.id}" ${isRequired} class="h-4 w-4 rounded border-gray-300 text-[#00ADEF] focus:ring-[#00ADEF]">
+              <label class="text-sm font-bold text-[#526274]">${field.label} ${reqMark}</label>
+            </div>
+          `;
+        } else {
+          return `
+            <div>
+              <label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label>
+              <input type="text" name="custom_${field.id}" ${isRequired} class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]">
+            </div>
+          `;
+        }
+      }).join('');
+
+    } catch (error) {
+      console.error("Error loading custom fields:", error);
+      customFieldsDiv.innerHTML = '';
+    }
+  };
+
+  // 5. Close Modal Function
+  window.closeApplicationModal = () => {
+    const modal = document.getElementById('application-modal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    document.body.style.overflow = 'auto';
+    clearInterval(countdownInterval);
+  };
+
+  // 6. Form Submission Logic
   document.getElementById('application-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const msgBox = document.getElementById('form-message');
@@ -284,26 +313,24 @@
       }
     }
 
-        // Capture standard fields
-        const data = {
-          announcement_id: document.getElementById('modal-announcement-id').value,
-          full_name: document.getElementById('full_name').value,
-          email: document.getElementById('email').value,
-          phone: document.getElementById('phone').value,
-          background: document.getElementById('background').value,
-          startup_idea: document.getElementById('startup_idea').value,
-          answers: {} // Add empty object for custom answers
-        };
+    const data = {
+      announcement_id: document.getElementById('modal-announcement-id').value,
+      full_name: document.getElementById('full_name').value,
+      email: document.getElementById('email').value,
+      phone: document.getElementById('phone').value,
+      background: document.getElementById('background').value,
+      startup_idea: document.getElementById('startup_idea').value,
+      answers: {}
+    };
 
-        // Capture dynamic custom fields!
-        const customInputs = document.querySelectorAll('[name^="custom_"]');
-        customInputs.forEach(input => {
-          if (input.type === 'checkbox') {
-            data.answers[input.name] = input.checked;
-          } else {
-            data.answers[input.name] = input.value;
-          }
-        });
+    const customInputs = document.querySelectorAll('[name^="custom_"]');
+    customInputs.forEach(input => {
+      if (input.type === 'checkbox') {
+        data.answers[input.name] = input.checked;
+      } else {
+        data.answers[input.name] = input.value;
+      }
+    });
 
     try {
       const response = await fetch('/api/public/apply', {
