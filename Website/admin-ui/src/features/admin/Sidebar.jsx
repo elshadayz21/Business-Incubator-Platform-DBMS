@@ -42,14 +42,12 @@ const Sidebar = ({
     { id: 8, icon: Megaphone, label: "Announcements", badge: "New" },
     { id: 9, icon: Images, label: "Gallery", badge: null },
     { id: 10, icon: Mail, label: "Mass Email", badge: null },
+    { id: 11, icon: FileText, label: "Static Pages", badge: null },
+    { id: 12, icon: Layers, label: "Cohorts", badge: null },
+    { id: 13, icon: PieChart, label: "Reports", badge: null },
+    { id: 14, icon: ClipboardList, label: "Applications", badge: "New" },
     ...(userRole?.toLowerCase() === "superadmin"
-      ? [{ id: 11, icon: Users, label: "Users", badge: "Admin" }]
-    { id: 9, icon: FileText, label: "Static Pages", badge: null },
-    { id: 10, icon: Layers, label: "Cohorts", badge: null },
-    { id: 11, icon: PieChart, label: "Reports", badge: null },
-    { id: 12, icon: ClipboardList, label: "Applications", badge: "New" },
-    ...(userRole?.toLowerCase() === "superadmin"
-      ? [{ id: 13, icon: Users, label: "Users", badge: "Admin" }]
+      ? [{ id: 15, icon: Users, label: "Users", badge: "Admin" }]
       : []),
   ];
 
