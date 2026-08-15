@@ -39,6 +39,12 @@ function filterProjects() {
 searchInput.addEventListener('input', filterProjects);
 statusFilter.addEventListener('change', filterProjects);
 
+function resetFilters() {
+  searchInput.value = '';
+  statusFilter.value = '';
+  filterProjects();
+}
+
 const style = document.createElement('style');
 style.textContent = `
             .marquee-container {

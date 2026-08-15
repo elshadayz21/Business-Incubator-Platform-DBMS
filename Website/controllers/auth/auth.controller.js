@@ -102,6 +102,7 @@ export const profilePage = async (req, res, next) => {
         id: user.id,
         name: user.name,
         email: user.email,
+        userCode: user.user_code || null,
         role: user.role,
         profilePicture: user.profile_image || null,
         company: user.company || null,
@@ -237,14 +238,22 @@ export const login = async (req, res, next) => {
       profile_image: user.profile_image || null,
     });
 
-    res.send(`
-      <script>
-        sessionStorage.setItem('isLoggedIn', 'true');
-        sessionStorage.setItem('user', JSON.stringify(${userDataJson}));
-        localStorage.setItem('isLoggedIn', 'true');
-        window.location.href = '${redirectUrl}';
-      </script>
-    `);
+    req.session.save((err) => {
+      if (err) {
+        console.error("Session save error during login:", err);
+        req.flash("error", "An error occurred during login. Please try again.");
+        return res.redirect("/v1/auth/login");
+      }
+
+      res.send(`
+        <script>
+          sessionStorage.setItem('isLoggedIn', 'true');
+          sessionStorage.setItem('user', JSON.stringify(${userDataJson}));
+          localStorage.setItem('isLoggedIn', 'true');
+          window.location.href = '${redirectUrl}';
+        </script>
+      `);
+    });
   } catch (err) {
     req.flash("error", "An error occurred during login. Please try again.");
     res.redirect("/v1/auth/login");

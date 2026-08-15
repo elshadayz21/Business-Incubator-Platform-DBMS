@@ -14,12 +14,15 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage: storage,
   fileFilter: (req, file, cb) => {
-    // Security: Only allow PDFs and Images
-    const filetypes = /pdf|doc|docx|png|jpg|jpeg/;
-    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = filetypes.test(file.mimetype);
-    if (mimetype && extname) return cb(null, true);
-    cb(new Error("Error: Invalid file type!"));
+    // Security: Only allow PDFs, Word docs and images.
+    // Accept the file if the extension is allowed AND the mimetype is either a
+    // matching office/image type or a generic application/octet-stream (some
+    // browsers mislabel PDFs/DOCX as octet-stream, which must not be rejected).
+    const allowedExt = /\.(pdf|doc|docx|png|jpg|jpeg)$/i.test(file.originalname);
+    const allowedMime = /^(application\/(pdf|msword|vnd\.openxmlformats-officedocument\.wordprocessingml\.document)|image\/(png|jpe?g))$/.test(file.mimetype);
+    const genericMime = file.mimetype === "application/octet-stream";
+    if (allowedExt && (allowedMime || genericMime)) return cb(null, true);
+    cb(new Error("Error: Invalid file type. Only PDF, DOC, DOCX, PNG, JPG, and JPEG files are allowed."));
   }
 });
 
@@ -444,6 +447,26 @@ router.delete(
     res.json(await deleteAnnouncement(req.params.id)),
   ),
 );
+
+// Convert announcement upload/validation errors into JSON 400 responses
+// instead of letting them fall through to the HTML 500 error page.
+router.use("/announcements", (err, req, res, next) => {
+  if (res.headersSent) return next(err);
+
+  let message = err && err.message ? err.message : "Invalid request";
+  if (err && err.name === "MulterError") {
+    message = err.code === "LIMIT_FILE_SIZE"
+      ? "Document exceeds the maximum file size."
+      : err.message;
+  }
+  // The request body may not have been fully consumed after multer aborted
+  // the parser. Drain it and refuse connection reuse so the keep-alive
+  // socket is not corrupted for the next request.
+  req.on("error", () => {});
+  req.resume();
+  res.setHeader("Connection", "close");
+  return res.status(400).json({ message });
+});
 
 // Gallery (CMS)
 router.get(

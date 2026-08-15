@@ -190,6 +190,17 @@
                                     <input type="email" value="<%= user ? user.email : '' %>" readonly
                                         class="w-full rounded-lg border border-line bg-surface px-4 py-3 text-sm font-semibold text-muted cursor-not-allowed" />
                                 </div>
+                                <% if (user && user.userCode) { %>
+                                <div class="space-y-2">
+                                    <label class="block text-xs font-extrabold uppercase tracking-widest text-muted">User Code</label>
+                                    <div class="flex items-center gap-2">
+                                        <input type="text" id="user-code-input" value="<%= user.userCode %>" readonly
+                                            class="w-full rounded-lg border border-cyan/30 bg-cyan-soft px-4 py-3 text-sm font-extrabold tracking-wider text-cyan-dark cursor-pointer" title="Click to copy" />
+                                        <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('user-code-input').value).then(()=>{const b=this;b.textContent='Copied';setTimeout(()=>b.textContent='Copy',1500)})" class="shrink-0 rounded-lg border border-cyan/30 bg-white px-4 py-3 text-xs font-extrabold text-cyan-dark hover:bg-cyan-soft">Copy</button>
+                                    </div>
+                                    <p class="text-xs font-medium text-muted">Use this code when adding co-founders to your project.</p>
+                                </div>
+                                <% } %>
                             </div>
 
                             <% if (user.role === 'mentor' || user.role === 'investor') { %>

@@ -66,7 +66,14 @@ export default function Announcements() {
                 body: formData
             });
 
-            if (!response.ok) throw new Error("Failed to publish");
+            if (!response.ok) {
+                let message = "Failed to publish";
+                try {
+                    const data = await response.json();
+                    if (data && data.message) message = data.message;
+                } catch (e) { /* keep default message */ }
+                throw new Error(message);
+            }
 
             // 4. Reset form
             setTitle("");

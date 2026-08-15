@@ -30,6 +30,7 @@ const UserTable = ({ users, loading, onDeactivate }) => {
         <thead>
           <tr className="bg-[#F6FAFC] border-b border-[#D6E4EA] text-[#526274] text-xs font-bold uppercase tracking-wider">
             <th className="p-4">Name &amp; Email</th>
+            <th className="p-4">User Code</th>
             <th className="p-4">Role</th>
             <th className="p-4 text-center">Status</th>
             <th className="p-4 text-right">Actions</th>
@@ -52,6 +53,12 @@ const UserTable = ({ users, loading, onDeactivate }) => {
                     </div>
                   </div>
                 </div>
+              </td>
+
+              <td className="p-4">
+                <span className="inline-flex px-2.5 py-1 rounded-lg bg-slate-50 text-[#526274] text-xs font-mono font-bold border border-[#D6E4EA]">
+                  {u.user_code || "—"}
+                </span>
               </td>
 
               <td className="p-4">
