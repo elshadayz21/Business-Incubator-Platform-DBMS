@@ -174,6 +174,90 @@ window.electron = {
         options.body = JSON.stringify({ status: args[1] });
         break;
 
+      // Static Pages
+      case "static-pages:get-all":
+        url = "/api/admin/static-pages";
+        break;
+      case "static-pages:get-by-id":
+        url = `/api/admin/static-pages/${args[0]}`;
+        break;
+      case "static-pages:create":
+        url = "/api/admin/static-pages";
+        options.method = "POST";
+        options.body = JSON.stringify(args[0]);
+        break;
+      case "static-pages:update":
+        url = `/api/admin/static-pages/${args[0]}`;
+        options.method = "PUT";
+        options.body = JSON.stringify(args[1]);
+        break;
+      case "static-pages:delete":
+        url = `/api/admin/static-pages/${args[0]}`;
+        options.method = "DELETE";
+        break;
+      // Cohorts
+      case "cohorts:get-all":
+        url = "/api/admin/cohorts";
+        break;
+      case "cohorts:get-by-id":
+        url = `/api/admin/cohorts/${args[0]}`;
+        break;
+      case "cohorts:create":
+        url = "/api/admin/cohorts";
+        options.method = "POST";
+        options.body = JSON.stringify(args[0]);
+        break;
+      case "cohorts:update":
+        url = `/api/admin/cohorts/${args[0]}`;
+        options.method = "PUT";
+        options.body = JSON.stringify(args[1]);
+        break;
+      case "cohorts:delete":
+        url = `/api/admin/cohorts/${args[0]}`;
+        options.method = "DELETE";
+        break;
+      case "cohort-members:get-all":
+        url = `/api/admin/cohorts/${args[0]}/members`;
+        break;
+      case "cohort-members:add":
+        url = "/api/admin/cohort-members";
+        options.method = "POST";
+        options.body = JSON.stringify(args[0]);
+        break;
+      case "cohort-members:remove":
+        url = `/api/admin/cohort-members/${args[0]}`;
+        options.method = "DELETE";
+        break;
+      case "mentor-assignments:get-all":
+        url = `/api/admin/cohorts/${args[0]}/mentor-assignments`;
+        break;
+      case "mentor-assignments:create":
+        url = "/api/admin/mentor-assignments";
+        options.method = "POST";
+        options.body = JSON.stringify(args[0]);
+        break;
+      case "mentor-assignments:remove":
+        url = `/api/admin/mentor-assignments/${args[0]}`;
+        options.method = "DELETE";
+        break;
+      case "mentor-sessions:get-all":
+        url = `/api/admin/mentor-assignments/${args[0]}/sessions`;
+        break;
+      case "mentor-sessions:create":
+        url = "/api/admin/mentor-sessions";
+        options.method = "POST";
+        options.body = JSON.stringify(args[0]);
+        break;
+      case "users:get-by-role":
+        url = `/api/admin/users-by-role/${args[0]}`;
+        break;
+      case "reports:get-summary":
+        url = "/api/admin/reports/summary";
+        break;
+      case "reports:get-rows":
+        url = "/api/admin/reports/rows";
+        break;
+
       default:
         console.warn("Unknown IPC channel:", channel);
         return null;

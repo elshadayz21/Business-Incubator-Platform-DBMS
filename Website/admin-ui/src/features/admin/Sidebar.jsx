@@ -16,6 +16,10 @@ import {
   Mail,
   Images,
   CircleUserRound,
+  FileText,
+  Layers,
+  PieChart,
+  ClipboardList
 } from "lucide-react";
 
 const Sidebar = ({
@@ -40,6 +44,12 @@ const Sidebar = ({
     { id: 10, icon: Mail, label: "Mass Email", badge: null },
     ...(userRole?.toLowerCase() === "superadmin"
       ? [{ id: 11, icon: Users, label: "Users", badge: "Admin" }]
+    { id: 9, icon: FileText, label: "Static Pages", badge: null },
+    { id: 10, icon: Layers, label: "Cohorts", badge: null },
+    { id: 11, icon: PieChart, label: "Reports", badge: null },
+    { id: 12, icon: ClipboardList, label: "Applications", badge: "New" },
+    ...(userRole?.toLowerCase() === "superadmin"
+      ? [{ id: 13, icon: Users, label: "Users", badge: "Admin" }]
       : []),
   ];
 
@@ -85,10 +95,10 @@ const Sidebar = ({
                 alt={currentUser.name || "Profile"}
                 className="w-full h-full object-cover"
               />
+            ) : currentUser.name ? (
+              currentUser.name.charAt(0).toUpperCase()
             ) : (
-              (currentUser.name
-                ? currentUser.name.charAt(0).toUpperCase()
-                : "A")
+              "A"
             )}
           </div>
           <div className="min-w-0">

@@ -8,6 +8,30 @@ import eventBus from "../../utils/eventBus.js";
 import pool from "../../config/db.js";
 import fs from "fs";
 import path from "path";
+import { getStaticPageBySlug } from "../../admin-backend/content/staticPages.js";
+import { parseStaticPageBody } from "../../utils/parseStaticPageBody.js";
+
+export const getStaticPage = async (req, res, next) => {
+  try {
+    const page = await getStaticPageBySlug(req.params.slug);
+    if (!page) {
+      return res.status(404).render("error/error", {
+        title: "Not Found", statusCode: "404",
+        message: "This page doesn't exist.",
+        color: "#FFDE59", icon: "fa-solid fa-file",
+        redirectLink: "/", buttonText: "Back to Home",
+      });
+    }
+    const sections = parseStaticPageBody(page.body);
+    res.render("pages/static-page", {
+      title: `${page.title} | DxValley`,
+      page,
+      sections,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
 
 // --- Mentors Page ---
 export const getMentorsPage = async (req, res, next) => {

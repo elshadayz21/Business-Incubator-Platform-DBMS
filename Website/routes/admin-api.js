@@ -1,5 +1,40 @@
-import ExcelJS from "exceljs";
+import multer from "multer";
+import path from "path";
+
+
+// Configure Multer for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "public/uploads/"); // Files will be saved here
+  },
+  filename: (req, file, cb) => {
+    cb(null, `doc-${Date.now()}${path.extname(file.originalname)}`);
+  },
+});
+const upload = multer({
+  storage: storage,
+  fileFilter: (req, file, cb) => {
+    // Security: Only allow PDFs and Images
+    const filetypes = /pdf|doc|docx|png|jpg|jpeg/;
+    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = filetypes.test(file.mimetype);
+    if (mimetype && extname) return cb(null, true);
+    cb(new Error("Error: Invalid file type!"));
+  }
+});
+
+
+import { getFormFields, saveFormFields } from "../admin-backend/applications/applications.js";
+
+import {
+  getAllApplications,
+  updateApplicationStatus,
+  sendMassInvites
+} from "../admin-backend/applications/applications.js";
+
+
 import { Router } from "express";
+import pool from "../config/db.js";
 import {
   getAllWorkshops,
   getWorkshop,
@@ -82,15 +117,37 @@ import uploadGallery, {
 } from "../config/multer-gallery.js";
 //for Mass Email (UR-B4)
 import {
-  getRecipientSources,
-  getRecipientsForSource,
-  getEmailTemplates,
-  createEmailTemplate,
-  updateEmailTemplate,
-  deleteEmailTemplate,
-  getEmailCampaigns,
-  sendCampaign,
-} from "../admin-backend/email/email.js";
+  getAllStaticPages,
+  getStaticPageById,
+  createStaticPage,
+  updateStaticPage,
+  deleteStaticPage,
+} from "../admin-backend/content/staticPages.js";
+import {
+  getAllCohorts,
+  getCohortById,
+  createCohort,
+  updateCohort,
+  deleteCohort,
+} from "../admin-backend/cohorts/cohorts.js";
+import {
+  getCohortMembers,
+  addCohortMember,
+  removeCohortMember,
+  getMentorAssignments,
+  createMentorAssignment,
+  deleteMentorAssignment,
+  getSessionsForAssignment,
+  createMentorSession,
+  getUsersByRole,
+} from "../admin-backend/mentorship/mentorship.js";
+import {
+  getReportSummary,
+  getReportRows,
+} from "../admin-backend/reports/reports.js";
+import ExcelJS from "exceljs";
+import { authorizeRole } from "../middleware/check_roles.middleware.js";
+import { ROLES } from "../utils/constants.js";
 
 const router = Router();
 
@@ -113,10 +170,13 @@ router.post(
   }),
 );
 
-import { authorizeRole } from "../middleware/check_roles.middleware.js";
-import { ROLES } from "../utils/constants.js";
-
 router.use(authorizeRole(ROLES.SUPERADMIN, ROLES.ADMIN));
+
+router.get(
+  "/reports/summary",
+  asyncHandler(async (req, res) => res.json(await getReportSummary())),
+);
+
 
 // Users (Superadmin only)
 const superadminOnly = authorizeRole(ROLES.SUPERADMIN);
@@ -143,7 +203,7 @@ router.put(
   asyncHandler(async (req, res) =>
     res.json(await setUserStatus(req.params.id, req.body.status)),
   ),
-);  
+);
 
 // Workshops
 router.get(
@@ -331,32 +391,58 @@ router.delete(
 
 // Inbox (Contact & Newsletter)
 router.get(
-    "/inbox",
-    asyncHandler(async (req, res) => res.json(await getAllSubmissions())),
+  "/inbox",
+  asyncHandler(async (req, res) => res.json(await getAllSubmissions())),
 );
 router.delete(
-    "/inbox/:id",
-    asyncHandler(async (req, res) =>
-        res.json(await deleteSubmission(req.params.id)),
-    ),
+  "/inbox/:id",
+  asyncHandler(async (req, res) =>
+    res.json(await deleteSubmission(req.params.id)),
+  ),
 );
 
-
-//for announcement
 // Announcements (CMS)
 router.get(
-    "/announcements",
-    asyncHandler(async (req, res) => res.json(await getAllAnnouncements())),
+  "/announcements",
+  asyncHandler(async (req, res) => res.json(await getAllAnnouncements())),
 );
+
+// Create Announcement with File Upload
 router.post(
     "/announcements",
-    asyncHandler(async (req, res) => res.json(await createAnnouncement(req.body))),
+    upload.single("document"),
+    asyncHandler(async (req, res) => {
+      // 1. Destructure ALL fields from req.body!
+      const { title, content, deadline, is_open_call, capacity } = req.body;
+
+      let document_url = null;
+      if (req.file) {
+        document_url = `/uploads/${req.file.filename}`;
+      }
+
+      // 2. Parse the checkbox and capacity values
+      const parsedIsOpenCall = is_open_call === "true" || is_open_call === true;
+      const parsedCapacity = capacity ? parseInt(capacity, 10) : null;
+
+      // 3. Pass them to the database function!
+      const newAnnouncement = await createAnnouncement({
+        title,
+        content,
+        deadline,
+        document_url,
+        is_open_call: parsedIsOpenCall,
+        capacity: parsedCapacity
+      });
+
+      res.json(newAnnouncement);
+    })
 );
+
 router.delete(
-    "/announcements/:id",
-    asyncHandler(async (req, res) =>
-        res.json(await deleteAnnouncement(req.params.id)),
-    ),
+  "/announcements/:id",
+  asyncHandler(async (req, res) =>
+    res.json(await deleteAnnouncement(req.params.id)),
+  ),
 );
 
 // Gallery (CMS)
@@ -481,27 +567,134 @@ router.use("/gallery", (err, req, res, next) => {
 
 // AI Mentor Matching Routes
 router.get(
-    "/projects/:id/suggested-mentors",
-    asyncHandler(async (req, res) => res.json(await getSuggestedMentors(req.params.id)))
+  "/projects/:id/suggested-mentors",
+  asyncHandler(async (req, res) =>
+    res.json(await getSuggestedMentors(req.params.id)),
+  ),
 );
 router.post(
-    "/projects/:id/assign-mentor",
-    asyncHandler(async (req, res) => res.json(await assignMentor(req.params.id, req.body.mentorId)))
+  "/projects/:id/assign-mentor",
+  asyncHandler(async (req, res) =>
+    res.json(await assignMentor(req.params.id, req.body.mentorId)),
+  ),
 );
 
-// Safe Multi-Tab Excel Export Route
 router.get(
-    "/reports/export/dashboard",
+  "/static-pages",
+  asyncHandler(async (req, res) => res.json(await getAllStaticPages())),
+);
+router.get(
+  "/static-pages/:id",
+  asyncHandler(async (req, res) =>
+    res.json(await getStaticPageById(req.params.id)),
+  ),
+);
+router.post(
+  "/static-pages",
+  asyncHandler(async (req, res) => res.json(await createStaticPage(req.body))),
+);
+router.put(
+  "/static-pages/:id",
+  asyncHandler(async (req, res) =>
+    res.json(await updateStaticPage(req.params.id, req.body)),
+  ),
+);
+router.delete(
+  "/static-pages/:id",
+  asyncHandler(async (req, res) =>
+    res.json(await deleteStaticPage(req.params.id)),
+  ),
+);
+
+router.get(
+  "/cohorts",
+  asyncHandler(async (req, res) => res.json(await getAllCohorts())),
+);
+router.get(
+  "/cohorts/:id",
+  asyncHandler(async (req, res) =>
+    res.json(await getCohortById(req.params.id)),
+  ),
+);
+router.post(
+  "/cohorts",
+  asyncHandler(async (req, res) => res.json(await createCohort(req.body))),
+);
+router.put(
+  "/cohorts/:id",
+  asyncHandler(async (req, res) =>
+    res.json(await updateCohort(req.params.id, req.body)),
+  ),
+);
+router.delete(
+  "/cohorts/:id",
+  asyncHandler(async (req, res) => res.json(await deleteCohort(req.params.id))),
+);
+router.get(
+  "/cohorts/:cohortId/members",
+  asyncHandler(async (req, res) =>
+    res.json(await getCohortMembers(req.params.cohortId)),
+  ),
+);
+router.post(
+  "/cohort-members",
+  asyncHandler(async (req, res) => res.json(await addCohortMember(req.body))),
+);
+router.delete(
+  "/cohort-members/:id",
+  asyncHandler(async (req, res) =>
+    res.json(await removeCohortMember(req.params.id)),
+  ),
+);
+
+router.get(
+  "/cohorts/:cohortId/mentor-assignments",
+  asyncHandler(async (req, res) =>
+    res.json(await getMentorAssignments(req.params.cohortId)),
+  ),
+);
+router.post(
+  "/mentor-assignments",
+  asyncHandler(async (req, res) =>
+    res.json(await createMentorAssignment(req.body)),
+  ),
+);
+router.delete(
+  "/mentor-assignments/:id",
+  asyncHandler(async (req, res) =>
+    res.json(await deleteMentorAssignment(req.params.id)),
+  ),
+);
+
+router.get(
+  "/mentor-assignments/:assignmentId/sessions",
+  asyncHandler(async (req, res) =>
+    res.json(await getSessionsForAssignment(req.params.assignmentId)),
+  ),
+);
+router.post(
+  "/mentor-sessions",
+  asyncHandler(async (req, res) =>
+    res.json(await createMentorSession(req.body)),
+  ),
+);
+
+router.get(
+  "/users-by-role/:role",
+  asyncHandler(async (req, res) =>
+    res.json(await getUsersByRole(req.params.role)),
+  ),
+);
+
+// Multi-Tab Excel Export Route
+router.get(
+    "/reports/export",
     asyncHandler(async (req, res) => {
       try {
-        // 1. Fetch data
+        // 1. Fetch data safely using functions we know work!
         const projects = await getAllProjects();
         const mentors = await getAllMentors();
         const workshops = await getAllWorkshops();
-
-        // Fetch funding and inbox safely
-        const fundingRaw = await getAllFundingRequests("");
-        const funding = Array.isArray(fundingRaw) ? fundingRaw : (fundingRaw?.data || []);
 
         const inboxRaw = await getAllSubmissions();
         const inbox = Array.isArray(inboxRaw) ? inboxRaw : [];
@@ -535,19 +728,12 @@ router.get(
           { header: "Expertise", key: "expertise", width: 25 },
           { header: "Email", key: "email", width: 30 },
         ]);
+
         buildSheet("Workshops", workshops, [
           { header: "ID", key: "id", width: 5 },
           { header: "Title", key: "title", width: 30 },
           { header: "Category", key: "category", width: 20 },
           { header: "Schedule", key: "schedule", width: 25 },
-          { header: "Capacity", key: "capacity", width: 10 },
-        ]);
-
-        buildSheet("Funding", funding, [
-          { header: "ID", key: "id", width: 5 },
-          { header: "Project ID", key: "project_id", width: 10 },
-          { header: "Amount", key: "amount", width: 15 },
-          { header: "Status", key: "status", width: 15 },
         ]);
 
         buildSheet("Inbox Messages", inbox, [
@@ -570,53 +756,86 @@ router.get(
     })
 );
 
+// Reports Summary
+router.get("/reports/summary", async (req, res) => {
+  try {
+    // 1. Fetch data
+    const projects = await getAllProjects();
+    const mentors = await getAllMentors();
 
-// Mass Email (UR-B4)
+    const totalProjects = projects.length;
+    const totalMentors = mentors.length;
+
+    // 2. Group projects by stage for the Pie Chart
+    const statusBreakdown = projects.reduce((acc, p) => {
+      const stage = p.stage || "Unknown";
+      const found = acc.find(item => item.name === stage);
+      if (found) found.value++;
+      else acc.push({ name: stage, value: 1 });
+      return acc;
+    }, []);
+
+    // 3. Mock data for cohorts
+    const applicantsByCohort = [
+      { cohort_id: 1, count: totalProjects > 0 ? Math.floor(totalProjects / 2) : 5 },
+      { cohort_id: 2, count: totalProjects > 0 ? Math.ceil(totalProjects / 2) : 8 }
+    ];
+    const cohorts = [
+      { id: 1, name: "Batch 01" },
+      { id: 2, name: "Batch 02" }
+    ];
+    const mentorLoad = mentors.map((m, i) => ({ mentor_id: m.id, load: Math.floor(Math.random() * 5) }));
+
+    // 4. Send the response
+    res.json({
+      totalProjects,
+      totalMentors,
+      applicantsByCohort,
+      statusBreakdown,
+      cohorts,
+      mentorLoad
+    });
+  } catch (error) {
+    // THIS WILL NOW PRINT THE EXACT ERROR IN YOUR TERMINAL!
+    console.error("🔥 SUMMARY ROUTE ERROR:", error);
+    res.status(500).json({ message: "Failed to load report summary." });
+  }
+});
+
+// Applications (Open Call Submissions)
 router.get(
-    "/emails/sources",
-    asyncHandler(async (req, res) => res.json(await getRecipientSources())),
+    "/applications",
+    asyncHandler(async (req, res) => res.json(await getAllApplications()))
 );
-router.get(
-    "/emails/sources/:source/recipients",
-    asyncHandler(async (req, res) =>
-        res.json(await getRecipientsForSource(req.params.source)),
-    ),
-);
-router.get(
-    "/emails/templates",
-    asyncHandler(async (req, res) => res.json(await getEmailTemplates())),
-);
-router.post(
-    "/emails/templates",
-    asyncHandler(async (req, res) => res.json(await createEmailTemplate(req.body))),
-);
+
 router.put(
-    "/emails/templates/:id",
+    "/applications/:id/status",
     asyncHandler(async (req, res) =>
-        res.json(await updateEmailTemplate(req.params.id, req.body)),
-    ),
+        res.json(await updateApplicationStatus(req.params.id, req.body.status))
+    )
 );
-router.delete(
-    "/emails/templates/:id",
-    asyncHandler(async (req, res) =>
-        res.json(await deleteEmailTemplate(req.params.id)),
-    ),
-);
+
+
+// Form Builder Routes
 router.get(
-    "/emails/campaigns",
-    asyncHandler(async (req, res) => res.json(await getEmailCampaigns())),
+    "/announcements/:id/form-fields",
+    asyncHandler(async (req, res) => res.json(await getFormFields(req.params.id)))
 );
+
 router.post(
-    "/emails/send",
-    asyncHandler(async (req, res) =>
-        res.json(
-            await sendCampaign({
-                ...req.body,
-                senderId: req.session.userId,
-            }),
-        ),
-    ),
+    "/announcements/:id/form-fields",
+    asyncHandler(async (req, res) => res.json(await saveFormFields(req.params.id, req.body.fields)))
+);
+// Mass Email Route
+router.post(
+    "/applications/send-invites",
+    asyncHandler(async (req, res) => {
+      const { subject, body } = req.body;
+      res.json(await sendMassInvites(subject, body));
+    })
 );
 
 export default router;
+
+
 
