@@ -5,7 +5,7 @@ import { ROLES } from "../../utils/constants.js";
 
 export const getAllUsers = async () => {
   const res = await pool.query(
-    `SELECT id, name, email, role, status, created_at FROM users ORDER BY created_at DESC`,
+    `SELECT id, name, email, user_code, role, status, created_at FROM users ORDER BY created_at DESC`,
   );
   return res.rows;
 };

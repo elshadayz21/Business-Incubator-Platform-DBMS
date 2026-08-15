@@ -94,7 +94,7 @@ export const updateUserProfileImage = async (userId, imagePath) => {
 export const getUserBasicInfo = async (userId) => {
   try {
     const result = await pool.query(
-      `SELECT id, name, email, profile_image, role, created_at, updated_at 
+      `SELECT id, name, email, user_code, profile_image, role, created_at, updated_at 
        FROM users WHERE id = $1`,
       [userId],
     );
