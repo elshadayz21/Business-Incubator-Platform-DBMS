@@ -9,6 +9,7 @@ import Funding from "./Funding/Funding";
 import Users from "./Users/Users";
 import Inbox from "./Inbox/Inbox";
 import Announcements from "./Announcements/Announcements";
+import Gallery from "./Gallery/Gallery";
 import MassEmail from "./MassEmail/MassEmail";
 
 const Admin = () => {
@@ -33,6 +34,8 @@ const Admin = () => {
         return <Inbox />;         // for inbox
       case "Announcements":      // for announcements
         return <Announcements />;
+      case "Gallery":            // for photo gallery CMS
+        return <Gallery />;
       case "Mass Email":         // for mass email (UR-B4)
         return <MassEmail />;
       case "Users":

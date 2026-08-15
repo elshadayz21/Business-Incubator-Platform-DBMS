@@ -95,8 +95,33 @@ app.use((req, res, next) => {
     next();
 });
 
-app.get("/", (req, res) => {
-    res.render("index");
+app.get("/", async (req, res) => {
+    try {
+        // Fetch a small set of published gallery items for the homepage preview
+        const limit = 3;
+        const galleryRes = await pool.query(
+            `SELECT id, title, description, image_url, category, display_order, created_at
+             FROM gallery_items
+             WHERE is_published = true
+             ORDER BY display_order ASC, created_at DESC
+             LIMIT $1`,
+            [limit]
+        );
+
+        const homePhotos = galleryRes.rows.map((item) => ({
+            id: item.id,
+            url: item.image_url,
+            title: item.title,
+            description: item.description || "",
+            category: item.category || "General",
+            created_at: item.created_at,
+        }));
+
+        res.render("index", { homePhotos });
+    } catch (err) {
+        console.error('Error loading homepage gallery:', err);
+        res.render("index", { homePhotos: [] });
+    }
 });
 
 app.use("/v1", GlobalRouter);

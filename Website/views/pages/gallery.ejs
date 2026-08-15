@@ -35,6 +35,17 @@
                 </span>
               </div>
               <p class="mt-5 text-sm leading-7 text-white/80">Click any photo to view it full size. New photos are added as the community grows.</p>
+
+              <!-- Filters: search + category -->
+              <form method="get" action="<%= routes.gallery %>" class="mt-4 flex flex-col sm:flex-row gap-3">
+                <input name="q" value="<%= q %>" type="search" placeholder="Search photos..." class="w-full sm:w-auto px-3.5 py-2.5 rounded-xl text-sm font-medium text-[#111827]" />
+                <select name="category" class="px-3.5 py-2.5 rounded-xl text-sm font-bold">
+                  <% (categories || ['All']).forEach(function(cat){ %>
+                    <option value="<%= cat === 'All' ? 'all' : cat %>" <%= (selectedCategory === cat || (selectedCategory === 'all' && cat === 'All')) ? 'selected' : '' %>><%= cat %></option>
+                  <% }) %>
+                </select>
+                <button type="submit" class="px-4 py-2 rounded-xl bg-orange text-white font-bold">Filter</button>
+              </form>
             </div>
           </aside>
         </div>
@@ -43,17 +54,31 @@
       <section id="gallery-grid" class="bg-white">
         <div class="mx-auto max-w-7xl px-6 py-20 lg:px-10 lg:py-24">
           <% if (photos.length > 0) { %>
-            <div class="columns-1 gap-4 sm:columns-2 lg:columns-3 [&>*]:mb-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               <% photos.forEach((photo, index) => { %>
-                <button type="button" class="gallery-item group relative block w-full cursor-zoom-in overflow-hidden rounded-2xl border border-line bg-surface focus:outline-none focus:ring-2 focus:ring-orange focus:ring-offset-2" data-photo="<%= photo %>" data-index="<%= index %>" aria-label="Open photo <%= index + 1 %>">
-                  <img src="<%= photo %>" alt="DxValley photo <%= index + 1 %>" class="h-auto w-full object-cover transition duration-300 group-hover:scale-[1.03] group-hover:opacity-90" loading="lazy" decoding="async" />
-                  <span class="absolute inset-0 grid place-items-center bg-cyan-deep/0 opacity-0 transition group-hover:bg-cyan-deep/20 group-hover:opacity-100" aria-hidden="true">
-                    <i class="fa-solid fa-magnifying-glass-plus text-2xl text-white"></i>
-                  </span>
-                </button>
-              <% }); %>
-            </div>
-          <% } else { %>
+                    <div class="gallery-item group relative overflow-hidden rounded-2xl border border-line bg-surface focus-within:ring-2 focus-within:ring-orange focus-within:ring-offset-2" data-photo="<%= photo.url %>" data-index="<%= index %>" data-title="<%= photo.title %>" data-description="<%= photo.description %>" data-category="<%= photo.category %>" data-created="<%= photo.created_at ? new Date(photo.created_at).toISOString() : '' %>">
+                      <button type="button" class="w-full h-56 block cursor-zoom-in" data-photo="<%= photo.url %>" data-index="<%= index %>" data-title="<%= photo.title %>" data-description="<%= photo.description %>" data-category="<%= photo.category %>" data-created="<%= photo.created_at ? new Date(photo.created_at).toISOString() : '' %>" aria-label="Open <%= photo.title || ('photo ' + (index + 1)) %>">
+                        <img src="<%= photo.url %>" alt="<%= photo.title || ('DxValley photo ' + (index + 1)) %>" class="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03] group-hover:opacity-90" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='/assets/images/default-avatar.svg'" />
+                      </button>
+
+                      <div class="gallery-overlay absolute inset-x-0 bottom-0 bg-gradient-to-t from-cyan-deep/90 to-transparent px-4 pb-3 pt-10 text-left transition duration-300 opacity-0 translate-y-3 group-hover:opacity-100 group-hover:translate-y-0">
+                        <span class="block text-[10px] font-extrabold uppercase tracking-wider text-white/70"><%= photo.category %></span>
+                        <span class="block text-sm font-bold text-white"><%= photo.title || '' %></span>
+                        <% if (photo.description) { %>
+                          <p class="mt-2 text-xs text-white/85 max-h-20 overflow-hidden text-ellipsis"><%= photo.description %></p>
+                        <% } %>
+                        <% if (photo.created_at) { %>
+                          <span class="block text-[11px] text-white/80 mt-1"><%= new Date(photo.created_at).toLocaleDateString() %></span>
+                        <% } %>
+                      </div>
+
+                      <div class="absolute inset-0 grid place-items-center bg-cyan-deep/0 opacity-0 transition group-hover:bg-cyan-deep/20 group-hover:opacity-100" aria-hidden="true">
+                        <i class="fa-solid fa-magnifying-glass-plus text-2xl text-white"></i>
+                      </div>
+                    </div>
+                  <% }); %>
+                </div>
+              <% } else { %>
             <div class="rounded-2xl border border-line bg-surface px-6 py-20 text-center">
               <span class="mx-auto grid h-14 w-14 place-items-center rounded-full bg-orange-soft text-orange" aria-hidden="true">
                 <i class="fa-solid fa-images text-xl"></i>
@@ -73,6 +98,7 @@
       <figure class="max-h-full max-w-5xl">
         <img id="lightbox-image" src="" alt="" class="mx-auto max-h-[80vh] w-auto rounded-2xl object-contain shadow-2xl" />
         <figcaption id="lightbox-caption" class="mt-4 text-center text-sm font-semibold text-white/85"></figcaption>
+        <figcaption id="lightbox-meta" class="mt-1 text-center text-xs font-bold uppercase tracking-wider text-white/60"></figcaption>
       </figure>
       <button id="lightbox-next" type="button" class="absolute right-4 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-white/15 text-white transition hover:bg-white hover:text-cyan-deep focus:outline-none focus:ring-2 focus:ring-white" aria-label="Next photo"><i class="fa-solid fa-chevron-right"></i></button>
     </div>
@@ -85,6 +111,7 @@
         const lightbox = document.getElementById('lightbox');
         const lightboxImage = document.getElementById('lightbox-image');
         const lightboxCaption = document.getElementById('lightbox-caption');
+        const lightboxMeta = document.getElementById('lightbox-meta');
         let current = 0;
 
         const openLightbox = (index) => {
@@ -93,7 +120,10 @@
           if (!item) return;
           lightboxImage.src = item.dataset.photo;
           lightboxImage.alt = item.querySelector('img').alt;
-          lightboxCaption.textContent = `Photo ${current + 1} of ${items.length}`;
+          lightboxCaption.textContent = item.dataset.title
+            ? item.dataset.title
+            : `Photo ${current + 1} of ${items.length}`;
+          lightboxMeta.textContent = item.dataset.description || (item.dataset.category || '');
           lightbox.classList.remove('hidden');
           lightbox.classList.add('flex');
           document.body.style.overflow = 'hidden';
@@ -117,6 +147,25 @@
           if (e.key === 'Escape') closeLightbox();
           if (e.key === 'ArrowRight') showNext();
           if (e.key === 'ArrowLeft') showPrev();
+        });
+
+        // Fallback: ensure overlay is visible on hover/focus for environments where Tailwind group-hover classes may be missing
+        items.forEach((item) => {
+          const overlay = item.querySelector('.gallery-overlay');
+          if (!overlay) return;
+          const showOverlay = () => {
+            overlay.style.opacity = '1';
+            overlay.style.transform = 'translateY(0)';
+          };
+          const hideOverlay = () => {
+            overlay.style.opacity = '';
+            overlay.style.transform = '';
+          };
+          item.addEventListener('mouseenter', showOverlay);
+          item.addEventListener('mouseleave', hideOverlay);
+          // keyboard accessibility: focus within
+          item.addEventListener('focusin', showOverlay);
+          item.addEventListener('focusout', hideOverlay);
         });
 
         const revealItems = document.querySelectorAll('.dv-reveal');
