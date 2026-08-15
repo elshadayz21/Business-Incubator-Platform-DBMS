@@ -141,25 +141,66 @@ export const getWorkshopDetailPage = async (req, res, next) => {
 };
 
 // --- Gallery Page ---
-export const getGalleryPage = (req, res) => {
-  const galleryDir = path.join(process.cwd(), "public", "uploads", "gallery");
+export const getGalleryPage = async (req, res) => {
+  const { category, q } = req.query;
   let photos = [];
   try {
-    photos = fs.existsSync(galleryDir)
-      ? fs
-          .readdirSync(galleryDir)
-          .filter((file) => /\.(jpe?g|png|webp|gif)$/i.test(file))
-          .sort()
-          .map((file) => `/uploads/gallery/${file}`)
-      : [];
-  } catch (err) {
-    console.error("Gallery Page Error:", err);
-  }
+    const params = [];
+    const where = ["is_published = true"];
 
-  res.render("pages/gallery", {
-    title: "Gallery | DxValley Incubation Center",
-    photos,
-  });
+    if (category && category !== 'all') {
+      params.push(category);
+      where.push(`category = $${params.length}`);
+    }
+
+    if (q) {
+      params.push(`%${q}%`);
+      where.push(`(title ILIKE $${params.length} OR description ILIKE $${params.length})`);
+    }
+
+    const whereSQL = where.length ? `WHERE ${where.join(' AND ')}` : '';
+
+    const sql = `SELECT id, title, description, image_url, category, display_order, created_at, updated_at
+                 FROM gallery_items
+                 ${whereSQL}
+                 ORDER BY display_order ASC, created_at DESC`;
+
+    const result = await pool.query(sql, params);
+
+    const dbPhotos = result.rows.map((item) => ({
+      id: item.id,
+      url: item.image_url,
+      title: item.title,
+      description: item.description || "",
+      category: item.category || "General",
+      created_at: item.created_at,
+      updated_at: item.updated_at,
+      display_order: item.display_order,
+    }));
+
+    photos = dbPhotos;
+
+    // derive categories from DB photos (unique)
+    const categoriesSet = new Set(dbPhotos.map((p) => p.category || 'General'));
+    const categories = ['All', ...Array.from(categoriesSet)];
+
+    res.render('pages/gallery', {
+      title: 'Gallery | DxValley Incubation Center',
+      photos,
+      categories,
+      selectedCategory: category || 'all',
+      q: q || '',
+    });
+  } catch (err) {
+    console.error('Gallery Page Error:', err);
+    res.render('pages/gallery', {
+      title: 'Gallery | DxValley Incubation Center',
+      photos: [],
+      categories: ['All'],
+      selectedCategory: 'all',
+      q: '',
+    });
+  }
 };
 
 // --- About Page ---

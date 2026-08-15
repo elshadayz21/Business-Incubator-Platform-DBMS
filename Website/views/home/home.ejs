@@ -125,6 +125,33 @@
       </div>
   </section>
 
+  <!-- Homepage: Gallery preview (CMS-driven, shows latest published photos) -->
+  <% if (typeof homePhotos !== 'undefined' && homePhotos && homePhotos.length > 0) { %>
+    <section id="home-gallery" class="bg-white">
+      <div class="mx-auto max-w-7xl px-6 py-16 lg:px-10 lg:py-20">
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <p class="text-xs font-extrabold uppercase tracking-[.18em] text-orange">Moments</p>
+            <h2 class="mt-2 text-2xl font-extrabold tracking-[-.03em] text-cyan-dark">From the community</h2>
+          </div>
+          <a href="<%= routes.gallery %>" class="text-sm font-bold text-cyan-dark underline underline-offset-4 hover:text-orange">View all gallery</a>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <% homePhotos.forEach(function(photo, idx) { %>
+            <a href="<%= routes.gallery %>" class="group relative block overflow-hidden rounded-xl border border-line bg-surface" aria-label="Open gallery">
+              <img src="<%= photo.url %>" alt="<%= photo.title || 'Gallery photo' %>" class="aspect-[4/3] w-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='/assets/images/default-avatar.svg'" />
+              <div class="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-cyan-deep/95 via-cyan-deep/80 to-transparent px-4 pb-3 pt-12 text-left transition-opacity duration-300 opacity-0 group-hover:opacity-100">
+                <% if (photo.title) { %><span class="block text-sm font-bold text-white"><%= photo.title %></span><% } %>
+                <% if (photo.description) { %><span class="mt-1 block text-xs leading-5 text-white/85 line-clamp-2"><%= photo.description %></span><% } %>
+              </div>
+            </a>
+          <% }) %>
+        </div>
+      </div>
+    </section>
+  <% } %>
+
   <section id="programs" class="bg-surface">
     <div class="mx-auto max-w-7xl px-6 py-24 lg:px-10 lg:py-28">
       <div class="max-w-[700px] dv-reveal" data-delay="0">

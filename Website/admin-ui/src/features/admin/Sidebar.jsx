@@ -13,6 +13,8 @@ import {
   Building2,
   Inbox as InboxIcon,
   Megaphone,
+  Mail,
+  Images,
   CircleUserRound,
   FileText,
   Layers,
@@ -38,6 +40,10 @@ const Sidebar = ({
     { id: 6, icon: Coins, label: "Funding", badge: "New" },
     { id: 7, icon: InboxIcon, label: "Inbox", badge: null },
     { id: 8, icon: Megaphone, label: "Announcements", badge: "New" },
+    { id: 9, icon: Images, label: "Gallery", badge: null },
+    { id: 10, icon: Mail, label: "Mass Email", badge: null },
+    ...(userRole?.toLowerCase() === "superadmin"
+      ? [{ id: 11, icon: Users, label: "Users", badge: "Admin" }]
     { id: 9, icon: FileText, label: "Static Pages", badge: null },
     { id: 10, icon: Layers, label: "Cohorts", badge: null },
     { id: 11, icon: PieChart, label: "Reports", badge: null },

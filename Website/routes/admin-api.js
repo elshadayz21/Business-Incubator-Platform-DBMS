@@ -102,6 +102,20 @@ import {
   createAnnouncement,
   deleteAnnouncement,
 } from "../admin-backend/announcements/announcements.js";
+//for Gallery CMS
+import {
+  getAllGalleryItems,
+  getGalleryItem,
+  createGalleryItem,
+  updateGalleryItem,
+  setGalleryItemPublished,
+  deleteGalleryItem,
+  getGalleryCategories,
+} from "../admin-backend/gallery/gallery.js";
+import uploadGallery, {
+  validateGalleryImage,
+} from "../config/multer-gallery.js";
+//for Mass Email (UR-B4)
 import {
   getAllStaticPages,
   getStaticPageById,
@@ -430,6 +444,126 @@ router.delete(
     res.json(await deleteAnnouncement(req.params.id)),
   ),
 );
+
+// Gallery (CMS)
+router.get(
+    "/gallery",
+    asyncHandler(async (req, res) => {
+        const { page, pageSize, q, category, status, sortBy, sortDir } = req.query;
+        const opts = {
+            q,
+            category,
+            status,
+            page: page ? Number(page) : 1,
+            pageSize: pageSize ? Number(pageSize) : 10,
+            sortBy,
+            sortDir,
+        };
+        const result = await getAllGalleryItems(opts);
+        res.json({ items: result.rows, total: result.total });
+    }),
+);
+
+// Default categories fallback for admin UI when DB has none
+const GALLERY_DEFAULT_CATEGORIES = [
+  'Events',
+  'Workshops',
+  'Training',
+  'Mentorship',
+  'Demo Day',
+  'Community',
+  'Other',
+];
+
+// NOTE: this route MUST be registered before /gallery/:id so that the
+// parameterized route does not shadow the categories endpoint.
+router.get(
+    "/gallery/categories",
+    asyncHandler(async (req, res) => {
+        const cats = await getGalleryCategories();
+        if (!cats || !Array.isArray(cats) || cats.length === 0) {
+            return res.json({ categories: GALLERY_DEFAULT_CATEGORIES });
+        }
+        res.json({ categories: cats });
+    }),
+);
+
+router.get(
+    "/gallery/:id",
+    asyncHandler(async (req, res) =>
+        res.json(await getGalleryItem(req.params.id)),
+    ),
+);
+
+router.post(
+    "/gallery",
+    uploadGallery.single("image"),
+    validateGalleryImage,
+    asyncHandler(async (req, res) => {
+        const data = {
+            ...req.body,
+            imageUrl: req.file
+                ? `/uploads/gallery/${req.file.filename}`
+                : req.body.imageUrl,
+        };
+        res.json(await createGalleryItem(data));
+    }),
+);
+router.put(
+    "/gallery/:id",
+    uploadGallery.single("image"),
+    validateGalleryImage,
+    asyncHandler(async (req, res) => {
+        const data = {
+            ...req.body,
+            imageUrl: req.file
+                ? `/uploads/gallery/${req.file.filename}`
+                : req.body.imageUrl,
+        };
+        res.json(await updateGalleryItem(req.params.id, data));
+    }),
+);
+router.patch(
+    "/gallery/:id/publish",
+    asyncHandler(async (req, res) =>
+        res.json(
+            await setGalleryItemPublished(
+                req.params.id,
+                req.body.isPublished,
+            ),
+        ),
+    ),
+);
+router.delete(
+    "/gallery/:id",
+    asyncHandler(async (req, res) =>
+        res.json(await deleteGalleryItem(req.params.id)),
+    ),
+);
+
+// Convert gallery upload/validation errors into JSON 400 responses instead of
+// letting them fall through to the HTML 500 error page.
+router.use("/gallery", (err, req, res, next) => {
+  if (res.headersSent) return next(err);
+
+  const isMulterError = err && err.name === "MulterError";
+  if (isMulterError || (err && err.status === 400)) {
+    let message = err.message || "Invalid request";
+    if (isMulterError && err.code === "LIMIT_FILE_SIZE") {
+      message = "Image exceeds maximum size of 5MB.";
+    }
+    // The request body may not have been fully consumed after multer aborted
+    // the parser. Drain it and refuse connection reuse so the keep-alive
+    // socket is not corrupted for the next request.
+    req.on("error", () => {});
+    req.resume();
+    res.setHeader("Connection", "close");
+    return res.status(400).json({ message });
+  }
+
+  return next(err);
+});
+
 
 // AI Mentor Matching Routes
 router.get(
