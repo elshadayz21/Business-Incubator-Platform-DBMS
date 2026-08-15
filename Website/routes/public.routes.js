@@ -83,6 +83,10 @@ router.get("/gallery", async (req, res) => {
         res.status(200).json(result.rows);
     } catch (error) {
         console.error("Error fetching gallery:", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+});
+
 // POST: Application Form
 router.post("/apply", async (req, res) => {
     try {
