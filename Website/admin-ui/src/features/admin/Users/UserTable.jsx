@@ -1,7 +1,24 @@
 import React from "react";
-import { Mail, Loader2, Inbox, ShieldOff } from "lucide-react";
+import {
+  Mail,
+  Loader2,
+  Inbox,
+  ShieldOff,
+  ShieldCheck,
+  KeyRound,
+  Trash2,
+  UserCog,
+} from "lucide-react";
 
-const UserTable = ({ users, loading, onDeactivate }) => {
+const UserTable = ({
+  users,
+  loading,
+  currentUserId,
+  onToggleStatus,
+  onChangeRole,
+  onResetPassword,
+  onDelete,
+}) => {
   if (loading)
     return (
       <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-[#D6E4EA]">
@@ -26,7 +43,7 @@ const UserTable = ({ users, loading, onDeactivate }) => {
 
   return (
     <div className="overflow-x-auto font-sans">
-      <table className="w-full text-left border-collapse min-w-[850px]">
+      <table className="w-full text-left border-collapse min-w-[900px]">
         <thead>
           <tr className="bg-[#F6FAFC] border-b border-[#D6E4EA] text-[#526274] text-xs font-bold uppercase tracking-wider">
             <th className="p-4">Name &amp; Email</th>
@@ -47,6 +64,11 @@ const UserTable = ({ users, loading, onDeactivate }) => {
                   <div>
                     <div className="font-bold text-[#111827] text-sm">
                       {u.name || "Unknown User"}
+                      {Number(u.id) === Number(currentUserId) && (
+                        <span className="ml-2 text-[10px] px-2 py-0.5 rounded-full bg-[#EAF8FC] text-[#006F9E] font-bold border border-[#00ADEF]/20 align-middle">
+                          You
+                        </span>
+                      )}
                     </div>
                     <div className="text-xs text-[#526274] font-medium flex items-center gap-1.5 mt-0.5">
                       <Mail size={12} className="text-[#00ADEF]" /> {u.email || "No Email"}
@@ -80,15 +102,51 @@ const UserTable = ({ users, loading, onDeactivate }) => {
               </td>
 
               <td className="p-4 text-right">
-                {u.status !== "inactive" && (
+                <div className="flex items-center justify-end gap-1.5">
+                  {u.status === "active" ? (
+                    <button
+                      onClick={() => onToggleStatus && onToggleStatus(u)}
+                      className="p-2 text-rose-600 hover:bg-rose-50 rounded-xl border border-rose-200 transition"
+                      title="Deactivate Account"
+                    >
+                      <ShieldOff size={16} />
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => onToggleStatus && onToggleStatus(u)}
+                      className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-xl border border-emerald-200 transition"
+                      title="Activate Account"
+                    >
+                      <ShieldCheck size={16} />
+                    </button>
+                  )}
+
                   <button
-                    onClick={() => onDeactivate && onDeactivate(u.id)}
-                    className="p-2 text-rose-600 hover:bg-rose-50 rounded-xl border border-rose-200 transition"
-                    title="Deactivate Account"
+                    onClick={() => onChangeRole && onChangeRole(u)}
+                    className="p-2 text-[#006F9E] hover:bg-[#EAF8FC] rounded-xl border border-[#00ADEF]/30 transition"
+                    title="Change Role"
                   >
-                    <ShieldOff size={16} />
+                    <UserCog size={16} />
                   </button>
-                )}
+
+                  <button
+                    onClick={() => onResetPassword && onResetPassword(u)}
+                    className="p-2 text-[#E38524] hover:bg-[#FFF1E3] rounded-xl border border-[#E38524]/30 transition"
+                    title="Reset Password"
+                  >
+                    <KeyRound size={16} />
+                  </button>
+
+                  {Number(u.id) !== Number(currentUserId) && (
+                    <button
+                      onClick={() => onDelete && onDelete(u)}
+                      className="p-2 text-rose-600 hover:bg-rose-50 rounded-xl border border-rose-200 transition"
+                      title="Delete User"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
+                </div>
               </td>
             </tr>
           ))}

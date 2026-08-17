@@ -116,6 +116,33 @@
       }
     };
 
+  // Helper: Format content to professional HTML with proper spacing
+  window.formatAnnouncementContent = (text) => {
+    if (!text) return '';
+    
+    // Extract plain text from HTML
+    let plainText = text;
+    if (/<[a-z][\s\S]*>/i.test(text)) {
+      const temp = document.createElement('div');
+      temp.innerHTML = text;
+      plainText = temp.textContent || temp.innerText || '';
+    }
+    
+    // Split by sentence endings followed by space
+    const sentences = plainText
+      .split(/(?<=[.!?])\s+/)
+      .filter(s => s.trim());
+    
+    if (sentences.length > 1) {
+      return sentences
+        .map(s => `<p style="margin: 0 0 12px 0; line-height: 1.7;">${s.trim()}</p>`)
+        .join('');
+    }
+    
+    // Single sentence or no split - just wrap in paragraph
+    return `<p style="margin: 0 0 12px 0; line-height: 1.7;">${plainText.trim()}</p>`;
+  };
+
   // 2. Open Call Modal Logic
   window.openApplicationModal = (index) => {
     const ann = window.announcementData[index];
@@ -123,7 +150,7 @@
 
     document.getElementById('modal-announcement-id').value = ann.id;
     document.getElementById('modal-title').textContent = ann.title;
-    document.getElementById('modal-content').innerHTML = ann.content;
+    document.getElementById('modal-content').innerHTML = window.formatAnnouncementContent(ann.content);
 
     // Show Document Link if it exists
     const docDiv = document.getElementById('modal-document');
@@ -185,7 +212,7 @@
     if (!ann) return;
 
     document.getElementById('modal-title').textContent = ann.title;
-    document.getElementById('modal-content').innerHTML = ann.content;
+    document.getElementById('modal-content').innerHTML = window.formatAnnouncementContent(ann.content);
 
     const docDiv = document.getElementById('modal-document');
     if (ann.document_url) {

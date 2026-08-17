@@ -173,6 +173,15 @@ window.electron = {
         options.method = "PUT";
         options.body = JSON.stringify({ status: args[1] });
         break;
+      case "users:reset-password":
+        url = `/api/admin/users/${args[0]}/password`;
+        options.method = "PUT";
+        options.body = JSON.stringify({ password: args[1] });
+        break;
+      case "users:delete":
+        url = `/api/admin/users/${args[0]}`;
+        options.method = "DELETE";
+        break;
 
       // Static Pages
       case "static-pages:get-all":
@@ -257,6 +266,29 @@ window.electron = {
       case "reports:get-rows":
         url = "/api/admin/reports/rows";
         break;
+      case "system:get-overview":
+        url = "/api/admin/system/overview";
+        break;
+
+      // Portal (Entrepreneur & Mentor)
+      case "portal:entrepreneur-dashboard":
+        url = "/api/portal/entrepreneur/dashboard";
+        break;
+      case "portal:mentor-dashboard":
+        url = "/api/portal/mentor/dashboard";
+        break;
+      case "portal:mentor-sessions:get":
+        url = `/api/portal/mentor/sessions/${args[0]}`;
+        break;
+      case "portal:mentor-sessions:create":
+        url = "/api/portal/mentor/sessions";
+        options.method = "POST";
+        options.body = JSON.stringify(args[0]);
+        break;
+      case "portal:mentor-sessions:delete":
+        url = `/api/portal/mentor/sessions/${args[0]}`;
+        options.method = "DELETE";
+        break;
 
       default:
         console.warn("Unknown IPC channel:", channel);
@@ -266,7 +298,14 @@ window.electron = {
     try {
       const res = await fetch(url, options);
       if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
+        let msg = `HTTP error! status: ${res.status}`;
+        try {
+          const body = await res.json();
+          if (body && (body.error || body.message)) {
+            msg = body.error || body.message;
+          }
+        } catch (_) {}
+        throw new Error(msg);
       }
       return await res.json();
     } catch (err) {

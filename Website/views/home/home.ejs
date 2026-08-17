@@ -76,25 +76,6 @@
     </div>
   </section>
 
-  <section class="border-b border-line bg-cyan-soft" aria-label="Batch 04 application status">
-    <div class="mx-auto grid max-w-7xl gap-6 px-6 py-7 lg:grid-cols-[1.1fr_1.5fr_auto] lg:items-center lg:px-10">
-      <div>
-        <p class="text-xs font-extrabold uppercase tracking-[.18em] text-cyan-dark">Batch 04 applications open</p>
-        <p class="mt-2 text-sm font-semibold text-ink">Closes 30 September 2026</p>
-      </div>
-      <div class="grid grid-cols-4 gap-2 sm:gap-4" aria-label="Application countdown" data-countdown data-deadline="2026-09-30T23:59:59+03:00">
-        <div class="border-l-2 border-cyan pl-3"><p class="text-2xl font-extrabold text-cyan-dark" data-countdown-value="days">62</p><p class="text-[10px] font-bold uppercase tracking-wider text-muted">Days</p></div>
-        <div class="border-l-2 border-cyan pl-3"><p class="text-2xl font-extrabold text-cyan-dark" data-countdown-value="hours">14</p><p class="text-[10px] font-bold uppercase tracking-wider text-muted">Hours</p></div>
-        <div class="border-l-2 border-cyan pl-3"><p class="text-2xl font-extrabold text-cyan-dark" data-countdown-value="minutes">38</p><p class="text-[10px] font-bold uppercase tracking-wider text-muted">Minutes</p></div>
-        <div class="border-l-2 border-cyan pl-3"><p class="text-2xl font-extrabold text-cyan-dark" data-countdown-value="seconds">09</p><p class="text-[10px] font-bold uppercase tracking-wider text-muted">Seconds</p></div>
-      </div>
-      <a class="inline-flex items-center gap-2 text-sm font-bold text-cyan-dark transition hover:text-orange" href="#programs">
-        View eligibility
-        <i class="fa-solid fa-arrow-up-right-from-square text-xs" aria-hidden="true"></i>
-      </a>
-    </div>
-  </section>
-
   <section id="about" class="bg-white">
     <div class="mx-auto grid max-w-7xl gap-16 px-6 py-24 lg:grid-cols-[1.05fr_.95fr] lg:gap-24 lg:px-10 lg:py-28">
       <div class="dv-reveal" data-delay="0">
@@ -115,6 +96,39 @@
             <h2 class="mt-2 text-3xl font-extrabold tracking-[-.03em] text-cyan-dark">Latest updates</h2>
           </div>
           <a class="text-xs font-bold text-cyan-dark underline underline-offset-4 transition hover:text-orange" href="/v1/about#announcements">View all</a>
+        </div>
+
+        <!-- Countdown Timer for Latest Open Call -->
+        <div id="home-countdown-banner" class="hidden mb-4 bg-gradient-to-r from-[#00ADEF] to-[#006F9E] rounded-2xl p-5 text-white">
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+              <span class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                <i class="fa-solid fa-clock text-sm"></i>
+              </span>
+              <div>
+                <p class="text-xs font-bold uppercase tracking-wider text-white/80">Application Deadline</p>
+                <p id="home-countdown-title" class="text-sm font-extrabold"></p>
+              </div>
+            </div>
+            <div id="home-countdown-timer" class="flex gap-3 text-center">
+              <div class="bg-white/10 rounded-lg px-3 py-2 min-w-[60px]">
+                <span id="home-days" class="text-2xl font-extrabold block">0</span>
+                <span class="text-[10px] font-bold uppercase text-white/70">Days</span>
+              </div>
+              <div class="bg-white/10 rounded-lg px-3 py-2 min-w-[60px]">
+                <span id="home-hours" class="text-2xl font-extrabold block">0</span>
+                <span class="text-[10px] font-bold uppercase text-white/70">Hours</span>
+              </div>
+              <div class="bg-white/10 rounded-lg px-3 py-2 min-w-[60px]">
+                <span id="home-minutes" class="text-2xl font-extrabold block">0</span>
+                <span class="text-[10px] font-bold uppercase text-white/70">Mins</span>
+              </div>
+              <div class="bg-white/10 rounded-lg px-3 py-2 min-w-[60px]">
+                <span id="home-seconds" class="text-2xl font-extrabold block">0</span>
+                <span class="text-[10px] font-bold uppercase text-white/70">Secs</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- We give this container an ID so our JavaScript can target it! -->
@@ -182,6 +196,116 @@
 
 
 <script>
+  let homeCountdownInterval;
+  let homeRefreshInterval;
+  let currentDeadlineId = null;
+
+  function updateCountdownValues(deadline) {
+    const now = new Date().getTime();
+    const distance = deadline - now;
+    const banner = document.getElementById('home-countdown-banner');
+
+    if (distance < 0) {
+      if (homeCountdownInterval) clearInterval(homeCountdownInterval);
+      if (banner) {
+        banner.innerHTML = '<div class="text-center py-2"><span class="bg-red-500 px-4 py-2 rounded-full text-sm font-bold">APPLICATION CLOSED</span></div>';
+      }
+      return;
+    }
+
+    const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+    const daysEl = document.getElementById('home-days');
+    const hoursEl = document.getElementById('home-hours');
+    const minutesEl = document.getElementById('home-minutes');
+    const secondsEl = document.getElementById('home-seconds');
+
+    if (daysEl) daysEl.textContent = days;
+    if (hoursEl) hoursEl.textContent = hours;
+    if (minutesEl) minutesEl.textContent = minutes;
+    if (secondsEl) secondsEl.textContent = seconds;
+  }
+
+  let lastDeadlineMs = null;
+
+  function startHomeCountdown(announcements) {
+    const openCalls = announcements.filter(ann => ann.is_open_call && ann.deadline);
+    const banner = document.getElementById('home-countdown-banner');
+    if (openCalls.length === 0) {
+      if (banner) banner.classList.add('hidden');
+      return;
+    }
+
+    const latest = openCalls[0];
+    const deadlineDate = new Date(latest.deadline).getTime();
+    const newDeadlineId = latest.id;
+
+    if (currentDeadlineId === newDeadlineId && lastDeadlineMs === deadlineDate) {
+      return;
+    }
+
+    currentDeadlineId = newDeadlineId;
+    lastDeadlineMs = deadlineDate;
+
+    if (banner) {
+      banner.classList.remove('hidden');
+      banner.innerHTML = `
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <span class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+              <i class="fa-solid fa-clock text-sm"></i>
+            </span>
+            <div>
+              <p class="text-xs font-bold uppercase tracking-wider text-white/80">Application Deadline</p>
+              <p class="text-sm font-extrabold">${latest.title}</p>
+            </div>
+          </div>
+          <div class="flex gap-3 text-center">
+            <div class="bg-white/10 rounded-lg px-3 py-2 min-w-[60px]">
+              <span id="home-days" class="text-2xl font-extrabold block">0</span>
+              <span class="text-[10px] font-bold uppercase text-white/70">Days</span>
+            </div>
+            <div class="bg-white/10 rounded-lg px-3 py-2 min-w-[60px]">
+              <span id="home-hours" class="text-2xl font-extrabold block">0</span>
+              <span class="text-[10px] font-bold uppercase text-white/70">Hours</span>
+            </div>
+            <div class="bg-white/10 rounded-lg px-3 py-2 min-w-[60px]">
+              <span id="home-minutes" class="text-2xl font-extrabold block">0</span>
+              <span class="text-[10px] font-bold uppercase text-white/70">Mins</span>
+            </div>
+            <div class="bg-white/10 rounded-lg px-3 py-2 min-w-[60px]">
+              <span id="home-seconds" class="text-2xl font-extrabold block">0</span>
+              <span class="text-[10px] font-bold uppercase text-white/70">Secs</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    if (homeCountdownInterval) clearInterval(homeCountdownInterval);
+    updateCountdownValues(deadlineDate);
+    homeCountdownInterval = setInterval(() => updateCountdownValues(deadlineDate), 1000);
+  }
+
+  // Fetch announcements and update everything
+  async function refreshAnnouncements() {
+    try {
+      const response = await fetch('/api/public/announcements');
+      let announcements = await response.json();
+      
+      // Store globally
+      window.announcementData = announcements;
+      
+      // Update countdown
+      startHomeCountdown(announcements);
+    } catch (error) {
+      console.error('Error refreshing announcements:', error);
+    }
+  }
+
   (async () => {
     try {
       const response = await fetch('/api/public/announcements');
@@ -198,6 +322,12 @@
 
             // Store the data in a global variable so we can access it on click!
             window.announcementData = announcements;
+
+            // Start countdown for the latest open call
+            startHomeCountdown(announcements);
+
+            // Auto-refresh every 30 seconds to catch deadline updates
+            homeRefreshInterval = setInterval(refreshAnnouncements, 30000);
 
             container.innerHTML = announcements.map((ann, index) => {
               const dateStr = new Date(ann.created_at).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -271,47 +401,18 @@
 </main>
 
 <script>
-  (() => {
-    const countdown = document.querySelector('[data-countdown]');
-    if (countdown) {
-      const deadline = new Date(countdown.dataset.deadline).getTime();
-      const values = {
-        days: countdown.querySelector('[data-countdown-value="days"]'),
-        hours: countdown.querySelector('[data-countdown-value="hours"]'),
-        minutes: countdown.querySelector('[data-countdown-value="minutes"]'),
-        seconds: countdown.querySelector('[data-countdown-value="seconds"]')
-      };
-
-      const updateCountdown = () => {
-        const remaining = Math.max(0, deadline - Date.now());
-        const totalSeconds = Math.floor(remaining / 1000);
-        const days = Math.floor(totalSeconds / 86400);
-        const hours = Math.floor((totalSeconds % 86400) / 3600);
-        const minutes = Math.floor((totalSeconds % 3600) / 60);
-        const seconds = totalSeconds % 60;
-        values.days.textContent = String(days).padStart(2, '0');
-        values.hours.textContent = String(hours).padStart(2, '0');
-        values.minutes.textContent = String(minutes).padStart(2, '0');
-        values.seconds.textContent = String(seconds).padStart(2, '0');
-      };
-
-      updateCountdown();
-      window.setInterval(updateCountdown, 1000);
-    }
-
-    const revealItems = document.querySelectorAll('.dv-reveal');
-    if ('IntersectionObserver' in window) {
-      const revealObserver = new IntersectionObserver((entries, observer) => {
-        entries.forEach((entry) => {
-          if (!entry.isIntersecting) return;
-          entry.target.style.animationDelay = `${entry.target.dataset.delay || 0}ms`;
-          entry.target.classList.add('dv-visible');
-          observer.unobserve(entry.target);
-        });
-      }, { threshold: 0.12 });
-      revealItems.forEach((item) => revealObserver.observe(item));
-    } else {
-      revealItems.forEach((item) => item.classList.add('dv-visible'));
-    }
-  })();
+  const revealItems = document.querySelectorAll('.dv-reveal');
+  if ('IntersectionObserver' in window) {
+    const revealObserver = new IntersectionObserver((entries, observer) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        entry.target.style.animationDelay = `${entry.target.dataset.delay || 0}ms`;
+        entry.target.classList.add('dv-visible');
+        observer.unobserve(entry.target);
+      });
+    }, { threshold: 0.12 });
+    revealItems.forEach((item) => revealObserver.observe(item));
+  } else {
+    revealItems.forEach((item) => item.classList.add('dv-visible'));
+  }
 </script>

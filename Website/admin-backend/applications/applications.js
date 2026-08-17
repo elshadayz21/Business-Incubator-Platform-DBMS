@@ -1,4 +1,7 @@
 import pool from "../../config/db.js";
+import crypto from "crypto";
+
+const generateInviteToken = () => crypto.randomBytes(32).toString("hex");
 
 // GET ALL APPLICATIONS (with Announcement Title)
 export const getAllApplications = async () => {
@@ -13,9 +16,12 @@ export const getAllApplications = async () => {
 // UPDATE APPLICATION STATUS (Accept/Reject)
 export const updateApplicationStatus = async (id, status) => {
     console.log("Updating application status:", id, status);
+    // Generate the invite token the moment an application is accepted, so
+    // the "Send Invites" email always carries a valid, usable signup link.
+    const token = status === "Accepted" ? generateInviteToken() : null;
     const result = await pool.query(
-        "UPDATE applications SET status = $1 WHERE id = $2 RETURNING *",
-        [status, id]
+        `UPDATE applications SET status = $1, invite_token = COALESCE(invite_token, $2) WHERE id = $3 RETURNING *`,
+        [status, token, id]
     );
 
     const app = result.rows[0];
@@ -57,7 +63,7 @@ import { sendInvitationEmail } from "../../utils/mailer.js"; // Make sure this i
 // SEND INVITES TO ALL ACCEPTED APPLICANTS
 export const sendMassInvites = async (subject, body) => {
     const result = await pool.query(
-        "SELECT * FROM applications WHERE status = 'Accepted' AND invite_used = false AND invite_sent = false"
+        "SELECT * FROM applications WHERE status = 'Accepted' AND invite_used = false AND invite_sent = false AND invite_token IS NOT NULL"
     );
 
     const acceptedApps = result.rows;

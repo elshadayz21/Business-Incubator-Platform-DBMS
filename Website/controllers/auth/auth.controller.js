@@ -227,7 +227,7 @@ export const login = async (req, res, next) => {
     if (user.role === ROLES.SUPERADMIN || user.role === ROLES.ADMIN) {
       redirectUrl = "/admin/dashboard";
     } else if (user.role === ROLES.MENTOR || user.role === ROLES.ENTREPRENEUR) {
-      redirectUrl = "/v1/auth/profile";
+      redirectUrl = "/admin/";
     }
 
     const userDataJson = JSON.stringify({

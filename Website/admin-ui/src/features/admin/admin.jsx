@@ -15,12 +15,41 @@ import StaticPages from "./StaticPages/StaticPages";
 import Cohorts from "./Cohorts/Cohorts";
 import Reports from "./Reports/Reports";
 import Applications from "./Applications/Applications";
+import SystemSettings from "./SystemSettings/SystemSettings";
 
 const Admin = () => {
   const [activeTab, setActiveTab] = useState("Dashboard");
   const userRole = JSON.parse(sessionStorage.getItem("user") || "{}").role;
+  const isSuperadmin = userRole?.toLowerCase() === "superadmin";
+
+  // Operational modules are Admin-only; system/CMS modules are Superadmin-only.
+  const adminOnlyTabs = [
+    "Projects",
+    "Mentors",
+    "Workshops",
+    "Resources",
+    "Funding",
+    "Inbox",
+    "Announcements",
+    "Mass Email",
+    "Cohorts",
+    "Applications",
+  ];
+  const superadminOnlyTabs = [
+    "Reports",
+    "Users",
+    "Gallery",
+    "Static Pages",
+    "System Settings",
+  ];
+
+  const canAccess = (tab) => {
+    if (isSuperadmin) return !adminOnlyTabs.includes(tab);
+    return !superadminOnlyTabs.includes(tab);
+  };
 
   const renderContent = () => {
+    if (!canAccess(activeTab)) return <Dashboard />;
     switch (activeTab) {
       case "Dashboard":
         return <Dashboard />;
@@ -54,6 +83,8 @@ const Admin = () => {
         return <Dashboard />;
       case "Applications":
         return <Applications />;
+      case "System Settings":
+        return <SystemSettings />;
     }
   };
 

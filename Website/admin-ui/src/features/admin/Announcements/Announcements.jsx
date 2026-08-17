@@ -1,10 +1,37 @@
 import React, { useState, useEffect } from "react";
-import { Megaphone, Trash2, Loader2, Send, PlusCircle, FileUp, X } from "lucide-react";
+import { Megaphone, Trash2, Loader2, Send, PlusCircle, FileUp, X, Pencil, Copy, Users, AlertTriangle, Check, Eye } from "lucide-react";
 
 
 
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
+
+// Helper: Format content to professional HTML with proper spacing
+const formatAnnouncementContent = (text) => {
+    if (!text) return '';
+    
+    // Extract plain text from HTML
+    let plainText = text;
+    if (/<[a-z][\s\S]*>/i.test(text)) {
+        const temp = document.createElement('div');
+        temp.innerHTML = text;
+        plainText = temp.textContent || temp.innerText || '';
+    }
+    
+    // Split by sentence endings followed by space
+    const sentences = plainText
+        .split(/(?<=[.!?])\s+/)
+        .filter(s => s.trim());
+    
+    if (sentences.length > 1) {
+        return sentences
+            .map(s => `<p style="margin: 0 0 12px 0; line-height: 1.7;">${s.trim()}</p>`)
+            .join('');
+    }
+    
+    // Single sentence or no split - just wrap in paragraph
+    return `<p style="margin: 0 0 12px 0; line-height: 1.7;">${plainText.trim()}</p>`;
+};
 
 export default function Announcements() {
     const [announcements, setAnnouncements] = useState([]);
@@ -17,9 +44,27 @@ export default function Announcements() {
     const [editingFormId, setEditingFormId] = useState(null); // Tracks which announcement's form we are editing
     const [formFields, setFormFields] = useState([]); // Stores the custom fields
 
-    // ADD THESE NEW ONES RIGHT HERE:
+    // Form state
     const [isOpenCall, setIsOpenCall] = useState(false);
     const [capacity, setCapacity] = useState("");
+
+    // Edit Modal state
+    const [editModal, setEditModal] = useState({ open: false, announcement: null });
+    const [editTitle, setEditTitle] = useState("");
+    const [editContent, setEditContent] = useState("");
+    const [editDeadline, setEditDeadline] = useState("");
+    const [editDocument, setEditDocument] = useState(null);
+    const [editDocumentUrl, setEditDocumentUrl] = useState(null);
+    const [editIsOpenCall, setEditIsOpenCall] = useState(false);
+    const [editCapacity, setEditCapacity] = useState("");
+    const [updating, setUpdating] = useState(false);
+
+    // Delete Confirmation state
+    const [deleteConfirm, setDeleteConfirm] = useState({ open: false, id: null, title: "" });
+
+    // Application Count state
+    const [appCounts, setAppCounts] = useState({});
+    const [showingAppsFor, setShowingAppsFor] = useState(null);
 
 
     const fetchAnnouncements = async () => {
@@ -97,9 +142,90 @@ export default function Announcements() {
                 method: 'DELETE',
                 credentials: 'include'
             });
+            setDeleteConfirm({ open: false, id: null, title: "" });
             fetchAnnouncements();
         } catch (error) {
             console.error("Error deleting announcement:", error);
+        }
+    };
+
+    // Open Edit Modal
+    const handleEdit = async (ann) => {
+        setEditModal({ open: true, announcement: ann });
+        setEditTitle(ann.title);
+        setEditContent(ann.content);
+        setEditDeadline(ann.deadline ? new Date(ann.deadline).toISOString().slice(0, 16) : "");
+        setEditDocumentUrl(ann.document_url);
+        setEditDocument(null);
+        setEditIsOpenCall(ann.is_open_call);
+        setEditCapacity(ann.capacity || "");
+    };
+
+    // Update Announcement
+    const handleUpdate = async (e) => {
+        e.preventDefault();
+        if (!editTitle || !editContent) return;
+
+        setUpdating(true);
+        try {
+            const formData = new FormData();
+            formData.append('title', editTitle);
+            formData.append('content', editContent);
+            formData.append('is_open_call', editIsOpenCall);
+            if (editCapacity) formData.append('capacity', editCapacity);
+            if (editDeadline) formData.append('deadline', editDeadline);
+            if (editDocument) {
+                formData.append('document', editDocument);
+            } else if (editDocumentUrl) {
+                formData.append('document_url', editDocumentUrl);
+            } else {
+                formData.append('document_url', '');
+            }
+
+            const response = await fetch(`/api/admin/announcements/${editModal.announcement.id}`, {
+                method: 'PUT',
+                credentials: 'include',
+                body: formData
+            });
+
+            if (!response.ok) throw new Error("Failed to update");
+
+            setEditModal({ open: false, announcement: null });
+            fetchAnnouncements();
+        } catch (error) {
+            console.error("Error updating announcement:", error);
+            alert("Failed to update announcement.");
+        } finally {
+            setUpdating(false);
+        }
+    };
+
+    // Duplicate Announcement
+    const handleDuplicate = async (id) => {
+        try {
+            const response = await fetch(`/api/admin/announcements/${id}/duplicate`, {
+                method: 'POST',
+                credentials: 'include'
+            });
+            if (response.ok) {
+                fetchAnnouncements();
+            }
+        } catch (error) {
+            console.error("Error duplicating announcement:", error);
+        }
+    };
+
+    // Get Application Count
+    const fetchApplicationCount = async (annId) => {
+        try {
+            const response = await fetch(`/api/admin/announcements/${annId}/applications/count`, {
+                credentials: 'include'
+            });
+            const data = await response.json();
+            setAppCounts(prev => ({ ...prev, [annId]: data.count }));
+            setShowingAppsFor(annId);
+        } catch (error) {
+            console.error("Error fetching application count:", error);
         }
     };
 
@@ -304,15 +430,36 @@ export default function Announcements() {
                                 <div key={ann.id} className="bg-white border border-[#D6E4EA] rounded-2xl p-5 shadow-xs flex flex-col transition hover:shadow-md">
                                     <div className="flex justify-between items-start mb-3">
                                         <h3 className="font-bold text-base text-[#111827]">{ann.title}</h3>
-                                        <button onClick={() => handleDelete(ann.id)} className="p-1.5 rounded-lg text-[#526274] hover:bg-red-50 hover:text-red-600 transition">
-                                            <Trash2 size={16} />
-                                        </button>
+                                        <div className="flex items-center gap-1">
+                                            {ann.is_open_call && (
+                                                <span className="text-[10px] font-bold text-[#006F9E] bg-[#EAF8FC] px-2 py-1 rounded-full border border-[#00ADEF]/20 mr-1">
+                                                    Open Call
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
 
                                     <div
-                                        className="text-[#526274] text-sm bg-[#F6FAFC] p-4 rounded-xl border border-[#D6E4EA] flex-grow italic"
-                                        dangerouslySetInnerHTML={{ __html: ann.content }}
+                                        className="text-[#526274] text-sm bg-[#F6FAFC] p-4 rounded-xl border border-[#D6E4EA] flex-grow"
+                                        dangerouslySetInnerHTML={{ __html: formatAnnouncementContent(ann.content) }}
                                     ></div>
+
+                                    {/* Application Count (for Open Calls) */}
+                                    {ann.is_open_call && (
+                                        <div className="mt-3 flex items-center gap-2">
+                                            <button
+                                                onClick={() => fetchApplicationCount(ann.id)}
+                                                className="flex items-center gap-1.5 text-xs font-bold text-[#006F9E] bg-[#EAF8FC] px-3 py-1.5 rounded-lg hover:bg-[#D6E4EA] transition border border-[#00ADEF]/20"
+                                            >
+                                                <Users size={12} />
+                                                {appCounts[ann.id] !== undefined ? (
+                                                    <span>{appCounts[ann.id]} Applications</span>
+                                                ) : (
+                                                    <span>View Applications</span>
+                                                )}
+                                            </button>
+                                        </div>
+                                    )}
 
                                     {/* Open Call Form Builder Button */}
                                     {ann.is_open_call && (
@@ -387,8 +534,34 @@ export default function Announcements() {
                                         </div>
                                     )}
 
-                                    <div className="mt-3 pt-3 border-t border-[#D6E4EA] text-xs text-[#526274] font-medium">
-                                        {new Date(ann.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                                    {/* Action Buttons Footer */}
+                                    <div className="mt-3 pt-3 border-t border-[#D6E4EA] flex items-center justify-between">
+                                        <span className="text-xs text-[#526274] font-medium">
+                                            {new Date(ann.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                                        </span>
+                                        <div className="flex items-center gap-1">
+                                            <button
+                                                onClick={() => handleEdit(ann)}
+                                                className="p-1.5 rounded-lg text-[#526274] hover:bg-blue-50 hover:text-blue-600 transition"
+                                                title="Edit"
+                                            >
+                                                <Pencil size={14} />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDuplicate(ann.id)}
+                                                className="p-1.5 rounded-lg text-[#526274] hover:bg-green-50 hover:text-green-600 transition"
+                                                title="Duplicate"
+                                            >
+                                                <Copy size={14} />
+                                            </button>
+                                            <button
+                                                onClick={() => setDeleteConfirm({ open: true, id: ann.id, title: ann.title })}
+                                                className="p-1.5 rounded-lg text-[#526274] hover:bg-red-50 hover:text-red-600 transition"
+                                                title="Delete"
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             ))
@@ -401,6 +574,199 @@ export default function Announcements() {
 
                 </div>
             </div>
+
+            {/* Edit Modal */}
+            {editModal.open && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+                    <div className="bg-white w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-xl">
+                        <div className="sticky top-0 bg-white border-b border-[#D6E4EA] p-6 flex justify-between items-center z-10">
+                            <h2 className="text-xl font-extrabold text-[#111827]">Edit Announcement</h2>
+                            <button
+                                onClick={() => setEditModal({ open: false, announcement: null })}
+                                className="p-2 rounded-lg text-[#526274] hover:bg-gray-100 transition"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleUpdate} className="p-6 space-y-5">
+                            {/* Title */}
+                            <div>
+                                <label className="block text-xs font-bold text-[#526274] mb-2 uppercase tracking-wider">Title</label>
+                                <input
+                                    type="text"
+                                    value={editTitle}
+                                    onChange={(e) => setEditTitle(e.target.value)}
+                                    required
+                                    className="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF] focus:border-transparent font-medium text-[#111827]"
+                                />
+                            </div>
+
+                            {/* Deadline */}
+                            <div>
+                                <label className="block text-xs font-bold text-[#526274] mb-2 uppercase tracking-wider">Application Deadline</label>
+                                <input
+                                    type="datetime-local"
+                                    value={editDeadline}
+                                    onChange={(e) => setEditDeadline(e.target.value)}
+                                    className="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF] focus:border-transparent font-medium text-[#111827]"
+                                />
+                            </div>
+
+                            {/* Open Call Checkbox */}
+                            <div className="flex items-center gap-3 py-2">
+                                <input
+                                    id="edit_is_open_call"
+                                    type="checkbox"
+                                    checked={editIsOpenCall}
+                                    onChange={(e) => setEditIsOpenCall(e.target.checked)}
+                                    className="h-4 w-4 rounded border-gray-300 text-[#00ADEF] focus:ring-[#00ADEF]"
+                                />
+                                <label htmlFor="edit_is_open_call" className="text-sm font-bold text-[#526274]">
+                                    Enable Application Form (Open Call)
+                                </label>
+                            </div>
+
+                            {/* Capacity */}
+                            {editIsOpenCall && (
+                                <div>
+                                    <label className="block text-xs font-bold text-[#526274] mb-2 uppercase tracking-wider">Application Capacity</label>
+                                    <input
+                                        type="number"
+                                        value={editCapacity}
+                                        onChange={(e) => setEditCapacity(e.target.value)}
+                                        className="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF] focus:border-transparent font-medium text-[#111827]"
+                                        placeholder="Leave blank for unlimited"
+                                    />
+                                </div>
+                            )}
+
+                            {/* Content */}
+                            <div>
+                                <label className="block text-xs font-bold text-[#526274] mb-2 uppercase tracking-wider">Content (Rich Text)</label>
+                                <div className="bg-white border border-[#D6E4EA] rounded-xl overflow-hidden">
+                                    <ReactQuill
+                                        theme="snow"
+                                        value={editContent}
+                                        onChange={setEditContent}
+                                        className="h-48 mb-12"
+                                        modules={{
+                                            toolbar: [
+                                                [{ 'header': [1, 2, 3, false] }],
+                                                ['bold', 'italic', 'underline', 'strike', { 'color': [] }, { 'background': [] }],
+                                                [{'list': 'ordered'}, {'list': 'bullet'}],
+                                                ['link'],
+                                                ['clean']
+                                            ]
+                                        }}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Current Document */}
+                            {editDocumentUrl && !editDocument && (
+                                <div className="flex items-center gap-2 p-3 bg-[#EAF8FC] rounded-xl border border-[#00ADEF]/20">
+                                    <FileUp size={16} className="text-[#00ADEF]" />
+                                    <span className="text-sm font-medium text-[#006F9E]">Current: {editDocumentUrl.split('/').pop()}</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setEditDocumentUrl(null)}
+                                        className="ml-auto p-1 rounded text-red-500 hover:bg-red-50"
+                                    >
+                                        <X size={14} />
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* File Upload */}
+                            <div>
+                                <label className="block text-xs font-bold text-[#526274] mb-2 uppercase tracking-wider">
+                                    {editDocumentUrl && !editDocument ? "Replace Document" : "Attach Document"}
+                                </label>
+                                <div className="flex items-center gap-3">
+                                    <label className="flex-1 cursor-pointer flex items-center gap-2 px-4 py-3 border border-dashed border-[#00ADEF] rounded-xl bg-[#EAF8FC] hover:bg-[#D6E4EA] transition">
+                                        <FileUp size={18} className="text-[#00ADEF]" />
+                                        <span className="text-sm font-bold text-[#006F9E]">
+                                            {editDocument ? editDocument.name : "Choose a file..."}
+                                        </span>
+                                        <input
+                                            type="file"
+                                            className="hidden"
+                                            onChange={(e) => setEditDocument(e.target.files[0])}
+                                            accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+                                        />
+                                    </label>
+                                </div>
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="flex gap-3 pt-4">
+                                <button
+                                    type="button"
+                                    onClick={() => setEditModal({ open: false, announcement: null })}
+                                    className="flex-1 py-3 border border-[#D6E4EA] text-[#526274] rounded-xl font-bold transition hover:bg-gray-50"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={updating}
+                                    className="flex-1 py-3 bg-[#00ADEF] text-white rounded-xl font-bold transition hover:bg-[#006F9E] disabled:opacity-50 flex items-center justify-center gap-2"
+                                >
+                                    {updating ? (
+                                        <>
+                                            <Loader2 size={16} className="animate-spin" />
+                                            Updating...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Check size={16} />
+                                            Update Announcement
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {deleteConfirm.open && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+                    <div className="bg-white w-full max-w-md rounded-2xl shadow-xl p-6">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                                <AlertTriangle size={24} className="text-red-600" />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-extrabold text-[#111827]">Delete Announcement</h3>
+                                <p className="text-sm text-[#526274]">This action cannot be undone.</p>
+                            </div>
+                        </div>
+                        
+                        <p className="text-sm text-[#526274] mb-6">
+                            Are you sure you want to delete "<span className="font-bold text-[#111827]">{deleteConfirm.title}</span>"?
+                        </p>
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setDeleteConfirm({ open: false, id: null, title: "" })}
+                                className="flex-1 py-3 border border-[#D6E4EA] text-[#526274] rounded-xl font-bold transition hover:bg-gray-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => handleDelete(deleteConfirm.id)}
+                                className="flex-1 py-3 bg-red-600 text-white rounded-xl font-bold transition hover:bg-red-700 flex items-center justify-center gap-2"
+                            >
+                                <Trash2 size={16} />
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

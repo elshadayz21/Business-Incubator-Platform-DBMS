@@ -98,11 +98,17 @@ import {
   createAdminUser,
   updateUserRole,
   setUserStatus,
+  resetUserPassword,
+  deleteUser,
 } from "../admin-backend/users/users.js";
 //for Announcements
 import {
   getAllAnnouncements,
+  getAnnouncementById,
   createAnnouncement,
+  updateAnnouncement,
+  duplicateAnnouncement,
+  getApplicationCount,
   deleteAnnouncement,
 } from "../admin-backend/announcements/announcements.js";
 //for Gallery CMS
@@ -148,6 +154,16 @@ import {
   getReportSummary,
   getReportRows,
 } from "../admin-backend/reports/reports.js";
+import { getSystemOverview } from "../admin-backend/system/system.js";
+import {
+  getEmailSources,
+  getEmailTemplates,
+  createEmailTemplate,
+  updateEmailTemplate,
+  deleteEmailTemplate,
+  getEmailCampaigns,
+  sendEmailCampaign,
+} from "../admin-backend/emails/emails.js";
 import ExcelJS from "exceljs";
 import { authorizeRole } from "../middleware/check_roles.middleware.js";
 import { ROLES } from "../utils/constants.js";
@@ -173,16 +189,35 @@ router.post(
   }),
 );
 
-router.use(authorizeRole(ROLES.SUPERADMIN, ROLES.ADMIN));
+const adminOnly = authorizeRole(ROLES.ADMIN);
+const superadminOnly = authorizeRole(ROLES.SUPERADMIN);
+
+// Module access is strictly separated by role (no overlap):
+//   Admin      -> operational modules (projects, mentors, workshops, resources,
+//                 funding, inbox, announcements, cohorts, applications, ...)
+//   Superadmin -> system/CMS modules (reports, users, gallery, static pages,
+//                 system settings)
+router.use("/reports", superadminOnly);
+router.use("/workshops", adminOnly);
+router.use("/resources", adminOnly);
+router.use("/bookings", adminOnly);
+router.use("/mentors", adminOnly);
+router.use("/projects", adminOnly);
+router.use("/funding", adminOnly);
+router.use("/inbox", adminOnly);
+router.use("/announcements", adminOnly);
+router.use("/cohorts", adminOnly);
+router.use("/cohort-members", adminOnly);
+router.use("/mentor-assignments", adminOnly);
+router.use("/mentor-sessions", adminOnly);
+router.use("/users-by-role", adminOnly);
+router.use("/applications", adminOnly);
+router.use("/emails", adminOnly);
 
 router.get(
   "/reports/summary",
   asyncHandler(async (req, res) => res.json(await getReportSummary())),
 );
-
-
-// Users (Superadmin only)
-const superadminOnly = authorizeRole(ROLES.SUPERADMIN);
 router.get(
   "/users",
   superadminOnly,
@@ -206,6 +241,23 @@ router.put(
   asyncHandler(async (req, res) =>
     res.json(await setUserStatus(req.params.id, req.body.status)),
   ),
+);
+router.put(
+  "/users/:id/password",
+  superadminOnly,
+  asyncHandler(async (req, res) =>
+    res.json(await resetUserPassword(req.params.id, req.body.password)),
+  ),
+);
+router.delete(
+  "/users/:id",
+  superadminOnly,
+  asyncHandler(async (req, res) => {
+    if (Number(req.params.id) === Number(req.session.userId)) {
+      return res.status(400).json({ error: "You cannot delete your own account." });
+    }
+    res.json(await deleteUser(req.params.id));
+  }),
 );
 
 // Workshops
@@ -410,35 +462,99 @@ router.get(
   asyncHandler(async (req, res) => res.json(await getAllAnnouncements())),
 );
 
+// Get Single Announcement
+router.get(
+  "/announcements/:id",
+  asyncHandler(async (req, res) => {
+    const ann = await getAnnouncementById(req.params.id);
+    if (!ann) return res.status(404).json({ message: "Announcement not found" });
+    res.json(ann);
+  })
+);
+
 // Create Announcement with File Upload
 router.post(
     "/announcements",
     upload.single("document"),
     asyncHandler(async (req, res) => {
-      // 1. Destructure ALL fields from req.body!
-      const { title, content, deadline, is_open_call, capacity } = req.body;
+      try {
+        // 1. Destructure ALL fields from req.body!
+        const { title, content, deadline, is_open_call, capacity } = req.body;
 
-      let document_url = null;
-      if (req.file) {
-        document_url = `/uploads/${req.file.filename}`;
+        let document_url = null;
+        if (req.file) {
+          document_url = `/uploads/${req.file.filename}`;
+        }
+
+        // 2. Parse the checkbox and capacity values
+        const parsedIsOpenCall = is_open_call === "true" || is_open_call === true;
+        const parsedCapacity = capacity ? parseInt(capacity, 10) : null;
+
+        // 3. Pass them to the database function!
+        const newAnnouncement = await createAnnouncement({
+          title,
+          content,
+          deadline,
+          document_url,
+          is_open_call: parsedIsOpenCall,
+          capacity: parsedCapacity,
+          is_published: true
+        });
+
+        res.json(newAnnouncement);
+      } catch (error) {
+        console.error("Error creating announcement:", error);
+        res.status(500).json({ message: error.message || "Failed to create announcement" });
       }
-
-      // 2. Parse the checkbox and capacity values
-      const parsedIsOpenCall = is_open_call === "true" || is_open_call === true;
-      const parsedCapacity = capacity ? parseInt(capacity, 10) : null;
-
-      // 3. Pass them to the database function!
-      const newAnnouncement = await createAnnouncement({
-        title,
-        content,
-        deadline,
-        document_url,
-        is_open_call: parsedIsOpenCall,
-        capacity: parsedCapacity
-      });
-
-      res.json(newAnnouncement);
     })
+);
+
+// Update Announcement
+router.put(
+  "/announcements/:id",
+  upload.single("document"),
+  asyncHandler(async (req, res) => {
+    const { title, content, deadline, is_open_call, capacity } = req.body;
+
+    let document_url = req.body.document_url || null;
+    if (req.file) {
+      document_url = `/uploads/${req.file.filename}`;
+    }
+
+    const parsedIsOpenCall = is_open_call === "true" || is_open_call === true;
+    const parsedCapacity = capacity ? parseInt(capacity, 10) : null;
+
+    const updated = await updateAnnouncement(req.params.id, {
+      title,
+      content,
+      deadline,
+      document_url,
+      is_open_call: parsedIsOpenCall,
+      capacity: parsedCapacity
+    });
+
+    if (!updated) return res.status(404).json({ message: "Announcement not found" });
+    res.json(updated);
+  })
+);
+
+// Duplicate Announcement
+router.post(
+  "/announcements/:id/duplicate",
+  asyncHandler(async (req, res) => {
+    const duplicated = await duplicateAnnouncement(req.params.id);
+    if (!duplicated) return res.status(404).json({ message: "Announcement not found" });
+    res.json(duplicated);
+  })
+);
+
+// Get Application Count for Announcement
+router.get(
+  "/announcements/:id/applications/count",
+  asyncHandler(async (req, res) => {
+    const count = await getApplicationCount(req.params.id);
+    res.json({ count });
+  })
 );
 
 router.delete(
@@ -468,9 +584,10 @@ router.use("/announcements", (err, req, res, next) => {
   return res.status(400).json({ message });
 });
 
-// Gallery (CMS)
+// Gallery (CMS) — Superadmin only
 router.get(
     "/gallery",
+    superadminOnly,
     asyncHandler(async (req, res) => {
         const { page, pageSize, q, category, status, sortBy, sortDir } = req.query;
         const opts = {
@@ -502,6 +619,7 @@ const GALLERY_DEFAULT_CATEGORIES = [
 // parameterized route does not shadow the categories endpoint.
 router.get(
     "/gallery/categories",
+    superadminOnly,
     asyncHandler(async (req, res) => {
         const cats = await getGalleryCategories();
         if (!cats || !Array.isArray(cats) || cats.length === 0) {
@@ -513,6 +631,7 @@ router.get(
 
 router.get(
     "/gallery/:id",
+    superadminOnly,
     asyncHandler(async (req, res) =>
         res.json(await getGalleryItem(req.params.id)),
     ),
@@ -520,6 +639,7 @@ router.get(
 
 router.post(
     "/gallery",
+    superadminOnly,
     uploadGallery.single("image"),
     validateGalleryImage,
     asyncHandler(async (req, res) => {
@@ -534,6 +654,7 @@ router.post(
 );
 router.put(
     "/gallery/:id",
+    superadminOnly,
     uploadGallery.single("image"),
     validateGalleryImage,
     asyncHandler(async (req, res) => {
@@ -548,6 +669,7 @@ router.put(
 );
 router.patch(
     "/gallery/:id/publish",
+    superadminOnly,
     asyncHandler(async (req, res) =>
         res.json(
             await setGalleryItemPublished(
@@ -559,6 +681,7 @@ router.patch(
 );
 router.delete(
     "/gallery/:id",
+    superadminOnly,
     asyncHandler(async (req, res) =>
         res.json(await deleteGalleryItem(req.params.id)),
     ),
@@ -602,31 +725,44 @@ router.post(
   ),
 );
 
+// Static Pages (branding CMS) — Superadmin only
 router.get(
   "/static-pages",
+  superadminOnly,
   asyncHandler(async (req, res) => res.json(await getAllStaticPages())),
 );
 router.get(
   "/static-pages/:id",
+  superadminOnly,
   asyncHandler(async (req, res) =>
     res.json(await getStaticPageById(req.params.id)),
   ),
 );
 router.post(
   "/static-pages",
+  superadminOnly,
   asyncHandler(async (req, res) => res.json(await createStaticPage(req.body))),
 );
 router.put(
   "/static-pages/:id",
+  superadminOnly,
   asyncHandler(async (req, res) =>
     res.json(await updateStaticPage(req.params.id, req.body)),
   ),
 );
 router.delete(
   "/static-pages/:id",
+  superadminOnly,
   asyncHandler(async (req, res) =>
     res.json(await deleteStaticPage(req.params.id)),
   ),
+);
+
+// System Overview (Superadmin only)
+router.get(
+  "/system/overview",
+  superadminOnly,
+  asyncHandler(async (req, res) => res.json(await getSystemOverview())),
 );
 
 router.get(
@@ -842,12 +978,28 @@ router.put(
 // Form Builder Routes
 router.get(
     "/announcements/:id/form-fields",
-    asyncHandler(async (req, res) => res.json(await getFormFields(req.params.id)))
+    asyncHandler(async (req, res) => {
+      try {
+        const fields = await getFormFields(req.params.id);
+        res.json(fields);
+      } catch (error) {
+        console.error("Error fetching form fields:", error);
+        res.status(500).json({ message: error.message });
+      }
+    })
 );
 
 router.post(
     "/announcements/:id/form-fields",
-    asyncHandler(async (req, res) => res.json(await saveFormFields(req.params.id, req.body.fields)))
+    asyncHandler(async (req, res) => {
+      try {
+        const result = await saveFormFields(req.params.id, req.body.fields);
+        res.json(result);
+      } catch (error) {
+        console.error("Error saving form fields:", error);
+        res.status(500).json({ message: error.message });
+      }
+    })
 );
 // Mass Email Route
 router.post(
@@ -857,6 +1009,49 @@ router.post(
       res.json(await sendMassInvites(subject, body));
     })
 );
+
+// Mass Email (UR-B4) — Admin only
+router.get(
+  "/emails/sources",
+  asyncHandler(async (req, res) => res.json(await getEmailSources())),
+);
+router.get(
+  "/emails/templates",
+  asyncHandler(async (req, res) => res.json(await getEmailTemplates())),
+);
+router.post(
+  "/emails/templates",
+  asyncHandler(async (req, res) => res.json(await createEmailTemplate(req.body))),
+);
+router.put(
+  "/emails/templates/:id",
+  asyncHandler(async (req, res) =>
+    res.json(await updateEmailTemplate(req.params.id, req.body)),
+  ),
+);
+router.delete(
+  "/emails/templates/:id",
+  asyncHandler(async (req, res) =>
+    res.json(await deleteEmailTemplate(req.params.id)),
+  ),
+);
+router.get(
+  "/emails/campaigns",
+  asyncHandler(async (req, res) => res.json(await getEmailCampaigns())),
+);
+router.post(
+  "/emails/send",
+  asyncHandler(async (req, res) =>
+    res.json(await sendEmailCampaign({ ...req.body, userId: req.session.userId })),
+  ),
+);
+
+router.use((err, req, res, next) => {
+  if (res.headersSent) return next(err);
+  const message = err && err.message ? err.message : "Internal Server Error";
+  const status = err && err.statusCode ? err.statusCode : 500;
+  res.status(status).json({ error: message });
+});
 
 export default router;
 

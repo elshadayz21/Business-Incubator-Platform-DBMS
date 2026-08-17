@@ -172,7 +172,7 @@ export default function LoginPage() {
                     System Authentication
                   </span>
                   <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#111827]">
-                    Sign In To Admin
+                    Sign In To Your Portal
                   </h2>
                 </div>
                 <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[#FFF1E3] text-[#E38524] text-xl shadow-sm border border-[#E38524]/20">
@@ -259,7 +259,7 @@ export default function LoginPage() {
                 {/* Security Badge */}
                 <div className="bg-[#EAF8FC] rounded-xl p-3 border border-[#00ADEF]/20 flex items-center gap-2.5 text-xs text-[#006F9E] font-medium">
                   <i className="fa-solid fa-shield-halved text-[#00ADEF] text-sm shrink-0" aria-hidden="true" />
-                  <span>Authorized Superadmins &amp; Admins access point.</span>
+                  <span>Authorized Superadmins, Admins, Entrepreneurs &amp; Mentors access point.</span>
                 </div>
 
                 {/* Primary Orange Submit Button */}
