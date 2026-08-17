@@ -25,6 +25,19 @@ export const createAdminUser = async ({ name, email, password, role }) => {
 };
 
 export const updateUserRole = async (id, role) => {
+  if (!Object.values(ROLES).includes(role)) {
+    throw new Error("Invalid role.");
+  }
+  const target = await pool.query("SELECT role FROM users WHERE id = $1", [id]);
+  if (target.rows.length === 0) throw new Error("User not found.");
+  if (target.rows[0].role === ROLES.SUPERADMIN && role !== ROLES.SUPERADMIN) {
+    const superCount = await pool.query(
+      "SELECT COUNT(*)::int AS n FROM users WHERE role = 'superadmin'",
+    );
+    if (superCount.rows[0].n <= 1) {
+      throw new Error("Cannot demote the last superadmin account.");
+    }
+  }
   const res = await pool.query(
     `UPDATE users SET role = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2
      RETURNING id, name, email, role, status`,
@@ -42,4 +55,39 @@ export const setUserStatus = async (id, status) => {
   );
   if (res.rows.length === 0) throw new Error("User not found.");
   return res.rows[0];
+};
+
+export const resetUserPassword = async (id, password) => {
+  if (!password || String(password).length < 8) {
+    throw new Error("Password must be at least 8 characters.");
+  }
+  const hashed = await hashPassword(String(password));
+  const res = await pool.query(
+    `UPDATE users SET password = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2
+     RETURNING id, name, email, role, status`,
+    [hashed, id],
+  );
+  if (res.rows.length === 0) throw new Error("User not found.");
+  return res.rows[0];
+};
+
+export const deleteUser = async (id) => {
+  const target = await pool.query("SELECT role FROM users WHERE id = $1", [id]);
+  if (target.rows.length === 0) throw new Error("User not found.");
+  if (target.rows[0].role === ROLES.SUPERADMIN) {
+    const superCount = await pool.query(
+      "SELECT COUNT(*)::int AS n FROM users WHERE role = 'superadmin'",
+    );
+    if (superCount.rows[0].n <= 1) {
+      throw new Error("Cannot delete the last superadmin account.");
+    }
+  }
+  try {
+    await pool.query("DELETE FROM users WHERE id = $1", [id]);
+  } catch (err) {
+    throw new Error(
+      "Cannot delete this user because they have related records. Deactivate the account instead.",
+    );
+  }
+  return { success: true };
 };

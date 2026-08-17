@@ -31,7 +31,10 @@ const Sidebar = ({
 
   const profileImage = currentUser.profile_image || null;
 
-  const navItems = [
+  const isSuperadmin = userRole?.toLowerCase() === "superadmin";
+
+  // Operational modules (Admin only)
+  const adminNavItems = [
     { id: 1, icon: LayoutDashboard, label: "Dashboard", badge: null },
     { id: 2, icon: FolderKanban, label: "Projects", badge: null },
     { id: 3, icon: BarChart3, label: "Mentors", badge: null },
@@ -40,16 +43,22 @@ const Sidebar = ({
     { id: 6, icon: Coins, label: "Funding", badge: "New" },
     { id: 7, icon: InboxIcon, label: "Inbox", badge: null },
     { id: 8, icon: Megaphone, label: "Announcements", badge: "New" },
-    { id: 9, icon: Images, label: "Gallery", badge: null },
     { id: 10, icon: Mail, label: "Mass Email", badge: null },
-    { id: 11, icon: FileText, label: "Static Pages", badge: null },
     { id: 12, icon: Layers, label: "Cohorts", badge: null },
-    { id: 13, icon: PieChart, label: "Reports", badge: null },
     { id: 14, icon: ClipboardList, label: "Applications", badge: "New" },
-    ...(userRole?.toLowerCase() === "superadmin"
-      ? [{ id: 15, icon: Users, label: "Users", badge: "Admin" }]
-      : []),
   ];
+
+  // System/CMS modules (Superadmin only)
+  const superadminNavItems = [
+    { id: 1, icon: LayoutDashboard, label: "Dashboard", badge: null },
+    { id: 13, icon: PieChart, label: "Reports", badge: null },
+    { id: 15, icon: Users, label: "Users", badge: "Admin" },
+    { id: 9, icon: Images, label: "Gallery", badge: null },
+    { id: 11, icon: FileText, label: "Static Pages", badge: null },
+    { id: 16, icon: ShieldCheck, label: "System Settings", badge: null },
+  ];
+
+  const navItems = isSuperadmin ? superadminNavItems : adminNavItems;
 
   const handleLogout = async () => {
     try {

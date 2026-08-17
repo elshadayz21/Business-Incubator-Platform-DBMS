@@ -17,6 +17,25 @@ const transporter = nodemailer.createTransport({
 });
 
 /**
+ * Sends a single email through the configured SMTP transporter.
+ * Returns true when accepted by the SMTP server, false on any error.
+ */
+export const sendEmail = async ({ to, subject, html }) => {
+    try {
+        await transporter.sendMail({
+            from: process.env.SMTP_FROM || `"DxValley Incubator" <${process.env.SMTP_USER}>`,
+            to,
+            subject,
+            html,
+        });
+        return true;
+    } catch (error) {
+        console.error("❌ Error sending email:", error);
+        return false;
+    }
+};
+
+/**
  * Sends an invitation email to an accepted applicant.
  * @param {string} email - The applicant's email address.
  * @param {string} token - The unique invite token.

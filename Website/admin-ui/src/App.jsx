@@ -1,10 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
 import Admin from "./features/admin/admin";
 import LoginPage from "./features/auth/login";
+import EntrepreneurPortal from "./features/entrepreneur/EntrepreneurPortal";
+import MentorPortal from "./features/mentor/MentorPortal";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [userRole, setUserRole] = useState("");
   const [, setUserVersion] = useState(0);
 
   const checkAuth = useCallback(() => {
@@ -14,8 +17,9 @@ function App() {
     if (isLoggedIn === "true" && user) {
       try {
         const userData = JSON.parse(user);
-        const role = userData.role?.toUpperCase();
-        if (role === "ADMIN" || role === "SUPERADMIN") {
+        const role = userData.role?.toLowerCase();
+        if (["admin", "superadmin", "entrepreneur", "mentor"].includes(role)) {
+          setUserRole(role);
           setIsAuthenticated(true);
           setIsLoading(false);
           return;
@@ -109,13 +113,18 @@ function App() {
       <div className="h-screen w-screen flex items-center justify-center bg-[#F6FAFC]">
         <div className="text-center space-y-3">
           <div className="w-10 h-10 border-4 border-[#00ADEF] border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-sm font-bold text-[#006F9E]">Loading DxValley Admin Portal...</p>
+          <p className="text-sm font-bold text-[#006F9E]">Loading DxValley Portal...</p>
         </div>
       </div>
     );
   }
 
-  return isAuthenticated ? <Admin /> : <LoginPage />;
+  if (!isAuthenticated) return <LoginPage />;
+
+  if (userRole === "entrepreneur") return <EntrepreneurPortal />;
+  if (userRole === "mentor") return <MentorPortal />;
+
+  return <Admin />;
 }
 
 export default App;

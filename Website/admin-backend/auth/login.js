@@ -48,9 +48,9 @@ export default async function loginRequest(credentials) {
       return { success: false, message: "Incorrect password" };
     }
 
-    if (user.role !== ROLES.ADMIN && user.role !== ROLES.SUPERADMIN) {
-      console.log("❌ Role check failed:", user.role);
-      return { success: false, message: "Access denied: Admins only" };
+    if (!Object.values(ROLES).includes(user.role)) {
+      console.log("❌ Unknown role:", user.role);
+      return { success: false, message: "Access denied: Invalid account role" };
     }
 
     console.log("✅ Login Successful!");

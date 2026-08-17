@@ -10,6 +10,7 @@ import connectPgSimpleImport from "connect-pg-simple";
 import pool from "./config/db.js";
 import { GlobalRouter } from "./routes/index.js";
 import adminApiRoutes from "./routes/admin-api.js";
+import portalApiRoutes from "./routes/portal-api.js";
 import path from "path";
 import { publicRoutes } from "./routes/public.routes.js";
 // import { getSuggestedMentorsController, assignMentorController } from "./controllers/project/project.controller.js";
@@ -126,6 +127,7 @@ app.get("/", async (req, res) => {
 
 app.use("/v1", GlobalRouter);
 app.use("/api/admin", adminApiRoutes);
+app.use("/api/portal", portalApiRoutes);
 app.use("/api/public", publicRoutes);
 
 app.get(/^\/admin(\/.*)?$/, (req, res) => {
