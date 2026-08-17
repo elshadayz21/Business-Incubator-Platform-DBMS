@@ -17,13 +17,55 @@ export const getProjectById = async (id) => {
 };
 
 // Update Project Status
-export const updateProjectStatus = async (id, status) => {
+/*export const updateProjectStatus = async (id, status) => {
   const res = await pool.query(
     "UPDATE projects SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *",
     [status, id],
   );
   return res.rows[0];
+};*/
+
+
+export const updateProjectStatus = async (id, status) => {
+  const res = await pool.query(
+      "UPDATE projects SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *",
+      [status, id],
+  );
+  const project = res.rows[0];
+
+  if (project) {
+    // Find the project owner. Make sure this column name matches your database!
+    const userId = project.entrepreneur_id || project.user_id;
+
+    if (project) {
+      // 1. Find the project owner from the project_entrepreneurs table!
+      const ownerRes = await pool.query(
+          "SELECT user_id FROM project_entrepreneurs WHERE project_id = $1 AND role_in_project != 'Mentor' LIMIT 1",
+          [project.id]
+      );
+
+      const userId = ownerRes.rows[0]?.user_id;
+
+      if (userId) {
+        const message = status === 'approved'
+            ? `Great news! Your project "${project.name}" has been approved.`
+            : `Update: Your project "${project.name}" was not approved.`;
+
+        await createNotification(
+            userId,
+            'project_status',
+            message,
+            { projectId: project.id },
+            `/v1/auth/profile?tab=projects`
+        );
+      }
+    }
+  }
+
+  return project;
 };
+
+
 
 // Get Projects by Status
 export const getProjectsByStatus = async (status) => {
@@ -151,7 +193,6 @@ export const getSuggestedMentors = async (projectId) => {
 // --- ASSIGN MENTOR TO PROJECT ---
 export const assignMentor = async (projectId, mentorId) => {
   try {
-    // Check if the mentor is already assigned to avoid duplicates
     const existing = await pool.query(
         "SELECT * FROM project_entrepreneurs WHERE project_id = $1 AND user_id = $2",
         [projectId, mentorId]
@@ -162,8 +203,33 @@ export const assignMentor = async (projectId, mentorId) => {
           "INSERT INTO project_entrepreneurs (project_id, user_id, role_in_project) VALUES ($1, $2, $3)",
           [projectId, mentorId, 'Mentor']
       );
+
+      // Send Notification to the Entrepreneur!
+      // Send Notification to the Entrepreneur!
+      // Find the owner from project_entrepreneurs
+      const ownerRes = await pool.query(
+          "SELECT user_id FROM project_entrepreneurs WHERE project_id = $1 AND role_in_project != 'Mentor' LIMIT 1",
+          [projectId]
+      );
+      const userId = ownerRes.rows[0]?.user_id;
+
+      if (userId) {
+        // We need the project name for the message
+        const projRes = await pool.query("SELECT name FROM projects WHERE id = $1", [projectId]);
+        const projectName = projRes.rows[0]?.name || "your project";
+
+        await createNotification(
+            userId,
+            'mentor_assignment',
+            `A new mentor has been assigned to your project "${projectName}".`,
+            { projectId, mentorId },
+            `/v1/auth/profile?tab=projects`
+        );
+      }
+
+      }
+
       return { success: true, message: "Mentor assigned successfully!" };
-    }
     return { success: true, message: "Mentor is already assigned to this project." };
   } catch (error) {
     console.error("Error assigning mentor:", error);

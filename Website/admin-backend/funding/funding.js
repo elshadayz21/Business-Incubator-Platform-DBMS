@@ -1,4 +1,5 @@
 import pool from "../../config/db.js";
+import { createNotification } from "../../utils/notificationHelper.js";
 
 // Get all funding requests
 export const getAllFundingRequests = async (query = "") => {
@@ -218,39 +219,98 @@ export const getFundingRequestById = async (id) => {
     throw error;
   }
 };
-
 // Update funding request status
-export const updateFundingRequestStatus = async (id, status, notes = null) => {
-  try {
-    const res = await pool.query(
+export const updateFundingRequestStatus = async (id, status, notes, approvedAmount = null) => {
+  // 1. Parse amount safely so it doesn't crash if left blank
+  const parsedAmount = approvedAmount && !isNaN(approvedAmount) ? approvedAmount : null;
+
+  // 2. If admin selects "Approved", change to "Offer Under Review"
+  const finalStatus = status === 'Approved' ? 'Offer Under Review' : status;
+
+  // 3. Update the database FIRST!
+  const res = await pool.query(
       `UPDATE funding_requests 
-      SET 
-        status = $1,
-        reviewed_at = NOW(),
-        notes = $2,
-        updated_at = NOW()
-      WHERE id = $3
-      RETURNING *`,
-      [status, notes, id],
+     SET status = $1, notes = $2, approved_amount = $3, founder_action = 'Pending', updated_at = CURRENT_TIMESTAMP 
+     WHERE id = $4 RETURNING *`,
+      [finalStatus, notes, parsedAmount, id]
+  );
+
+  const funding = res.rows[0];
+  if (!funding) return null;
+
+  // 4. NOW that 'funding' is defined, find the owner and send notification!
+  try {
+    const ownerRes = await pool.query(
+        "SELECT user_id FROM project_entrepreneurs WHERE project_id = $1 AND (role_in_project IS NULL OR role_in_project != 'Mentor') LIMIT 1",
+        [funding.project_id]
     );
+    const userId = ownerRes.rows[0]?.user_id;
 
-    if (res.rows.length === 0) {
-      return { success: false, data: null };
+    const projRes = await pool.query("SELECT name FROM projects WHERE id = $1", [funding.project_id]);
+    const projectName = projRes.rows[0]?.name || "your project";
+
+    if (userId && finalStatus === 'Offer Under Review') {
+      const message = `Funding offer made for "${projectName}"! The admin offered $${parsedAmount}. Please review and Accept or Decline.`;
+      await createNotification(
+          userId,
+          'funding_approval',
+          message,
+          { fundingId: funding.id, projectId: funding.project_id },
+          `/v1/auth/profile?tab=funding`
+      );
     }
-
-    return { success: true, data: res.rows[0] };
   } catch (error) {
-    console.error("Error updating funding request:", error);
-    throw error;
+    console.error("Error sending funding notification:", error);
   }
+
+  return funding;
 };
 
+// ENTREPRENEUR ACCEPTS OR REJECTS FUNDING
+export const founderRespondToFunding = async (fundingId, userId, action) => {
+  // 1. Get the funding request
+  const fundRes = await pool.query("SELECT * FROM funding_requests WHERE id = $1", [fundingId]);
+  if (fundRes.rows.length === 0) throw new Error("Funding request not found.");
+
+  const funding = fundRes.rows[0];
+
+  // 2. Safely find the project owner from project_entrepreneurs
+  const ownerRes = await pool.query(
+      "SELECT user_id FROM project_entrepreneurs WHERE project_id = $1 AND (role_in_project IS NULL OR role_in_project != 'Mentor') LIMIT 1",
+      [funding.project_id]
+  );
+  const projectOwnerId = ownerRes.rows[0]?.user_id;
+
+  // Security check: Make sure the founder owns this project
+  if (projectOwnerId !== userId) {
+    throw new Error("Unauthorized: You do not own this project.");
+  }
+
+  // 3. Determine the final status for the Admin table
+  let finalStatus = 'Offer Under Review';
+  if (action === 'Founder Accepted') finalStatus = 'Approved';
+  if (action === 'Founder Declined') finalStatus = 'Rejected';
+
+  // 4. Update the main status column AND the founder_action column
+  const res = await pool.query(
+      "UPDATE funding_requests SET status = $1, founder_action = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3 RETURNING *",
+      [finalStatus, action, fundingId]
+  );
+
+  // 5. Notify the Admin that the founder responded!
+  const projRes = await pool.query("SELECT name FROM projects WHERE id = $1", [funding.project_id]);
+  const projectName = projRes.rows[0]?.name || "a project";
+
+  await createNotification(1, 'funding_response', `Founder ${action === 'Founder Accepted' ? 'accepted' : 'declined'} the funding for project "${projectName}".`, { fundingId });
+
+  return res.rows[0];
+};
 // Delete funding request
 export const deleteFundingRequest = async (id) => {
   try {
     const res = await pool.query(
-      `DELETE FROM funding_requests WHERE id = $1 RETURNING *`,
-      [id],
+        `DELETE FROM funding_requests WHERE id = $1 RETURNING *`,
+        [id],
     );
 
     if (res.rows.length === 0) {
@@ -263,4 +323,3 @@ export const deleteFundingRequest = async (id) => {
     throw error;
   }
 };
-
