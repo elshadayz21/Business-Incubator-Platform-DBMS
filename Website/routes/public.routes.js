@@ -1,5 +1,6 @@
 import { Router } from "express";
 import pool from "../config/db.js";
+import { founderRespondToFunding } from "../admin-backend/funding/funding.js";
 
 const router = Router();
 
@@ -118,6 +119,24 @@ router.post("/apply", async (req, res) => {
     } catch (error) {
         console.error("Application form error:", error);
         res.status(500).json({ success: false, message: "Internal Server Error" });
+    }
+});
+// Entrepreneur Accept/Reject Funding Route
+router.put("/funding/:id/respond", async (req, res) => {
+    try {
+        const { action } = req.body;
+        const userId = req.session.userId; // The logged-in entrepreneur
+
+        if (!userId) return res.status(401).json({ message: "Please log in." });
+        if (!['Founder Accepted', 'Founder Declined'].includes(action)) {
+            return res.status(400).json({ message: "Invalid action." });
+        }
+
+        const result = await founderRespondToFunding(req.params.id, userId, action);
+        res.json(result);
+    } catch (error) {
+        console.error("Error responding to funding:", error.message);
+        res.status(403).json({ message: error.message });
     }
 });
 

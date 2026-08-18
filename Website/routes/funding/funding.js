@@ -57,6 +57,7 @@ router.get(
 // Update funding request status - only admins and investors can review
 router.put(
   "/:id/status",
+
   isAuth,
   authorizeRole("admin", "investor"),
   updateFundingRequestStatusController,

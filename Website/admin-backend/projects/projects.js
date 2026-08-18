@@ -1,4 +1,5 @@
 import pool from "../../config/db.js";
+import { createNotification } from "../../utils/notificationHelper.js";
 
 // Get All Projects
 export const getAllProjects = async () => {
@@ -17,13 +18,51 @@ export const getProjectById = async (id) => {
 };
 
 // Update Project Status
-export const updateProjectStatus = async (id, status) => {
+/*export const updateProjectStatus = async (id, status) => {
   const res = await pool.query(
     "UPDATE projects SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *",
     [status, id],
   );
   return res.rows[0];
+};*/
+
+
+// Update Project Status
+export const updateProjectStatus = async (id, status) => {
+  const res = await pool.query(
+      "UPDATE projects SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *",
+      [status, id],
+  );
+  const project = res.rows[0];
+
+  if (project) {
+    const ownerRes = await pool.query(
+        "SELECT user_id FROM project_entrepreneurs WHERE project_id = $1 AND (role_in_project IS NULL OR role_in_project != 'Mentor') LIMIT 1",
+        [project.id]
+    );
+
+    const userId = ownerRes.rows[0]?.user_id;
+    console.log("Approval Check - Found project owner ID:", userId); // <--- THIS WILL TELL US IF IT FOUND THE OWNER
+
+    if (userId) {
+      const message = status === 'approved'
+          ? `Great news! Your project "${project.name}" has been approved.`
+          : `Update: Your project "${project.name}" was not approved.`;
+
+      await createNotification(
+          userId,
+          'project_status',
+          message,
+          { projectId: project.id },
+          `/v1/auth/profile?tab=projects`
+      );
+    }
+  }
+
+  return project;
 };
+
+
 
 // Get Projects by Status
 export const getProjectsByStatus = async (status) => {
@@ -34,20 +73,53 @@ export const getProjectsByStatus = async (status) => {
   return res.rows;
 };
 
-// Toggle Project Approved Status
+
+/// Toggle Project Approved Status
 export const toggleProjectApproved = async (id) => {
   const res = await pool.query(
-    `
-    UPDATE projects
+      `UPDATE projects
     SET approved = NOT approved,
         updated_at = CURRENT_TIMESTAMP
     WHERE id = $1
-    RETURNING *;
-    `,
-    [id],
+    RETURNING *;`,
+      [id],
   );
 
-  return res.rows[0];
+  const project = res.rows[0];
+  if (!project) return null;
+
+  // Find the project owner
+  const ownerRes = await pool.query(
+      "SELECT user_id FROM project_entrepreneurs WHERE project_id = $1 AND (role_in_project IS NULL OR role_in_project != 'Mentor') LIMIT 1",
+      [project.id]
+  );
+
+  const userId = ownerRes.rows[0]?.user_id;
+
+  if (userId) {
+    // Check if the project was just APPROVED or REJECTED
+    if (project.approved) {
+      console.log("Toggle Approval - Approved. Notifying user:", userId);
+      await createNotification(
+          userId,
+          'project_status',
+          `Great news! Your project "${project.name}" has been approved.`,
+          { projectId: project.id },
+          `/v1/auth/profile?tab=projects`
+      );
+    } else {
+      console.log("Toggle Approval - Rejected. Notifying user:", userId);
+      await createNotification(
+          userId,
+          'project_status',
+          `Update: Your project "${project.name}" has been rejected. Please review feedback.`,
+          { projectId: project.id },
+          `/v1/auth/profile?tab=projects`
+      );
+    }
+  }
+
+  return project;
 };
 
 // Get Projects Statistics
@@ -151,23 +223,50 @@ export const getSuggestedMentors = async (projectId) => {
 // --- ASSIGN MENTOR TO PROJECT ---
 export const assignMentor = async (projectId, mentorId) => {
   try {
-    // Check if the mentor is already assigned to avoid duplicates
-    const existing = await pool.query(
-        "SELECT * FROM project_entrepreneurs WHERE project_id = $1 AND user_id = $2",
-        [projectId, mentorId]
+    // 1. Check if the project ALREADY has a mentor!
+    const mentorCheck = await pool.query(
+        "SELECT * FROM project_entrepreneurs WHERE project_id = $1 AND role_in_project = 'Mentor'",
+        [projectId]
     );
 
-    if (existing.rows.length === 0) {
-      await pool.query(
-          "INSERT INTO project_entrepreneurs (project_id, user_id, role_in_project) VALUES ($1, $2, $3)",
-          [projectId, mentorId, 'Mentor']
-      );
-      return { success: true, message: "Mentor assigned successfully!" };
+    if (mentorCheck.rows.length > 0) {
+      return { success: false, message: "This project already has a mentor assigned." };
     }
-    return { success: true, message: "Mentor is already assigned to this project." };
+
+    // 2. Assign the new mentor
+    await pool.query(
+        "INSERT INTO project_entrepreneurs (project_id, user_id, role_in_project) VALUES ($1, $2, $3)",
+        [projectId, mentorId, 'Mentor']
+    );
+
+    // 3. Send Notification to the Entrepreneur!
+    const ownerRes = await pool.query(
+        "SELECT user_id FROM project_entrepreneurs WHERE project_id = $1 AND (role_in_project IS NULL OR role_in_project != 'Mentor') LIMIT 1",
+        [projectId]
+    );
+
+    const userId = ownerRes.rows[0]?.user_id;
+
+    if (userId) {
+      const projRes = await pool.query("SELECT name FROM projects WHERE id = $1", [projectId]);
+      const projectName = projRes.rows[0]?.name || "your project";
+
+      // FETCH THE MENTOR'S NAME HERE!
+      const mentorRes = await pool.query("SELECT name FROM users WHERE id = $1", [mentorId]);
+      const mentorName = mentorRes.rows[0]?.name || "A mentor";
+
+      await createNotification(
+          userId,
+          'mentor_assignment',
+          `${mentorName} has been assigned as a mentor to your project "${projectName}"! Please contact your mentor.`,
+          { projectId, mentorId },
+          `/v1/auth/profile?tab=projects`
+      );
+    }
+
+    return { success: true, message: "Mentor assigned successfully!" };
   } catch (error) {
     console.error("Error assigning mentor:", error);
     return { success: false, message: "Server error assigning mentor." };
   }
 };
-

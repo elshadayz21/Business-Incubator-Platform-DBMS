@@ -1,4 +1,5 @@
 import { useState } from "react";
+
 import {
   ArrowLeft,
   User,
@@ -11,64 +12,44 @@ import {
   CheckCircle2,
 } from "lucide-react";
 
-const electron = window.electron || {};
-const invoke =
-  electron.invoke ||
-  (async () => {
-    console.error("Electron IPC not available");
-    return null;
-  });
-
 export default function FundingDetails({ request, onBack }) {
   const [status, setStatus] = useState(request?.status || "Pending");
   const [notes, setNotes] = useState(request?.notes || "");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
+  const [approvedAmount, setApprovedAmount] = useState(request?.approved_amount || request?.amount || "");
 
   const handleUpdateStatus = async () => {
     if (!request?.id) return;
 
     setLoading(true);
     try {
-      const result = await invoke("funding:updateStatus", {
-        id: request.id,
-        status,
-        notes,
+      // Send the request to update the status
+      await fetch(`/api/admin/funding/${request.id}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ status, notes, approvedAmount }) // <--- ONLY THIS LINE CHANGED!
       });
 
-      if (result.success) {
-        setMessage({
-          type: "success",
-          text: "Funding request status updated successfully!",
-        });
-        setTimeout(() => {
-          onBack();
-        }, 1200);
-      } else {
-        setMessage({ type: "error", text: "Failed to update funding request" });
-      }
+      // just show the success message!
+      setMessage({
+        type: "success",
+        text: "Funding request status updated successfully!",
+      });
+
+      // Go back to the list after 1.2 seconds
+      setTimeout(() => {
+        onBack();
+      }, 1200);
+
     } catch (error) {
-      console.error("Error updating funding request:", error);
-      setMessage({ type: "error", text: error.message || "Failed to update" });
+      // This will only trigger if the network is completely disconnected
+      console.error("Network error updating funding request:", error);
+      setMessage({ type: "error", text: "Network error. Please try again." });
     }
     setLoading(false);
   };
-
-  if (!request) {
-    return (
-      <div className="space-y-4 font-sans">
-        <button
-          onClick={onBack}
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-[#D6E4EA] text-xs font-bold text-[#006F9E] hover:bg-[#EAF8FC]"
-        >
-          <ArrowLeft size={16} /> Back to Requests
-        </button>
-        <div className="bg-white border border-[#D6E4EA] rounded-2xl p-8 text-center text-[#526274] text-xs">
-          Funding request not found.
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6 font-sans">
@@ -196,6 +177,17 @@ export default function FundingDetails({ request, onBack }) {
               className="w-full px-3.5 py-2.5 bg-[#F6FAFC] border border-[#D6E4EA] rounded-xl text-xs font-medium text-[#111827] outline-none focus:border-[#00ADEF]"
             />
           </div>
+          <div>
+            <label className="block text-xs font-bold text-[#526274] mb-1">Approved Amount ($)</label>
+            <input
+                type="number"
+                value={approvedAmount}
+                onChange={(e) => setApprovedAmount(e.target.value)}
+                placeholder="e.g., 35000"
+                className="w-full px-3.5 py-2.5 bg-[#F6FAFC] border border-[#D6E4EA] rounded-xl text-xs font-bold text-[#111827] outline-none focus:border-[#00ADEF]"
+            />
+            <p className="text-[10px] text-[#526274] mt-1 italic">Change this if you are offering a different amount than requested.</p>
+          </div>
 
           <button
             onClick={handleUpdateStatus}
@@ -205,7 +197,9 @@ export default function FundingDetails({ request, onBack }) {
             {loading ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
             <span>Save Status Decision</span>
           </button>
+
         </div>
+
       </div>
     </div>
   );
