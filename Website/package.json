@@ -56,6 +56,7 @@
     "pg": "^8.18.0",
     "pg-hstore": "^2.3.4",
     "postgres": "^3.4.9",
+    "sanitize-html": "^2.17.7",
     "sequelize": "^6.37.7",
     "sharp": "^0.34.5",
     "validator": "^13.15.23"
