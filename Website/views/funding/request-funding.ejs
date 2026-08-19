@@ -1,85 +1,79 @@
 <!DOCTYPE html>
 <html lang="en">
-<%- include('../partials/head') %>
+<%- include('../partials/head', { title: 'Request Funding - DxValley Incubation Center' }) %>
 
-<body class="min-h-screen flex flex-col bg-neo-white text-neo-black font-sans">
-    <%- include('../partials/header.ejs') %>
+<body class="flex min-h-screen flex-col bg-white font-sans text-ink">
+    <%- include('../partials/header') %>
 
-    <main class="flex-1 px-4 py-12">
-        <div class="w-full max-w-5xl mx-auto">
-            <a href="/v1/projects"
-                class="inline-flex items-center gap-3 mb-10 text-lg font-black uppercase tracking-widest hover:-translate-x-2 transition-transform group font-display">
-                <span
-                    class="w-10 h-10 border-4 border-black bg-brand-amber flex items-center justify-center shadow-neo-sm group-hover:shadow-none transition-all">←</span>
-                Back to Projects
-            </a>
-
-            <div class="mb-16 text-center">
-                <div
-                    class="inline-block bg-brand-indigo px-6 py-2 border-4 border-black font-black text-xs mb-6 shadow-neo uppercase tracking-widest transform -rotate-1">
-                    SECURE FUNDING
-                </div>
-                <h1
-                    class="text-5xl md:text-7xl font-display font-bold text-neo-black mb-6 uppercase tracking-tighter">
-                    Request <span class="text-brand-indigo italic">Funding</span>
+    <main class="flex-grow">
+        <!-- Hero -->
+        <section class="relative overflow-hidden bg-gradient-to-br from-cyan via-cyan-mid to-cyan-deep text-white">
+            <div class="pointer-events-none absolute -left-28 -top-32 h-[520px] w-[700px] rounded-[48%] border-[76px] border-white/10" aria-hidden="true"></div>
+            <div class="pointer-events-none absolute -right-44 bottom-[-260px] h-[620px] w-[760px] rounded-[50%] border-[88px] border-white/10" aria-hidden="true"></div>
+            <div class="relative mx-auto max-w-7xl px-6 py-20 lg:px-10 lg:py-24">
+                <p class="mb-5 inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[.24em] text-white/80">
+                    <span class="h-2 w-2 rounded-full bg-orange" aria-hidden="true"></span>
+                    Funding
+                </p>
+                <h1 class="max-w-[760px] text-5xl font-extrabold leading-[1.02] tracking-[-.055em] sm:text-6xl lg:text-7xl">
+                    Request<br />
+                    <span class="text-white/75">Funding.</span>
                 </h1>
-                <p
-                    class="text-xl text-slate-600 max-w-2xl mx-auto font-medium italic border-l-4 border-brand-indigo pl-6">
-                    Tell us how much funding you need and what stage your project is in. Our review team will evaluate
-                    your request.
+                <p class="mt-7 max-w-[650px] text-lg leading-8 text-white/85 sm:text-xl">
+                    Tell us how much funding you need and what stage your project is in. Our review team will evaluate your request.
                 </p>
             </div>
+        </section>
 
-            <!-- Flash Messages -->
-            <% if (error) { %>
-            <div class="bg-red-100 border-4 border-red-600 p-6 shadow-neo mb-8">
-                <div class="flex items-center gap-4">
-                    <span class="text-3xl">⚠️</span>
-                    <div>
-                        <h3 class="text-red-800 font-black uppercase font-display">Error</h3>
-                        <p class="text-red-700 font-medium font-sans">
-                            <%= error %>
-                        </p>
-                    </div>
+        <!-- Flash Messages -->
+        <% if (error) { %>
+        <div class="mx-auto max-w-7xl px-6 pt-8 lg:px-10">
+            <div class="flex items-start gap-4 rounded-2xl border border-red-200 bg-red-50 p-5">
+                <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-red-100 text-red-600"><i class="fa-solid fa-circle-exclamation text-sm"></i></span>
+                <div>
+                    <p class="text-sm font-extrabold text-red-800">Error</p>
+                    <p class="mt-0.5 text-sm font-medium text-red-700"><%= error %></p>
                 </div>
             </div>
-            <% } %>
+        </div>
+        <% } %>
 
-            <% if (success) { %>
-            <div class="bg-green-100 border-4 border-green-600 p-6 shadow-neo mb-8">
-                <div class="flex items-center gap-4">
-                    <span class="text-3xl">✅</span>
-                    <div>
-                        <h3 class="text-green-800 font-black uppercase font-display">Success</h3>
-                        <p class="text-green-700 font-medium font-sans">
-                            <%= success %>
-                        </p>
-                    </div>
+        <% if (success) { %>
+        <div class="mx-auto max-w-7xl px-6 pt-8 lg:px-10">
+            <div class="flex items-start gap-4 rounded-2xl border border-green-200 bg-green-50 p-5">
+                <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-green-100 text-green-600"><i class="fa-solid fa-circle-check text-sm"></i></span>
+                <div>
+                    <p class="text-sm font-extrabold text-green-800">Success</p>
+                    <p class="mt-0.5 text-sm font-medium text-green-700"><%= success %></p>
                 </div>
             </div>
-            <% } %>
+        </div>
+        <% } %>
 
-            <form action="/v1/funding/create" method="POST" class="space-y-12" id="fundingForm">
+        <!-- Form Section -->
+        <section class="bg-surface">
+            <div class="mx-auto max-w-3xl px-6 py-16 lg:px-10 lg:py-24">
 
-                <!-- Section 1: Select Project -->
-                <div class="bg-white border-4 border-black p-8 md:p-10 shadow-neo relative">
-                    <div class="flex items-center gap-4 mb-10">
-                        <div
-                            class="w-14 h-14 bg-brand-indigo text-white border-4 border-black flex items-center justify-center text-2xl font-black shadow-neo-sm">
-                            1</div>
-                        <h2 class="text-3xl font-display font-bold uppercase tracking-tight">
-                            Select Your Project
-                        </h2>
-                    </div>
+                <!-- Back Link -->
+                <a href="/v1/projects" class="mb-10 inline-flex items-center gap-2 text-sm font-bold text-cyan-dark transition hover:text-cyan">
+                    <i class="fa-solid fa-arrow-left text-xs" aria-hidden="true"></i>
+                    Back to Projects
+                </a>
 
-                    <div class="space-y-4 text-left">
+                <form action="/v1/funding/create" method="POST" class="space-y-8" id="fundingForm">
+
+                    <!-- Section 1: Select Project -->
+                    <div class="rounded-2xl border border-line bg-white p-6 shadow-[0_12px_30px_rgba(0,88,125,.08)] sm:p-8">
+                        <div class="mb-8 flex items-center gap-4">
+                            <span class="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-cyan-soft text-cyan-dark font-extrabold text-sm border border-cyan/20">1</span>
+                            <h2 class="text-xl font-extrabold tracking-tight text-ink">Select Your Project</h2>
+                        </div>
+
                         <% if (projects && projects.length > 0) { %>
                         <div>
-                            <label for="project_id"
-                                class="block text-xs font-black uppercase mb-3 tracking-widest text-slate-500">Project
-                                <span class="text-brand-indigo">*</span></label>
+                            <label for="project_id" class="mb-2 block text-sm font-bold text-ink">Project <span class="text-orange">*</span></label>
                             <select id="project_id" name="project_id" required
-                                class="w-full px-4 py-3 border-4 border-black bg-white text-neo-black font-bold text-base focus:outline-none focus:ring-4 focus:ring-brand-indigo shadow-neo-sm hover:shadow-neo transition-all">
+                                class="w-full rounded-xl border border-line bg-surface px-4 py-3.5 text-sm font-medium text-ink outline-none transition placeholder:text-slate-400 focus:border-cyan focus:ring-2 focus:ring-cyan/20">
                                 <option value="">-- Choose a project --</option>
                                 <% projects.forEach(project => { %>
                                 <option value="<%= project.id %>">
@@ -87,105 +81,83 @@
                                 </option>
                                 <% }); %>
                             </select>
-                            <p class="text-slate-600 text-sm font-medium mt-2">Select the project you want to request
-                                funding for</p>
+                            <p class="mt-2 text-xs font-medium text-muted">Select the project you want to request funding for.</p>
                         </div>
                         <% } else { %>
-                        <div class="bg-yellow-50 border-4 border-brand-amber p-6">
-                            <p class="font-black uppercase text-brand-amber mb-2">No Projects Found</p>
-                            <p class="text-slate-600 font-medium mb-4">You need to create a project first before requesting
-                                funding.</p>
-                            <a href="/v1/projects/new"
-                                class="inline-block bg-brand-amber border-4 border-black px-6 py-2 font-black text-neo-black uppercase shadow-neo hover:shadow-none hover:translate-x-1 transition-all">
-                                Create a Project
+                        <div class="rounded-xl border border-orange/30 bg-orange-soft p-6">
+                            <p class="text-sm font-extrabold text-orange-dark">No Projects Found</p>
+                            <p class="mt-1 text-sm font-medium text-muted">You need to create a project first before requesting funding.</p>
+                            <a href="/v1/projects/new" class="mt-4 inline-flex items-center gap-2 rounded-xl bg-orange px-5 py-2.5 text-xs font-extrabold text-white shadow-[0_10px_24px_rgba(141,67,10,.24)] transition hover:-translate-y-0.5 hover:bg-orange-dark">
+                                Create a Project <i class="fa-solid fa-arrow-right text-[10px]" aria-hidden="true"></i>
                             </a>
                         </div>
                         <% } %>
                     </div>
-                </div>
 
-                <!-- Section 2: Funding Details -->
-                <% if (projects && projects.length > 0) { %>
-                <div class="bg-white border-4 border-black p-8 md:p-10 shadow-neo relative">
-                    <div class="flex items-center gap-4 mb-10">
-                        <div
-                            class="w-14 h-14 bg-brand-amber text-neo-black border-4 border-black flex items-center justify-center text-2xl font-black shadow-neo-sm">
-                            2</div>
-                        <h2 class="text-3xl font-display font-bold uppercase tracking-tight">
-                            Funding Details
-                        </h2>
-                    </div>
+                    <% if (projects && projects.length > 0) { %>
+                    <!-- Section 2: Funding Details -->
+                    <div class="rounded-2xl border border-line bg-white p-6 shadow-[0_12px_30px_rgba(0,88,125,.08)] sm:p-8">
+                        <div class="mb-8 flex items-center gap-4">
+                            <span class="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-orange-soft text-orange-dark font-extrabold text-sm border border-orange/20">2</span>
+                            <h2 class="text-xl font-extrabold tracking-tight text-ink">Funding Details</h2>
+                        </div>
 
-                    <div class="space-y-8 text-left">
-                        <!-- Amount -->
-                        <div>
-                            <label for="amount"
-                                class="block text-xs font-black uppercase mb-3 tracking-widest text-slate-500">Funding
-                                Amount (USD) <span class="text-brand-indigo">*</span></label>
-                            <div class="relative">
-                                <span
-                                    class="absolute left-6 top-1/2 -translate-y-1/2 text-2xl font-black text-slate-700 pointer-events-none">$</span>
-                                <input type="number" id="amount" name="amount" placeholder="50000" step="0.01" min="0"
-                                    required
-                                    class="w-full pl-20 pr-4 py-3 border-4 border-black text-neo-black font-bold text-base focus:outline-none focus:ring-4 focus:ring-brand-indigo shadow-neo-sm hover:shadow-neo transition-all">
+                        <div class="space-y-6">
+                            <!-- Amount -->
+                            <div>
+                                <label for="amount" class="mb-2 block text-sm font-bold text-ink">Funding Amount (ETB) <span class="text-orange">*</span></label>
+                                <div class="relative">
+                                    <span class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-muted">ETB</span>
+                                    <input type="number" id="amount" name="amount" placeholder="50000" step="0.01" min="0" required
+                                        class="w-full rounded-xl border border-line bg-surface pl-14 pr-4 py-3.5 text-sm font-medium text-ink outline-none transition placeholder:text-slate-400 focus:border-cyan focus:ring-2 focus:ring-cyan/20">
+                                </div>
+                                <p class="mt-2 text-xs font-medium text-muted">Enter the amount of funding you're requesting.</p>
                             </div>
-                            <p class="text-slate-600 text-sm font-medium mt-2">Enter the amount of funding you're
-                                requesting</p>
-                        </div>
 
-                        <!-- Funding Stage -->
-                        <div>
-                            <label for="funding_stage"
-                                class="block text-xs font-black uppercase mb-3 tracking-widest text-slate-500">Funding
-                                Stage <span class="text-brand-indigo">*</span></label>
-                            <select id="funding_stage" name="funding_stage" required
-                                class="w-full px-4 py-3 border-4 border-black bg-white text-neo-black font-bold text-base focus:outline-none focus:ring-4 focus:ring-brand-indigo shadow-neo-sm hover:shadow-neo transition-all">
-                                <option value="">-- Select funding stage --</option>
-                                <option value="Pre-Seed">Pre-Seed</option>
-                                <option value="Seed">Seed Round</option>
-                                <option value="Series A">Series A</option>
-                                <option value="Series B">Series B</option>
-                                <option value="Series C">Series C</option>
-                                <option value="Growth">Growth Stage</option>
-                            </select>
-                            <p class="text-slate-600 text-sm font-medium mt-2">Select the funding round your project is
-                                in</p>
-                        </div>
+                            <!-- Funding Stage -->
+                            <div>
+                                <label for="funding_stage" class="mb-2 block text-sm font-bold text-ink">Funding Stage <span class="text-orange">*</span></label>
+                                <select id="funding_stage" name="funding_stage" required
+                                    class="w-full rounded-xl border border-line bg-surface px-4 py-3.5 text-sm font-medium text-ink outline-none transition placeholder:text-slate-400 focus:border-cyan focus:ring-2 focus:ring-cyan/20">
+                                    <option value="">-- Select funding stage --</option>
+                                    <option value="Pre-Seed">Pre-Seed</option>
+                                    <option value="Seed">Seed Round</option>
+                                    <option value="Series A">Series A</option>
+                                    <option value="Series B">Series B</option>
+                                    <option value="Series C">Series C</option>
+                                    <option value="Growth">Growth Stage</option>
+                                </select>
+                                <p class="mt-2 text-xs font-medium text-muted">Select the funding round your project is in.</p>
+                            </div>
 
-                        <!-- Description -->
-                        <div>
-                            <label for="description"
-                                class="block text-xs font-black uppercase mb-3 tracking-widest text-slate-500">Use of
-                                Funds (Optional)</label>
-                            <textarea id="description" name="description" rows="6" placeholder="Explain how you'll use the funding..."
-                                class="w-full px-4 py-3 border-4 border-black text-neo-black font-medium text-base focus:outline-none focus:ring-4 focus:ring-brand-indigo shadow-neo-sm hover:shadow-neo transition-all resize-none"></textarea>
-                            <p class="text-slate-600 text-sm font-medium mt-2">Describe how you plan to use the
-                                funding (e.g., product development, marketing, hiring)</p>
+                            <!-- Description -->
+                            <div>
+                                <label for="description" class="mb-2 block text-sm font-bold text-ink">Use of Funds</label>
+                                <textarea id="description" name="description" rows="5" placeholder="Explain how you'll use the funding (e.g., product development, marketing, hiring)..."
+                                    class="w-full resize-none rounded-xl border border-line bg-surface px-4 py-3.5 text-sm font-medium text-ink outline-none transition placeholder:text-slate-400 focus:border-cyan focus:ring-2 focus:ring-cyan/20"></textarea>
+                                <p class="mt-2 text-xs font-medium text-muted">Describe how you plan to use the funding.</p>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Submit Section -->
-                <div class="bg-white border-4 border-black p-8 md:p-10 shadow-neo">
-                    <div class="flex flex-col sm:flex-row gap-4 justify-between items-center">
-                        <p class="text-slate-600 font-medium text-center sm:text-left">
-                            <span class="font-black text-neo-black">Note:</span> A member of our team will review your
-                            request within 5-7 business days.
+                    <!-- Submit -->
+                    <div class="flex flex-col items-center justify-between gap-6 rounded-2xl border border-line bg-white p-6 shadow-[0_12px_30px_rgba(0,88,125,.08)] sm:flex-row sm:p-8">
+                        <p class="text-sm font-medium text-muted text-center sm:text-left">
+                            <span class="font-bold text-ink">Note:</span> A member of our team will review your request within 5–7 business days.
                         </p>
-                        <button type="submit"
-                            class="px-8 py-3 bg-brand-indigo text-white border-4 border-black font-black uppercase text-lg shadow-neo hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all active:translate-x-0 active:translate-y-0 active:shadow-none whitespace-nowrap">
+                        <button type="submit" class="inline-flex shrink-0 items-center gap-3 rounded-xl bg-orange px-7 py-3.5 text-sm font-extrabold text-white shadow-[0_10px_24px_rgba(141,67,10,.24)] transition hover:-translate-y-0.5 hover:bg-orange-dark focus:outline-none focus:ring-2 focus:ring-orange focus:ring-offset-2">
                             Submit Request
+                            <i class="fa-solid fa-paper-plane text-xs" aria-hidden="true"></i>
                         </button>
                     </div>
-                </div>
+                    <% } %>
 
-            </form>
-            <% } %>
-
-        </div>
+                </form>
+            </div>
+        </section>
     </main>
 
-    <%- include('../partials/footer.ejs') %>
+    <%- include('../partials/footer') %>
 </body>
 
 </html>

@@ -1,4 +1,5 @@
 import pool from "../../config/db.js";
+import eventBus from "../../utils/eventBus.js";
 
 // Get All Projects
 export const getAllProjects = async () => {
@@ -22,6 +23,23 @@ export const updateProjectStatus = async (id, status) => {
     "UPDATE projects SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *",
     [status, id],
   );
+
+  if (res.rows[0]) {
+    const project = res.rows[0];
+    const entrepreneurs = await pool.query(
+      "SELECT user_id FROM project_entrepreneurs WHERE project_id = $1",
+      [id]
+    );
+    for (const row of entrepreneurs.rows) {
+      eventBus.emit("project.status_changed", {
+        projectId: id,
+        projectName: project.name,
+        status,
+        userId: row.user_id,
+      });
+    }
+  }
+
   return res.rows[0];
 };
 
@@ -46,6 +64,22 @@ export const toggleProjectApproved = async (id) => {
     `,
     [id],
   );
+
+  if (res.rows[0]) {
+    const project = res.rows[0];
+    const entrepreneurs = await pool.query(
+      "SELECT user_id FROM project_entrepreneurs WHERE project_id = $1",
+      [id]
+    );
+    for (const row of entrepreneurs.rows) {
+      eventBus.emit("project.approval_toggled", {
+        projectId: id,
+        projectName: project.name,
+        approved: project.approved,
+        userId: row.user_id,
+      });
+    }
+  }
 
   return res.rows[0];
 };

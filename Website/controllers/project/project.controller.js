@@ -115,7 +115,7 @@ export const createProjectController = async (req, res, next) => {
       return res.redirect("/v1/projects/new");
     }
 
-    const validStages = ["idea", "in-progress", "completed"];
+    const validStages = ["idea", "mvp", "scale-up"];
     if (stage && !validStages.includes(stage)) {
       req.flash("error", "Invalid development stage selected");
       return res.redirect("/v1/projects/new");
@@ -241,7 +241,9 @@ export const createProjectController = async (req, res, next) => {
     );
     res.redirect(`/v1/projects`);
   } catch (err) {
-    console.error("Error in createProjectController:", err);
+    console.error("Error in createProjectController:", err.message);
+    console.error("Error code:", err.code);
+    console.error("Error detail:", err.detail);
 
     if (err.code === "23505") {
       req.flash("error", "A project with this name already exists");
@@ -258,9 +260,19 @@ export const createProjectController = async (req, res, next) => {
       return res.redirect("/v1/projects/new");
     }
 
+    if (err.code === "42703") {
+      req.flash("error", "Database schema mismatch — please contact the administrator to run the latest migration.");
+      return res.redirect("/v1/projects/new");
+    }
+
+    if (err.code === "23514") {
+      req.flash("error", `Invalid value provided: ${err.detail || "check your inputs"}`);
+      return res.redirect("/v1/projects/new");
+    }
+
     req.flash(
       "error",
-      "An error occurred while creating the project. Please try again",
+      `An error occurred while creating the project. ${err.message || "Please try again"}`,
     );
     res.redirect("/v1/projects/new");
   }

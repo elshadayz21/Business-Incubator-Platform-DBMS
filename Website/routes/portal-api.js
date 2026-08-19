@@ -8,12 +8,19 @@ import {
   getMentorAssignmentSessions,
   createMentorSession,
   deleteMentorSession,
+  markNotificationsAsRead,
 } from "../admin-backend/portal/portal.js";
 
 const router = Router();
 
 const asyncHandler = (fn) => (req, res, next) => {
-  Promise.resolve(fn(req, res, next)).catch(next);
+  Promise.resolve(fn(req, res, next)).catch((err) => {
+    console.error("[Portal API] Error:", err);
+    if (req.originalUrl.startsWith("/api/")) {
+      return res.status(500).json({ error: "Internal server error" });
+    }
+    next(err);
+  });
 };
 
 router.get(
@@ -41,6 +48,16 @@ router.get(
       req.session.userEmail,
     );
     res.json(dashboard);
+  }),
+);
+
+router.post(
+  "/notifications/read",
+  isAuth,
+  authorizeRole(ROLES.ENTREPRENEUR, ROLES.MENTOR, ROLES.SUPERADMIN, ROLES.ADMIN),
+  asyncHandler(async (req, res) => {
+    await markNotificationsAsRead(req.session.userId);
+    res.json({ success: true });
   }),
 );
 

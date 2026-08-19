@@ -232,7 +232,7 @@ export default function Announcements() {
 
     const handleBuildForm = async (ann) => {
         if (editingFormId === ann.id) {
-            setEditingFormId(null); // Close if already open
+            setEditingFormId(null);
             return;
         }
         setEditingFormId(ann.id);
@@ -270,12 +270,13 @@ export default function Announcements() {
                 credentials: 'include',
                 body: JSON.stringify({ fields: formFields })
             });
-            if (!response.ok) throw new Error("Failed to save form");
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message || "Failed to save form");
             alert("Form saved successfully!");
             setEditingFormId(null);
         } catch (error) {
             console.error("Error saving form:", error);
-            alert("Failed to save form.");
+            alert("Failed to save form: " + error.message);
         }
     };
 

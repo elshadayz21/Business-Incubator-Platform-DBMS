@@ -1,4 +1,5 @@
 import pool from "../../config/db.js";
+import eventBus from "../../utils/eventBus.js";
 
 // Get all funding requests
 export const getAllFundingRequests = async (query = "") => {
@@ -238,7 +239,31 @@ export const updateFundingRequestStatus = async (id, status, notes = null) => {
       return { success: false, data: null };
     }
 
-    return { success: true, data: res.rows[0] };
+    const request = res.rows[0];
+
+    const entrepreneurs = await pool.query(
+      `SELECT pe.user_id
+       FROM project_entrepreneurs pe
+       WHERE pe.project_id = $1`,
+      [request.project_id]
+    );
+
+    let projectName = "unknown project";
+    try {
+      const pRes = await pool.query("SELECT name FROM projects WHERE id = $1", [request.project_id]);
+      if (pRes.rows[0]) projectName = pRes.rows[0].name;
+    } catch (e) { /* ignore */ }
+
+    for (const row of entrepreneurs.rows) {
+      eventBus.emit("funding.admin_reviewed", {
+        request,
+        projectName,
+        status,
+        userId: row.user_id,
+      });
+    }
+
+    return { success: true, data: request };
   } catch (error) {
     console.error("Error updating funding request:", error);
     throw error;
