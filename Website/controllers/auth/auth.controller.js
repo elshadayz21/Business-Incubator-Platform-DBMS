@@ -162,8 +162,15 @@ export const register = async (req, res, next) => {
       return res.redirect(`/v1/auth/signup?token=${token}`);
     }
 
+    // Strong Password Policy Check
     if (password.length < 8) {
-      req.flash("error", "Password must be at least 8 characters");
+      req.flash("error", "Password must be at least 8 characters long.");
+      return res.redirect(`/v1/auth/signup?token=${token}`);
+    }
+
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (!passwordRegex.test(password)) {
+      req.flash("error", "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.");
       return res.redirect(`/v1/auth/signup?token=${token}`);
     }
 
@@ -213,14 +220,50 @@ export const login = async (req, res, next) => {
       return res.redirect("/v1/auth/login");
     }
 
-    if (user.status === "inactive") {
-      req.flash("error", "Account is deactivated. Please contact an administrator.");
+    // 1. CHECK IF ACCOUNT IS LOCKED
+    if (user.lock_until && new Date(user.lock_until) > new Date()) {
+      const timeLeft = Math.ceil((new Date(user.lock_until) - new Date()) / 60000);
+      req.flash("error", `Account locked due to too many failed attempts. Try again in ${timeLeft} minute(s).`);
       return res.redirect("/v1/auth/login");
     }
 
+    // 2. CHECK PASSWORD
     const isMatch = await comparePassword(password, user.password);
     if (!isMatch) {
-      req.flash("error", "Invalid email or password");
+      // Increment failed attempts
+      let attempts = (user.failed_login_attempts || 0) + 1;
+      let lockUntil = null;
+      let errorMessage = "Invalid email or password.";
+
+      // If they hit 5 attempts, lock the account for 15 minutes
+      if (attempts >= 5) {
+        attempts = 0; // Reset attempts to 0 so it doesn't keep climbing
+        lockUntil = new Date(new Date().getTime() + 15 * 60000); // 15 mins from now
+        errorMessage = "Account locked due to too many failed attempts. Try again in 15 minutes.";
+      } else {
+        errorMessage = `Invalid email or password. ${5 - attempts} attempt(s) remaining.`;
+      }
+
+      // Update the database with the new attempt count or lock time
+      await pool.query(
+          "UPDATE users SET failed_login_attempts = $1, lock_until = $2 WHERE id = $3",
+          [attempts, lockUntil, user.id]
+      );
+
+      req.flash("error", errorMessage);
+      return res.redirect("/v1/auth/login");
+    }
+
+    // 3. SUCCESSFUL LOGIN - Reset attempts and lock time!
+    if (user.failed_login_attempts > 0 || user.lock_until) {
+      await pool.query(
+          "UPDATE users SET failed_login_attempts = 0, lock_until = NULL WHERE id = $1",
+          [user.id]
+      );
+    }
+
+    if (user.status === "inactive") {
+      req.flash("error", "Account is deactivated. Please contact an administrator.");
       return res.redirect("/v1/auth/login");
     }
 
@@ -236,7 +279,7 @@ export const login = async (req, res, next) => {
     if (user.role === ROLES.SUPERADMIN || user.role === ROLES.ADMIN) {
       redirectUrl = "/admin/dashboard";
     } else if (user.role === ROLES.MENTOR || user.role === ROLES.ENTREPRENEUR) {
-      redirectUrl = "/admin/";
+      redirectUrl = "/v1/auth/profile";
     }
 
     const userDataJson = JSON.stringify({
@@ -247,22 +290,14 @@ export const login = async (req, res, next) => {
       profile_image: user.profile_image || null,
     });
 
-    req.session.save((err) => {
-      if (err) {
-        console.error("Session save error during login:", err);
-        req.flash("error", "An error occurred during login. Please try again.");
-        return res.redirect("/v1/auth/login");
-      }
-
-      res.send(`
-        <script>
-          sessionStorage.setItem('isLoggedIn', 'true');
-          sessionStorage.setItem('user', JSON.stringify(${userDataJson}));
-          localStorage.setItem('isLoggedIn', 'true');
-          window.location.href = '${redirectUrl}';
-        </script>
-      `);
-    });
+    res.send(`
+      <script>
+        sessionStorage.setItem('isLoggedIn', 'true');
+        sessionStorage.setItem('user', JSON.stringify(${userDataJson}));
+        localStorage.setItem('isLoggedIn', 'true');
+        window.location.href = '${redirectUrl}';
+      </script>
+    `);
   } catch (err) {
     req.flash("error", "An error occurred during login. Please try again.");
     res.redirect("/v1/auth/login");

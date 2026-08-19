@@ -1,5 +1,44 @@
 const form = document.getElementById('signupForm');
 const password = document.getElementById('password');
+
+// --- Password Strength Checklist Logic ---
+const checklist = document.getElementById('passwordChecklist');
+
+const updateCheckItem = (elId, isValid) => {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    const icon = el.querySelector('i');
+    const text = el.querySelector('span');
+
+    if (isValid) {
+        icon.className = 'fa-solid fa-check text-[10px] text-green-500 transition';
+        text.classList.add('text-green-600');
+        text.classList.remove('text-muted');
+    } else {
+        icon.className = 'fa-solid fa-circle text-[6px] text-slate-400 transition';
+        text.classList.remove('text-green-600');
+        text.classList.add('text-muted');
+    }
+};
+
+if (password && checklist) {
+    // Show checklist when user clicks into the password field
+    password.addEventListener('focus', () => checklist.classList.remove('hidden'));
+
+    // Live update as they type
+    password.addEventListener('input', () => {
+        const val = password.value;
+
+        updateCheckItem('check-length', val.length >= 8);
+        updateCheckItem('check-upper', /[A-Z]/.test(val));
+        updateCheckItem('check-lower', /[a-z]/.test(val));
+        updateCheckItem('check-number', /[0-9]/.test(val));
+        updateCheckItem('check-special', /[@$!%*?&]/.test(val));
+    });
+}
+// -----------------------------------------
+
+
 const confirmPassword = document.getElementById('confirmPassword');
 const passwordMatch = document.getElementById('passwordMatch');
 const errorMessage = document.getElementById('errorMessage');
@@ -64,10 +103,18 @@ form.addEventListener('submit', function (e) {
         return;
     }
 
-    // Validate password length
+
+    // Validate password strength
     if (passwordValue.length < 8) {
         e.preventDefault();
         showError('Password must be at least 8 characters long.');
+        return;
+    }
+
+    const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (!strongPasswordRegex.test(passwordValue)) {
+        e.preventDefault();
+        showError('Password must include uppercase, lowercase, a number, and a special character.');
         return;
     }
 
@@ -93,3 +140,14 @@ password.addEventListener('input', function () {
         confirmPassword.dispatchEvent(new Event('input'));
     }
 });
+// --- Show/Hide Password Logic ---
+const showPasswordCheckbox = document.getElementById('showPassword');
+
+if (showPasswordCheckbox) {
+    showPasswordCheckbox.addEventListener('change', function() {
+        // Toggle both password and confirm password fields
+        const type = this.checked ? 'text' : 'password';
+        if (password) password.type = type;
+        if (confirmPassword) confirmPassword.type = type;
+    });
+}
