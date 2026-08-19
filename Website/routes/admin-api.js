@@ -167,6 +167,7 @@ import ExcelJS from "exceljs";
 import { authorizeRole } from "../middleware/check_roles.middleware.js";
 import { ROLES } from "../utils/constants.js";
 
+
 const router = Router();
 
 const asyncHandler = (fn) => (req, res, next) => {
@@ -431,17 +432,14 @@ router.get(
   ),
 );
 router.put(
-  "/funding/:id/status",
-  asyncHandler(async (req, res) =>
-    res.json(
-      await updateFundingRequestStatus(
-        req.params.id,
-        req.body.status,
-        req.body.notes,
-      ),
-    ),
-  ),
+    "/funding/:id/status",
+    asyncHandler(async (req, res) => {
+      const { status, notes, approvedAmount } = req.body;
+      const result = await updateFundingRequestStatus(req.params.id, status, notes, approvedAmount);
+      res.json(result);
+    })
 );
+
 router.delete(
   "/funding/:id",
   asyncHandler(async (req, res) =>

@@ -239,7 +239,7 @@ export const createProjectController = async (req, res, next) => {
       "success",
       `Project created successfully! ${coFounderUserIds.length > 0 ? `${coFounderUserIds.length} co-founder(s) added` : ""} 🚀`,
     );
-    res.redirect(`/v1/projects`);
+    res.redirect(`/v1/auth/profile?tab=projects`);
   } catch (err) {
     console.error("Error in createProjectController:", err.message);
     console.error("Error code:", err.code);

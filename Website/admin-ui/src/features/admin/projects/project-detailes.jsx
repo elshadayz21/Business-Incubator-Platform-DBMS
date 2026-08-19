@@ -48,10 +48,16 @@ const ProjectDetails = ({ project, onClose }) => {
         body: JSON.stringify({ mentorId }),
       });
 
-      if (!response.ok) throw new Error("Failed to assign mentor");
+      const result = await response.json();
 
-      setMentors((prev) => prev.filter((m) => m.id !== mentorId));
-      alert("Mentor assigned successfully!");
+      if (response.ok && result.success) {
+        // Remove the mentor from the list
+        setMentors((prev) => prev.filter((m) => m.id !== mentorId));
+        alert("✅ Mentor assigned successfully!");
+      } else {
+        // Backend rejected it (e.g., already has a mentor)
+        alert("❌ " + result.message);
+      }
     } catch (error) {
       console.error("Error assigning mentor:", error);
       alert("Error assigning mentor.");

@@ -1,5 +1,6 @@
 import pool from "../../config/db.js";
 import eventBus from "../../utils/eventBus.js";
+import { createNotification } from "../../utils/notificationHelper.js";
 
 // Get All Projects
 export const getAllProjects = async () => {
@@ -23,9 +24,9 @@ export const updateProjectStatus = async (id, status) => {
     "UPDATE projects SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *",
     [status, id],
   );
+  const project = res.rows[0];
 
-  if (res.rows[0]) {
-    const project = res.rows[0];
+  if (project) {
     const entrepreneurs = await pool.query(
       "SELECT user_id FROM project_entrepreneurs WHERE project_id = $1",
       [id]
@@ -38,9 +39,31 @@ export const updateProjectStatus = async (id, status) => {
         userId: row.user_id,
       });
     }
+
+    const ownerRes = await pool.query(
+      "SELECT user_id FROM project_entrepreneurs WHERE project_id = $1 AND (role_in_project IS NULL OR role_in_project != 'Mentor') LIMIT 1",
+      [project.id]
+    );
+
+    const userId = ownerRes.rows[0]?.user_id;
+
+    if (userId) {
+      const message =
+        status === "approved"
+          ? `Great news! Your project "${project.name}" has been approved.`
+          : `Update: Your project "${project.name}" status was updated to ${status}.`;
+
+      await createNotification(
+        userId,
+        "project_status",
+        message,
+        { projectId: project.id },
+        `/v1/auth/profile?tab=projects`
+      );
+    }
   }
 
-  return res.rows[0];
+  return project;
 };
 
 // Get Projects by Status
@@ -55,33 +78,59 @@ export const getProjectsByStatus = async (status) => {
 // Toggle Project Approved Status
 export const toggleProjectApproved = async (id) => {
   const res = await pool.query(
-    `
-    UPDATE projects
-    SET approved = NOT approved,
-        updated_at = CURRENT_TIMESTAMP
-    WHERE id = $1
-    RETURNING *;
-    `,
+    `UPDATE projects
+     SET approved = NOT approved,
+         updated_at = CURRENT_TIMESTAMP
+     WHERE id = $1
+     RETURNING *;`,
     [id],
   );
 
-  if (res.rows[0]) {
-    const project = res.rows[0];
-    const entrepreneurs = await pool.query(
-      "SELECT user_id FROM project_entrepreneurs WHERE project_id = $1",
-      [id]
-    );
-    for (const row of entrepreneurs.rows) {
-      eventBus.emit("project.approval_toggled", {
-        projectId: id,
-        projectName: project.name,
-        approved: project.approved,
-        userId: row.user_id,
-      });
+  const project = res.rows[0];
+  if (!project) return null;
+
+  const entrepreneurs = await pool.query(
+    "SELECT user_id FROM project_entrepreneurs WHERE project_id = $1",
+    [id]
+  );
+  for (const row of entrepreneurs.rows) {
+    eventBus.emit("project.approval_toggled", {
+      projectId: id,
+      projectName: project.name,
+      approved: project.approved,
+      userId: row.user_id,
+    });
+  }
+
+  // Find the project owner
+  const ownerRes = await pool.query(
+    "SELECT user_id FROM project_entrepreneurs WHERE project_id = $1 AND (role_in_project IS NULL OR role_in_project != 'Mentor') LIMIT 1",
+    [project.id]
+  );
+
+  const userId = ownerRes.rows[0]?.user_id;
+
+  if (userId) {
+    if (project.approved) {
+      await createNotification(
+        userId,
+        "project_status",
+        `Great news! Your project "${project.name}" has been approved.`,
+        { projectId: project.id },
+        `/v1/auth/profile?tab=projects`
+      );
+    } else {
+      await createNotification(
+        userId,
+        "project_status",
+        `Update: Your project "${project.name}" status has been toggled off. Please review feedback.`,
+        { projectId: project.id },
+        `/v1/auth/profile?tab=projects`
+      );
     }
   }
 
-  return res.rows[0];
+  return project;
 };
 
 // Get Projects Statistics
@@ -100,26 +149,21 @@ export const getProjectsStats = async () => {
   return res.rows[0];
 };
 
-
-// --- AI SUGGESTED MENTORS LOGIC (With Realistic Scoring) ---
-
-// Helper function to calculate text similarity
+// --- AI SUGGESTED MENTORS LOGIC ---
 const calculateScore = (domain, expertise) => {
-  if (!domain || !expertise) return Math.random() * 15 + 5; // Random 5-20% if missing
+  if (!domain || !expertise) return Math.random() * 15 + 5;
 
   const d = domain.toLowerCase();
   const e = expertise.toLowerCase();
 
-  // 1. Perfect match
   if (d === e) return 98;
 
-  // 2. Partial word match (e.g., "Agri" in "Agriculture")
   const dWords = d.split(/[\s,]+/);
   const eWords = e.split(/[\s,]+/);
   let matchCount = 0;
 
-  dWords.forEach(dw => {
-    eWords.forEach(ew => {
+  dWords.forEach((dw) => {
+    eWords.forEach((ew) => {
       if (dw.length > 2 && ew.length > 2 && (dw.includes(ew) || ew.includes(dw))) {
         matchCount++;
       }
@@ -127,34 +171,30 @@ const calculateScore = (domain, expertise) => {
   });
 
   if (matchCount > 0) {
-    return 70 + (matchCount * 10); // 70-90% for partial word matches
+    return 70 + matchCount * 10;
   }
 
-  // 3. Character overlap (Fallback: looks at shared letters)
-  const dChars = new Set(d.replace(/[^a-z]/g, '').split(''));
-  const eChars = new Set(e.replace(/[^a-z]/g, '').split(''));
+  const dChars = new Set(d.replace(/[^a-z]/g, "").split(""));
+  const eChars = new Set(e.replace(/[^a-z]/g, "").split(""));
   let charMatch = 0;
 
-  dChars.forEach(c => { if(eChars.has(c)) charMatch++; });
+  dChars.forEach((c) => {
+    if (eChars.has(c)) charMatch++;
+  });
 
-  // Calculate percentage based on shared characters
   const score = (charMatch / (dChars.size + eChars.size)) * 100;
-
-  // Ensure it's between 5% and 60% to look like a realistic fuzzy match
   return Math.max(5, Math.min(score, 60));
 };
 
 export const getSuggestedMentors = async (projectId) => {
   try {
-    // 1. Get the project to find out what domain it is
     const projectRes = await pool.query("SELECT domain FROM projects WHERE id = $1", [projectId]);
     if (projectRes.rows.length === 0) return { success: false, message: "Project not found" };
 
     const domain = projectRes.rows[0].domain || "General";
 
-    // 2. Fetch ALL active mentors so we can score them
     const mentorsRes = await pool.query(
-        `SELECT id, name, expertise, email, profile_image 
+      `SELECT id, name, expertise, email, profile_image 
        FROM users 
        WHERE role = 'mentor' 
        AND status = 'active'`
@@ -164,13 +204,11 @@ export const getSuggestedMentors = async (projectId) => {
       return { success: true, mentors: [], message: "No active mentors found in the system." };
     }
 
-    // 3. Calculate a dynamic match score for each mentor
-    const scoredMentors = mentorsRes.rows.map(mentor => {
+    const scoredMentors = mentorsRes.rows.map((mentor) => {
       const score = calculateScore(domain, mentor.expertise);
-      return { ...mentor, matchScore: score / 100 }; // React expects 0.0 to 1.0
+      return { ...mentor, matchScore: score / 100 };
     });
 
-    // 4. Sort by highest score first and take the top 5
     scoredMentors.sort((a, b) => b.matchScore - a.matchScore);
     const topMentors = scoredMentors.slice(0, 5);
 
@@ -181,27 +219,49 @@ export const getSuggestedMentors = async (projectId) => {
   }
 };
 
-
 // --- ASSIGN MENTOR TO PROJECT ---
 export const assignMentor = async (projectId, mentorId) => {
   try {
-    // Check if the mentor is already assigned to avoid duplicates
-    const existing = await pool.query(
-        "SELECT * FROM project_entrepreneurs WHERE project_id = $1 AND user_id = $2",
-        [projectId, mentorId]
+    const mentorCheck = await pool.query(
+      "SELECT * FROM project_entrepreneurs WHERE project_id = $1 AND role_in_project = 'Mentor'",
+      [projectId]
     );
 
-    if (existing.rows.length === 0) {
-      await pool.query(
-          "INSERT INTO project_entrepreneurs (project_id, user_id, role_in_project) VALUES ($1, $2, $3)",
-          [projectId, mentorId, 'Mentor']
-      );
-      return { success: true, message: "Mentor assigned successfully!" };
+    if (mentorCheck.rows.length > 0) {
+      return { success: false, message: "This project already has a mentor assigned." };
     }
-    return { success: true, message: "Mentor is already assigned to this project." };
+
+    await pool.query(
+      "INSERT INTO project_entrepreneurs (project_id, user_id, role_in_project) VALUES ($1, $2, $3)",
+      [projectId, mentorId, "Mentor"]
+    );
+
+    const ownerRes = await pool.query(
+      "SELECT user_id FROM project_entrepreneurs WHERE project_id = $1 AND (role_in_project IS NULL OR role_in_project != 'Mentor') LIMIT 1",
+      [projectId]
+    );
+
+    const userId = ownerRes.rows[0]?.user_id;
+
+    if (userId) {
+      const projRes = await pool.query("SELECT name FROM projects WHERE id = $1", [projectId]);
+      const projectName = projRes.rows[0]?.name || "your project";
+
+      const mentorRes = await pool.query("SELECT name FROM users WHERE id = $1", [mentorId]);
+      const mentorName = mentorRes.rows[0]?.name || "A mentor";
+
+      await createNotification(
+        userId,
+        "mentor_assignment",
+        `${mentorName} has been assigned as a mentor to your project "${projectName}"! Please contact your mentor.`,
+        { projectId, mentorId },
+        `/v1/auth/profile?tab=projects`
+      );
+    }
+
+    return { success: true, message: "Mentor assigned successfully!" };
   } catch (error) {
     console.error("Error assigning mentor:", error);
     return { success: false, message: "Server error assigning mentor." };
   }
 };
-

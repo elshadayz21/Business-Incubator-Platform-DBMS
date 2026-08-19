@@ -3,12 +3,14 @@ import eventBus from "../../utils/eventBus.js";
 
 // Get all funding requests
 export const getAllFundingRequests = async (query = "") => {
-  try {
-    let querySQL = `
+    try {
+        let querySQL = `
       SELECT 
         fr.id,
         fr.project_id,
         fr.amount,
+        fr.approved_amount,
+        fr.founder_action,
         fr.status,
         fr.funding_stage,
         fr.description,
@@ -31,83 +33,86 @@ export const getAllFundingRequests = async (query = "") => {
       JOIN projects p ON fr.project_id = p.id
       LEFT JOIN project_entrepreneurs pe ON p.id = pe.project_id
       LEFT JOIN users u ON pe.user_id = u.id
-      ORDER BY fr.requested_at DESC
     `;
 
-    // Parse query parameters for filtering
-    const params = [];
-    if (query.includes("status=")) {
-      const match = query.match(/status=([^&]+)/);
-      if (match) {
-        querySQL += ` WHERE fr.status = $${params.length + 1}`;
-        params.push(match[1]);
-      }
-    }
+        // Parse query parameters for filtering
+        const params = [];
+        if (query.includes("status=")) {
+            const match = query.match(/status=([^&]+)/);
+            if (match) {
+                querySQL += ` WHERE fr.status = $${params.length + 1}`;
+                params.push(match[1]);
+            }
+        }
 
-    if (query.includes("funding_stage=")) {
-      const match = query.match(/funding_stage=([^&]+)/);
-      if (match) {
-        querySQL += querySQL.includes("WHERE") ? " AND" : " WHERE";
-        querySQL += ` fr.funding_stage = $${params.length + 1}`;
-        params.push(match[1]);
-      }
-    }
+        if (query.includes("funding_stage=")) {
+            const match = query.match(/funding_stage=([^&]+)/);
+            if (match) {
+                querySQL += querySQL.includes("WHERE") ? " AND" : " WHERE";
+                querySQL += ` fr.funding_stage = $${params.length + 1}`;
+                params.push(match[1]);
+            }
+        }
 
-    const res = await pool.query(querySQL, params);
+        querySQL += ` ORDER BY fr.requested_at DESC`;
 
-    // Group by funding request to avoid duplicates from multiple founders
-    const grouped = {};
-    res.rows.forEach((row) => {
-      if (!grouped[row.id]) {
-        grouped[row.id] = {
-          id: row.id,
-          project_id: row.project_id,
-          amount: row.amount,
-          status: row.status,
-          funding_stage: row.funding_stage,
-          description: row.description,
-          requested_at: row.requested_at,
-          reviewed_at: row.reviewed_at,
-          reviewed_by: row.reviewed_by,
-          notes: row.notes,
-          created_at: row.created_at,
-          updated_at: row.updated_at,
-          project: {
-            id: row.project_id_info,
-            name: row.project_name,
-            domain: row.project_domain,
-            stage: row.project_stage,
-            status: row.project_status,
-          },
-          founders: [],
-        };
-      }
+        const res = await pool.query(querySQL, params);
 
-      if (
-        row.founder_id &&
-        !grouped[row.id].founders.some((f) => f.id === row.founder_id)
-      ) {
-        grouped[row.id].founders.push({
-          id: row.founder_id,
-          name: row.founder_name,
-          email: row.founder_email,
-          profile_image: row.founder_image,
+        // Group by funding request to avoid duplicates from multiple founders
+        const grouped = {};
+        res.rows.forEach((row) => {
+            if (!grouped[row.id]) {
+                grouped[row.id] = {
+                    id: row.id,
+                    project_id: row.project_id,
+                    amount: row.amount,
+                    approved_amount: row.approved_amount, // ADDED THIS!
+                    founder_action: row.founder_action,   // ADDED THIS!
+                    status: row.status,
+                    funding_stage: row.funding_stage,
+                    description: row.description,
+                    requested_at: row.requested_at,
+                    reviewed_at: row.reviewed_at,
+                    reviewed_by: row.reviewed_by,
+                    notes: row.notes,
+                    created_at: row.created_at,
+                    updated_at: row.updated_at,
+                    project: {
+                        id: row.project_id_info,
+                        name: row.project_name,
+                        domain: row.project_domain,
+                        stage: row.project_stage,
+                        status: row.project_status,
+                    },
+                    founders: [],
+                };
+            }
+
+            if (
+                row.founder_id &&
+                !grouped[row.id].founders.some((f) => f.id === row.founder_id)
+            ) {
+                grouped[row.id].founders.push({
+                    id: row.founder_id,
+                    name: row.founder_name,
+                    email: row.founder_email,
+                    profile_image: row.founder_image,
+                });
+            }
         });
-      }
-    });
 
-    return { success: true, data: Object.values(grouped) };
-  } catch (error) {
-    console.error("Error fetching funding requests:", error);
-    throw error;
-  }
+        return { success: true, data: Object.values(grouped) };
+    } catch (error) {
+        console.error("Error fetching funding requests:", error);
+        throw error;
+    }
 };
 
 // Get funding dashboard
 export const getFundingDashboard = async () => {
-  try {
-    const res = await pool.query(
-      `SELECT 
+    try {
+        const res = await pool.query(
+            `SELECT 
         p.id,
         p.name,
         p.domain,
@@ -121,20 +126,20 @@ export const getFundingDashboard = async () => {
       LEFT JOIN funding_requests fr ON p.id = fr.project_id
       GROUP BY p.id, p.name, p.domain, p.stage
       ORDER BY total_requests DESC, p.name ASC`,
-    );
+        );
 
-    return { success: true, data: res.rows };
-  } catch (error) {
-    console.error("Error fetching dashboard:", error);
-    throw error;
-  }
+        return { success: true, data: res.rows };
+    } catch (error) {
+        console.error("Error fetching dashboard:", error);
+        throw error;
+    }
 };
 
 // Get funding by stage
 export const getFundingByStage = async () => {
-  try {
-    const res = await pool.query(
-      `SELECT 
+    try {
+        const res = await pool.query(
+            `SELECT 
         p.stage,
         fr.status,
         COUNT(fr.id) as count,
@@ -145,20 +150,20 @@ export const getFundingByStage = async () => {
       WHERE fr.status IS NOT NULL
       GROUP BY p.stage, fr.status
       ORDER BY p.stage ASC, fr.status ASC`,
-    );
+        );
 
-    return { success: true, data: res.rows };
-  } catch (error) {
-    console.error("Error fetching funding by stage:", error);
-    throw error;
-  }
+        return { success: true, data: res.rows };
+    } catch (error) {
+        console.error("Error fetching funding by stage:", error);
+        throw error;
+    }
 };
 
 // Get single funding request
 export const getFundingRequestById = async (id) => {
-  try {
-    const res = await pool.query(
-      `SELECT 
+    try {
+        const res = await pool.query(
+            `SELECT 
         fr.*,
         p.id as project_id_info,
         p.name as project_name,
@@ -174,55 +179,63 @@ export const getFundingRequestById = async (id) => {
       LEFT JOIN project_entrepreneurs pe ON p.id = pe.project_id
       LEFT JOIN users u ON pe.user_id = u.id
       WHERE fr.id = $1`,
-      [id],
-    );
+            [id],
+        );
 
-    if (res.rows.length === 0) {
-      return { success: true, data: null };
+        if (res.rows.length === 0) {
+            return { success: true, data: null };
+        }
+
+        // Group founders
+        const firstRow = res.rows[0];
+        const fundingRequest = {
+            id: firstRow.id,
+            project_id: firstRow.project_id,
+            amount: firstRow.amount,
+            approved_amount: firstRow.approved_amount, // ADDED THIS!
+            founder_action: firstRow.founder_action,   // ADDED THIS!
+            status: firstRow.status,
+            funding_stage: firstRow.funding_stage,
+            description: firstRow.description,
+            requested_at: firstRow.requested_at,
+            reviewed_at: firstRow.reviewed_at,
+            reviewed_by: firstRow.reviewed_by,
+            notes: firstRow.notes,
+            created_at: firstRow.created_at,
+            updated_at: firstRow.updated_at,
+            project: {
+                id: firstRow.project_id_info,
+                name: firstRow.project_name,
+                domain: firstRow.project_domain,
+                stage: firstRow.project_stage,
+                status: firstRow.project_status,
+            },
+            founders: res.rows
+                .filter((row) => row.founder_id)
+                .map((row) => ({
+                    id: row.founder_id,
+                    name: row.founder_name,
+                    email: row.founder_email,
+                    profile_image: row.founder_image,
+                })),
+        };
+
+        return { success: true, data: fundingRequest };
+    } catch (error) {
+        console.error("Error fetching funding request:", error);
+        throw error;
     }
-
-    // Group founders
-    const firstRow = res.rows[0];
-    const fundingRequest = {
-      id: firstRow.id,
-      project_id: firstRow.project_id,
-      amount: firstRow.amount,
-      status: firstRow.status,
-      funding_stage: firstRow.funding_stage,
-      description: firstRow.description,
-      requested_at: firstRow.requested_at,
-      reviewed_at: firstRow.reviewed_at,
-      reviewed_by: firstRow.reviewed_by,
-      notes: firstRow.notes,
-      created_at: firstRow.created_at,
-      updated_at: firstRow.updated_at,
-      project: {
-        id: firstRow.project_id_info,
-        name: firstRow.project_name,
-        domain: firstRow.project_domain,
-        stage: firstRow.project_stage,
-        status: firstRow.project_status,
-      },
-      founders: res.rows
-        .filter((row) => row.founder_id)
-        .map((row) => ({
-          id: row.founder_id,
-          name: row.founder_name,
-          email: row.founder_email,
-          profile_image: row.founder_image,
-        })),
-    };
-
-    return { success: true, data: fundingRequest };
-  } catch (error) {
-    console.error("Error fetching funding request:", error);
-    throw error;
-  }
 };
 
 // Update funding request status
-export const updateFundingRequestStatus = async (id, status, notes = null) => {
-  try {
+export const updateFundingRequestStatus = async (id, status, notes, approvedAmount = null) => {
+    // 1. Parse amount safely so it doesn't crash if left blank
+    const parsedAmount = approvedAmount && !isNaN(approvedAmount) ? approvedAmount : null;
+
+    // 2. If admin selects "Approved", change to "Offer Under Review"
+    const finalStatus = status === 'Approved' ? 'Offer Under Review' : status;
+
+    // 3. Update the database FIRST!
     const res = await pool.query(
       `UPDATE funding_requests 
       SET 
@@ -272,20 +285,19 @@ export const updateFundingRequestStatus = async (id, status, notes = null) => {
 
 // Delete funding request
 export const deleteFundingRequest = async (id) => {
-  try {
-    const res = await pool.query(
-      `DELETE FROM funding_requests WHERE id = $1 RETURNING *`,
-      [id],
-    );
+    try {
+        const res = await pool.query(
+            `DELETE FROM funding_requests WHERE id = $1 RETURNING *`,
+            [id],
+        );
 
-    if (res.rows.length === 0) {
-      return { success: false, data: null };
+        if (res.rows.length === 0) {
+            return { success: false, data: null };
+        }
+
+        return { success: true, data: res.rows[0] };
+    } catch (error) {
+        console.error("Error deleting funding request:", error);
+        throw error;
     }
-
-    return { success: true, data: res.rows[0] };
-  } catch (error) {
-    console.error("Error deleting funding request:", error);
-    throw error;
-  }
 };
-

@@ -291,7 +291,7 @@ export const createFundingRequestFormController = async (req, res, next) => {
       "success",
       `Funding request of $${parseFloat(amount).toLocaleString()} created successfully! Our team will review it shortly.`,
     );
-    res.redirect("/v1/projects");
+    res.redirect('/v1/auth/profile?tab=funding');
   } catch (error) {
     console.error("Error in createFundingRequestFormController:", error);
     req.flash("error", "An error occurred while creating your funding request");
