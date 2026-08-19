@@ -97,7 +97,16 @@ export const profilePage = async (req, res, next) => {
       dashboardData.stats = await getSystemMetrics();
     }
 
+    const roleTitles = {
+      admin: "Dx Valley ICMS - Admin Portal",
+      superadmin: "Dx Valley ICMS - Super Admin Portal",
+      entrepreneur: "Dx Valley ICMS - Entrepreneur Portal",
+      mentor: "Dx Valley ICMS - Mentor Portal",
+      investor: "Dx Valley ICMS - Investor Portal",
+    };
+
     res.render("profile/profile", {
+      title: roleTitles[user.role] || "Dx Valley ICMS",
       user: {
         id: user.id,
         name: user.name,

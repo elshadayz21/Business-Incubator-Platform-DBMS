@@ -1,4 +1,5 @@
 import pool from "../../config/db.js";
+import eventBus from "../../utils/eventBus.js";
 
 // Cohort Members
 export const getCohortMembers = async (cohortId) => {
@@ -23,11 +24,30 @@ export const addCohortMember = async ({
      VALUES ($1, $2, $3) RETURNING *`,
     [cohort_id, user_id, current_stage || "idea"],
   );
+
+  eventBus.emit("cohort.member_added", { cohortId: cohort_id, userId: user_id });
+
   return result.rows[0];
 };
 
 export const removeCohortMember = async (id) => {
+  const member = await pool.query(
+    `SELECT cm.user_id, cm.cohort_id, c.name AS cohort_name
+     FROM cohort_members cm
+     JOIN cohorts c ON c.id = cm.cohort_id
+     WHERE cm.id = $1`,
+    [id],
+  );
   await pool.query(`DELETE FROM cohort_members WHERE id = $1`, [id]);
+
+  if (member.rows[0]) {
+    eventBus.emit("cohort.member_removed", {
+      cohortId: member.rows[0].cohort_id,
+      cohortName: member.rows[0].cohort_name,
+      userId: member.rows[0].user_id,
+    });
+  }
+
   return { success: true };
 };
 
@@ -56,11 +76,36 @@ export const createMentorAssignment = async ({
      VALUES ($1, $2, $3) RETURNING *`,
     [mentor_id, entrepreneur_id, cohort_id],
   );
+
+  eventBus.emit("mentor.assigned", {
+    mentorId: mentor_id,
+    entrepreneurId: entrepreneur_id,
+    cohortId: cohort_id,
+  });
+
   return result.rows[0];
 };
 
 export const deleteMentorAssignment = async (id) => {
+  const assignment = await pool.query(
+    `SELECT ma.mentor_id, ma.entrepreneur_id, ma.cohort_id,
+            c.name AS cohort_name
+     FROM mentor_assignments ma
+     JOIN cohorts c ON c.id = ma.cohort_id
+     WHERE ma.id = $1`,
+    [id],
+  );
   await pool.query(`DELETE FROM mentor_assignments WHERE id = $1`, [id]);
+
+  if (assignment.rows[0]) {
+    eventBus.emit("mentor.unassigned", {
+      mentorId: assignment.rows[0].mentor_id,
+      entrepreneurId: assignment.rows[0].entrepreneur_id,
+      cohortId: assignment.rows[0].cohort_id,
+      cohortName: assignment.rows[0].cohort_name,
+    });
+  }
+
   return { success: true };
 };
 

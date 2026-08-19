@@ -59,20 +59,19 @@ const Sidebar = ({
     { id: 3, icon: BarChart3, label: "Mentors", badge: null },
     { id: 4, icon: GraduationCap, label: "Workshops", badge: null },
     { id: 5, icon: Boxes, label: "Resources", badge: null },
-    // UPDATED THIS LINE: Badge is now dynamic!
-    { id: 6, icon: Coins, label: "Funding", badge: hasNewFunding ? "New" : null },
+    { id: 6, icon: Coins, label: "Funding", badge: null },
     { id: 7, icon: InboxIcon, label: "Inbox", badge: null },
-    { id: 8, icon: Megaphone, label: "Announcements", badge: "New" },
+    { id: 8, icon: Megaphone, label: "Announcements", badge: null },
     { id: 10, icon: Mail, label: "Mass Email", badge: null },
     { id: 12, icon: Layers, label: "Cohorts", badge: null },
-    { id: 14, icon: ClipboardList, label: "Applications", badge: "New" },
+    { id: 14, icon: ClipboardList, label: "Applications", badge: null },
   ];
 
   // System/CMS modules (Superadmin only)
   const superadminNavItems = [
     { id: 1, icon: LayoutDashboard, label: "Dashboard", badge: null },
     { id: 13, icon: PieChart, label: "Reports", badge: null },
-    { id: 15, icon: Users, label: "Users", badge: "Admin" },
+    { id: 15, icon: Users, label: "Users", badge: null },
     { id: 9, icon: Images, label: "Gallery", badge: null },
     { id: 11, icon: FileText, label: "Static Pages", badge: null },
     { id: 16, icon: ShieldCheck, label: "System Settings", badge: null },
