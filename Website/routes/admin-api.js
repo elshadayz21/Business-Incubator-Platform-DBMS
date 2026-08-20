@@ -84,14 +84,7 @@ import {
   deleteSubmission,
 } from "../admin-backend/inbox/inbox.js";
 //.............
-import {
-  getAllFundingRequests,
-  getFundingDashboard,
-  getFundingByStage,
-  getFundingRequestById,
-  updateFundingRequestStatus,
-  deleteFundingRequest,
-} from "../admin-backend/funding/funding.js";
+
 import loginRequest from "../admin-backend/auth/login.js";
 import {
   getAllUsers,
@@ -167,7 +160,16 @@ import {
 import ExcelJS from "exceljs";
 import { authorizeRole } from "../middleware/check_roles.middleware.js";
 import { ROLES } from "../utils/constants.js";
-
+import {
+  getAllFundingRequests,
+  getFundingDashboard,
+  getFundingByStage,
+  getFundingRequestById,
+  updateFundingRequestStatus,
+  deleteFundingRequest,
+  founderRespondToFunding,
+  getFundingHistory //
+} from "../admin-backend/funding/funding.js";
 
 const router = Router();
 
@@ -1050,6 +1052,19 @@ router.use((err, req, res, next) => {
   const status = err && err.statusCode ? err.statusCode : 500;
   res.status(status).json({ error: message });
 });
+
+// Get Funding History Route
+router.get(
+    "/funding/:id/history",
+    asyncHandler(async (req, res) => {
+      try {
+        const history = await getFundingHistory(req.params.id);
+        res.json(history);
+      } catch (error) {
+        res.status(500).json({ message: "Failed to load history." });
+      }
+    })
+);
 
 export default router;
 
