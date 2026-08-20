@@ -29,9 +29,6 @@ import {
 const RECIPIENT_PLACEHOLDER_HINT =
   "Available placeholders: {{first_name}}, {{name}}, {{email}}";
 
-const INVITATION_SUBJECT = "You're In! Welcome to DxValley \u{1F680}";
-const INVITATION_BODY = "Congratulations!\n\nYour application to DxValley has been accepted.\n\nTo complete your registration and access the Founder Dashboard, please click the link below:\n\n{link}";
-
 export default function MassEmail() {
   const [sources, setSources] = useState([]);
   const [templates, setTemplates] = useState([]);
@@ -86,15 +83,10 @@ export default function MassEmail() {
   }, []);
 
   const activeSource = sources.find((s) => s.key === source);
-  const isAcceptedSource = source === "accepted_applicants";
 
   const handleLoadTemplate = (tpl) => {
     setSubject(tpl.subject);
-    let newBody = tpl.body;
-    if (isAcceptedSource && !newBody.includes("{link}")) {
-      newBody = newBody + "\n\n{link}";
-    }
-    setBody(newBody);
+    setBody(tpl.body);
   };
 
   const handleSend = async (e) => {
@@ -288,14 +280,7 @@ export default function MassEmail() {
                   </label>
                   <select
                     value={source}
-                    onChange={(e) => {
-                      const newSource = e.target.value;
-                      setSource(newSource);
-                      if (newSource === "accepted_applicants") {
-                        setSubject(INVITATION_SUBJECT);
-                        setBody(INVITATION_BODY);
-                      }
-                    }}
+                    onChange={(e) => setSource(e.target.value)}
                     className={inputClass}
                   >
                     {sources.map((s) => (
@@ -364,32 +349,9 @@ export default function MassEmail() {
                     placeholder={`Dear {{first_name}},\n\nWelcome to the DxValley incubation program...`}
                   />
                   <p className="text-[11px] text-[#8AA0B4] mt-1.5">
-                    {isAcceptedSource
-                      ? "Type {link} where you want the signup button to appear. Also available: {{first_name}}, {{name}}, {{email}}"
-                      : RECIPIENT_PLACEHOLDER_HINT}
+                    {RECIPIENT_PLACEHOLDER_HINT}
                   </p>
                 </div>
-
-                {isAcceptedSource && body.includes("{link}") && (
-                  <div className="bg-[#EAF8FC] border border-[#00ADEF]/20 rounded-xl p-4">
-                    <p className="text-[11px] font-extrabold uppercase tracking-wider text-[#006F9E] mb-2">
-                      Preview (Link Area)
-                    </p>
-                    <div className="text-sm text-[#111827]">
-                      {body.split("\n").map((line, i) => (
-                        <p key={i} className="mb-2">
-                          {line.includes("{link}") ? (
-                            <span className="inline-block bg-[#E38524] text-white px-4 py-2 rounded-lg font-bold text-xs cursor-pointer">
-                              Complete Registration
-                            </span>
-                          ) : (
-                            line
-                          )}
-                        </p>
-                      ))}
-                    </div>
-                  </div>
-                )}
 
                 <button
                   type="submit"

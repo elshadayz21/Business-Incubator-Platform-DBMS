@@ -9,6 +9,8 @@ import {
   getFundingByStageController,
   newFundingRequestPage,
   createFundingRequestFormController,
+  getNegotiationsController,
+  addNegotiationMessageController,
 } from "../../controllers/funding/funding.controller.js";
 import { isAuth } from "../../middleware/auth.middlware.js";
 import { authorizeRole } from "../../middleware/check_roles.middleware.js";
@@ -43,6 +45,23 @@ router.post(
   createFundingRequestController,
 );
 
+// Negotiation endpoints
+
+// Get negotiation history for a funding request
+router.get(
+  "/:id/negotiations",
+  isAuth,
+  authorizeRole("entrepreneur", "mentor", "admin"),
+  getNegotiationsController,
+);
+
+// Send a negotiation message or counter-offer
+router.post(
+  "/:id/negotiations",
+  isAuth,
+  authorizeRole("entrepreneur", "mentor", "admin"),
+  addNegotiationMessageController,
+);
 
 // Admin-only endpoints
 
@@ -57,7 +76,6 @@ router.get(
 // Update funding request status - only admins and investors can review
 router.put(
   "/:id/status",
-
   isAuth,
   authorizeRole("admin", "investor"),
   updateFundingRequestStatusController,

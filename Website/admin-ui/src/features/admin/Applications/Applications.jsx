@@ -4,6 +4,11 @@ import { CheckCircle, XCircle, Loader2, Inbox } from "lucide-react";
 export default function Applications() {
     const [applications, setApplications] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [showEmailModal, setShowEmailModal] = useState(false);
+    const [emailSubject, setEmailSubject] = useState("You're In! Welcome to DxValley 🚀");
+    const [emailBody, setEmailBody] = useState("Congratulations!\n\nYour application to DxValley has been accepted.\n\nTo complete your registration and access the Founder Dashboard, please click the link below:\n\n{link}");
+    const [sendingEmails, setSendingEmails] = useState(false);
+
 
     const fetchApplications = async () => {
         try {
@@ -15,6 +20,26 @@ export default function Applications() {
             setApplications([]);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleSendInvites = async () => {
+        setSendingEmails(true);
+        try {
+            const response = await fetch('/api/admin/applications/send-invites', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ subject: emailSubject, body: emailBody })
+            });
+            const result = await response.json();
+            alert(result.message);
+            setShowEmailModal(false); // Close modal on success
+        } catch (error) {
+            console.error("Error sending invites:", error);
+            alert("Failed to send invites.");
+        } finally {
+            setSendingEmails(false);
         }
     };
 
@@ -44,6 +69,13 @@ export default function Applications() {
                 <div className="mb-8">
                     <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#006F9E] block mb-2">Open Call Submissions</span>
                     <h1 className="text-3xl font-extrabold tracking-[-.04em] text-cyan-dark">Applications</h1>
+                    {/* UPDATED THIS BUTTON! */}
+                    <button
+                        onClick={() => setShowEmailModal(true)}
+                        className="px-4 py-2 bg-[#E38524] text-white rounded-xl font-bold text-xs hover:bg-[#C97019] transition"
+                    >
+                        Compose & Send Invites
+                    </button>
                 </div>
 
                 {loading ? (
@@ -132,6 +164,80 @@ export default function Applications() {
 </div>
 )}
 </div>
+            {/* Compose Email Modal */}
+            {showEmailModal && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+                    <div className="bg-white w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-xl flex flex-col">
+
+                        {/* Modal Header */}
+                        <div className="bg-[#00ADEF] p-6 sticky top-0 z-10">
+                            <div className="flex justify-between items-center">
+                                <h2 className="text-xl font-extrabold text-white">Compose Invitation Email</h2>
+                                <button onClick={() => setShowEmailModal(false)} className="text-white hover:bg-white/20 rounded-lg p-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Modal Body / Form */}
+                        <div className="p-6 space-y-5">
+                            <div>
+                                <label className="block text-xs font-bold text-[#526274] mb-2 uppercase tracking-wider">Subject</label>
+                                <input
+                                    type="text"
+                                    value={emailSubject}
+                                    onChange={(e) => setEmailSubject(e.target.value)}
+                                    className="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-[#526274] mb-2 uppercase tracking-wider">Email Body</label>
+                                <textarea
+                                    value={emailBody}
+                                    onChange={(e) => setEmailBody(e.target.value)}
+                                    rows="8"
+                                    className="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF] font-mono text-sm"
+                                />
+                                <p className="text-xs text-[#526274] mt-2 italic">
+                                    Tip: Type <code className="bg-gray-100 px-1 rounded">{`{link}`}</code> where you want the signup button to appear. Use Enter for new lines.
+                                </p>
+                            </div>
+
+                            <div className="bg-[#EAF8FC] border border-[#00ADEF]/20 rounded-xl p-4">
+                                <p className="text-xs font-bold text-[#006F9E] uppercase tracking-wider mb-2">Preview (Link Area)</p>
+                                <div className="text-sm text-[#111827]">
+                                    {emailBody.split('\n').map((line, i) => (
+                                        <p key={i} className="mb-2">
+                                            {line.includes('{link}') ? (
+                                                <span className="inline-block bg-[#E38524] text-white px-4 py-2 rounded-lg font-bold text-xs cursor-pointer">Complete Registration</span>
+                                            ) : line}
+                                        </p>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Modal Footer */}
+                        <div className="p-6 border-t border-[#D6E4EA] flex gap-3">
+                            <button
+                                onClick={() => setShowEmailModal(false)}
+                                className="flex-1 py-3 bg-white text-[#526274] border border-[#D6E4EA] rounded-xl font-bold text-sm hover:bg-gray-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleSendInvites}
+                                disabled={sendingEmails}
+                                className="flex-1 py-3 bg-[#E38524] text-white rounded-xl font-bold text-sm hover:bg-[#C97019] transition disabled:opacity-50 flex items-center justify-center gap-2"
+                            >
+                                {sendingEmails ? 'Sending...' : 'Send to All Accepted'}
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            )}
 </div>
-    );
+);
 }
