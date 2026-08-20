@@ -5,6 +5,8 @@ import {
   MapPin,
   User,
   BookOpen,
+  Star,
+  CheckCircle,
   ClipboardList,
 } from "lucide-react";
 
@@ -20,6 +22,25 @@ const WorkshopDetails = ({ workshop }) => {
   };
 
   const enrollments = workshop?.enrollments || [];
+
+  const attendanceCount = enrollments.filter((e) => e.attended).length;
+  const attendanceRate =
+    enrollments.length > 0
+      ? ((attendanceCount / enrollments.length) * 100).toFixed(1)
+      : 0;
+
+  const feedbackResponses = enrollments.filter(
+    (e) => e.feedbackRating || e.feedback_rating
+  );
+  const averageFeedback =
+    feedbackResponses.length > 0
+      ? (
+          feedbackResponses.reduce(
+            (sum, e) => sum + (e.feedbackRating || e.feedback_rating || 0),
+            0
+          ) / feedbackResponses.length
+        ).toFixed(1)
+      : 0;
 
   return (
     <div className="space-y-6 font-sans">
@@ -95,7 +116,7 @@ const WorkshopDetails = ({ workshop }) => {
       </div>
 
       {/* Analytics Row */}
-      <div className="grid grid-cols-1 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
         <div className="bg-white border border-[#D6E4EA] rounded-2xl p-5 shadow-xs">
           <div className="flex items-center gap-2 text-[#526274] text-xs font-bold mb-2">
             <Users size={16} className="text-[#00ADEF]" />
@@ -104,6 +125,26 @@ const WorkshopDetails = ({ workshop }) => {
           <p className="text-2xl font-extrabold text-[#111827] font-['Space_Grotesk']">
             {parseInt(workshop.enrolledCount || workshop.enrolled_count) || 0} /{" "}
             <span className="text-[#526274]">{parseInt(workshop.capacity) || 0}</span>
+          </p>
+        </div>
+
+        <div className="bg-white border border-[#D6E4EA] rounded-2xl p-5 shadow-xs">
+          <div className="flex items-center gap-2 text-[#526274] text-xs font-bold mb-2">
+            <CheckCircle size={16} className="text-emerald-600" />
+            <span>Attendance Rate</span>
+          </div>
+          <p className="text-2xl font-extrabold text-emerald-700 font-['Space_Grotesk']">
+            {attendanceRate}%
+          </p>
+        </div>
+
+        <div className="bg-white border border-[#D6E4EA] rounded-2xl p-5 shadow-xs">
+          <div className="flex items-center gap-2 text-[#526274] text-xs font-bold mb-2">
+            <Star size={16} className="text-[#E38524]" />
+            <span>Average Rating</span>
+          </div>
+          <p className="text-2xl font-extrabold text-[#E38524] font-['Space_Grotesk']">
+            {averageFeedback === 0 ? "N/A" : `${averageFeedback} / 5`}
           </p>
         </div>
       </div>

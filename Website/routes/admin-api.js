@@ -91,6 +91,8 @@ import {
   getFundingRequestById,
   updateFundingRequestStatus,
   deleteFundingRequest,
+  getNegotiations,
+  addNegotiation,
 } from "../admin-backend/funding/funding.js";
 import loginRequest from "../admin-backend/auth/login.js";
 import {
@@ -439,6 +441,25 @@ router.delete(
   "/funding/:id",
   asyncHandler(async (req, res) =>
     res.json(await deleteFundingRequest(req.params.id)),
+  ),
+);
+
+router.get(
+  "/funding/:id/negotiations",
+  asyncHandler(async (req, res) => res.json(await getNegotiations(req.params.id))),
+);
+router.post(
+  "/funding/:id/negotiations",
+  asyncHandler(async (req, res) =>
+    res.json(
+      await addNegotiation({
+        funding_request_id: req.params.id,
+        sender_id: req.session.userId,
+        sender_role: "admin",
+        message: req.body.message,
+        proposed_amount: req.body.proposed_amount,
+      }),
+    ),
   ),
 );
 
