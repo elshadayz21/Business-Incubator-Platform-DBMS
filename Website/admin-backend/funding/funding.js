@@ -229,6 +229,7 @@ export const getFundingRequestById = async (id) => {
 
 // Update funding request status
 export const updateFundingRequestStatus = async (id, status, notes, approvedAmount = null) => {
+  try {
     // 1. Parse amount safely so it doesn't crash if left blank
     const parsedAmount = approvedAmount && !isNaN(approvedAmount) ? approvedAmount : null;
 
@@ -312,6 +313,52 @@ export const founderRespondToFunding = async (fundingId, userId, action) => {
     await createNotification(1, 'funding_response', `Founder ${action === 'Founder Accepted' ? 'accepted' : 'declined'} the funding for project "${projectName}".`, { fundingId });
 
     return res.rows[0];
+};
+
+// Founder respond to funding offer
+export const founderRespondToFunding = async (requestId, userId, action) => {
+    try {
+        // 1. Get the funding request
+        const frRes = await pool.query(
+            `SELECT * FROM funding_requests WHERE id = $1`,
+            [requestId]
+        );
+        if (frRes.rows.length === 0) {
+            throw new Error("Funding request not found.");
+        }
+        const request = frRes.rows[0];
+
+        // 2. Verify user is a founder/entrepreneur of the project
+        const peRes = await pool.query(
+            `SELECT 1 FROM project_entrepreneurs WHERE project_id = $1 AND user_id = $2`,
+            [request.project_id, userId]
+        );
+        if (peRes.rows.length === 0) {
+            throw new Error("You are not a founder of this project.");
+        }
+
+        // 3. Only allowed if current status is "Offer Under Review"
+        if (request.status !== "Offer Under Review") {
+            throw new Error("You can only accept or decline offers that are under review.");
+        }
+
+        // 4. Update founder_action and status
+        const newStatus = action === "Founder Accepted" ? "Founder Accepted" : "Founder Declined";
+        const res = await pool.query(
+            `UPDATE funding_requests
+             SET founder_action = $1,
+                 status = $2,
+                 updated_at = NOW()
+             WHERE id = $3
+             RETURNING *`,
+            [action, newStatus, requestId]
+        );
+
+        return { success: true, data: res.rows[0] };
+    } catch (error) {
+        console.error("Error in founderRespondToFunding:", error.message);
+        throw error;
+    }
 };
 
 // Delete funding request
