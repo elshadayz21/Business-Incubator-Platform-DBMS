@@ -327,10 +327,10 @@ router.post(
   asyncHandler(async (req, res) => res.json(await addResource(req.body))),
 );
 router.put(
-  "/resources/:id",
-  asyncHandler(async (req, res) =>
-    res.json(await updateResource(req.params.id, req.body.data)),
-  ),
+    "/resources/:id",
+    asyncHandler(async (req, res) =>
+        res.json(await updateResource(req.params.id, req.body)),
+    ),
 );
 router.delete(
   "/resources/:id",

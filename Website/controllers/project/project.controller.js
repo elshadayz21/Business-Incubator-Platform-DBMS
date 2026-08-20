@@ -278,9 +278,9 @@ export const projectsController = async (req, res, next) => {
   try {
     const dbProjects = await getAllProjects();
 
-    // Filter to only show projects that are not Pending on the public gallery
+    // Filter to ONLY show completed projects on the public gallery
     const activeProjects = dbProjects.filter(
-      (p) => p.status && p.status.toLowerCase() !== "pending"
+        (p) => p.status && p.status.toLowerCase() === "completed"
     );
 
     // Fetch entrepreneurs for each project and transform
