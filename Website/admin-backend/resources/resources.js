@@ -49,24 +49,29 @@ export const addResource = async (data) => {
 export const updateResource = async (id, data) => {
   const { name, type, capacity, location } = data;
 
-  if (!name || !location) {
-    throw new Error("Resource name and location are required.");
+  if (!name) {
+    throw new Error("Resource name is required.");
   }
-  if (!VALID_RESOURCE_TYPES.includes(type)) {
+
+  // Make type validation case-insensitive
+  if (type && !VALID_RESOURCE_TYPES.includes(type.toLowerCase())) {
     throw new Error(
-      `Invalid resource type: ${type}. Allowed: ${VALID_RESOURCE_TYPES.join(", ")}`,
+        `Invalid resource type: ${type}. Allowed: ${VALID_RESOURCE_TYPES.join(", ")}`,
     );
   }
-  if (!Number.isInteger(Number(capacity)) || Number(capacity) <= 0) {
-    throw new Error("Capacity must be a positive integer.");
+
+  // Handle capacity safely
+  const parsedCapacity = capacity ? Number(capacity) : 1;
+  if (isNaN(parsedCapacity) || parsedCapacity <= 0) {
+    throw new Error("Capacity must be a positive number.");
   }
 
   try {
     const res = await pool.query(
-      `UPDATE resources 
+        `UPDATE resources 
        SET name = $1, type = $2, capacity = $3, location = $4, updated_at = CURRENT_TIMESTAMP
        WHERE id = $5 RETURNING *`,
-      [name, type, capacity, location, id],
+        [name, type, parsedCapacity, location, id],
     );
     if (res.rows.length === 0) {
       throw new Error("Resource not found to update.");
