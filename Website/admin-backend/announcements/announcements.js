@@ -1,5 +1,4 @@
 import pool from "../../config/db.js";
-import sanitizeHtml from "sanitize-html";
 
 // GET ALL ANNOUNCEMENTS
 export const getAllAnnouncements = async () => {
@@ -15,23 +14,12 @@ export const getAnnouncementById = async (id) => {
 
 // CREATE A NEW ANNOUNCEMENT
 export const createAnnouncement = async (data) => {
-    const { title, content, deadline, document_url, is_open_call, capacity } = data;
-
-    // Sanitize the rich text content to strip out <script> tags and malicious code!
-    const cleanContent = sanitizeHtml(content, {
-        allowedTags: sanitizeHtml.defaults.allowedTags.concat(['img', 'h1', 'h2', 'u', 's']), // Allow safe formatting tags
-        allowedAttributes: {
-            a: ['href', 'target'], // Allow links
-            img: ['src', 'alt']    // Allow images
-        },
-        allowedSchemes: ['http', 'https', 'mailto']
-    });
-
+    const { title, content, deadline, document_url, is_open_call, capacity, is_published } = data;
     const result = await pool.query(
-        `INSERT INTO announcements (title, content, deadline, document_url, is_open_call, capacity) 
-     VALUES ($1, $2, $3, $4, $5, $6) 
+        `INSERT INTO announcements (title, content, deadline, document_url, is_open_call, capacity, is_published) 
+     VALUES ($1, $2, $3, $4, $5, $6, $7) 
      RETURNING *`,
-        [title, cleanContent, deadline || null, document_url || null, is_open_call || false, capacity || null]
+        [title, content, deadline || null, document_url || null, is_open_call || false, capacity || null, is_published !== false]
     );
     return result.rows[0];
 };
@@ -78,13 +66,8 @@ export const getApplicationCount = async (announcementId) => {
     return result.rows[0].count;
 };
 
-/// DELETE AN ANNOUNCEMENT
+// DELETE AN ANNOUNCEMENT
 export const deleteAnnouncement = async (id) => {
-    // 1. Delete any applications tied to this announcement first!
-    await pool.query("DELETE FROM applications WHERE announcement_id = $1", [id]);
-
-    // 2. Now delete the announcement safely
     await pool.query("DELETE FROM announcements WHERE id = $1", [id]);
-
     return { success: true, message: "Announcement deleted successfully" };
 };
