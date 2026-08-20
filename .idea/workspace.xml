@@ -3,13 +3,7 @@
   <component name="ChangeListManager">
     <list default="true" id="901bcf82-3eb7-452d-8742-e0e378cb8b0d" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Website/admin-backend/funding/funding.js" beforeDir="false" afterPath="$PROJECT_DIR$/Website/admin-backend/funding/funding.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Website/admin-ui/src/features/admin/Funding/FundingDetails.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Website/admin-ui/src/features/admin/Funding/FundingDetails.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Website/admin-ui/src/features/entrepreneur/EntrepreneurPortal.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Website/admin-ui/src/features/entrepreneur/EntrepreneurPortal.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Website/public/admin/assets/index-Bg56f15u.js" beforeDir="false" afterPath="$PROJECT_DIR$/Website/public/admin/assets/index-CA2QUbF2.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Website/public/admin/assets/index-BiH6julO.css" beforeDir="false" afterPath="$PROJECT_DIR$/Website/public/admin/assets/index-phAqY6N0.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Website/public/admin/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/Website/public/admin/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Website/routes/admin-api.js" beforeDir="false" afterPath="$PROJECT_DIR$/Website/routes/admin-api.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Website/views/profile/profile.ejs" beforeDir="false" afterPath="$PROJECT_DIR$/Website/views/profile/profile.ejs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -48,7 +42,7 @@
     "RunOnceActivity.git.unshallow": "true",
     "RunOnceActivity.typescript.service.memoryLimit.init": "true",
     "codeWithMe.voiceChat.enabledByDefault": "false",
-    "git-widget-placeholder": "feature-funding-history",
+    "git-widget-placeholder": "fix-restore-notifications",
     "kotlin-language-version-configured": "true",
     "node.js.detected.package.eslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
