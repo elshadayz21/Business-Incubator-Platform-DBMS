@@ -18,6 +18,7 @@ import {
   HandCoins,
   GraduationCap,
   Rocket,
+  Pencil,
 } from "lucide-react";
 import {
   getMentorDashboard,
@@ -44,8 +45,37 @@ const MentorPortal = () => {
   });
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState("");
+  const [responseInputs, setResponseInputs] = useState({});
+  const [responseSending, setResponseSending] = useState({});
+  const [editingResponse, setEditingResponse] = useState({});
 
   const currentUser = JSON.parse(sessionStorage.getItem("user") || "{}");
+
+  const handleSendMentorResponse = async (sessionId) => {
+    const text = (responseInputs[sessionId] || "").trim();
+    if (!text) return;
+    setResponseSending((prev) => ({ ...prev, [sessionId]: true }));
+    try {
+      const res = await fetch(`/api/portal/mentor/sessions/${sessionId}/response`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ response: text }),
+      });
+      const result = await res.json();
+      if (res.ok && result.success) {
+        setResponseInputs((prev) => ({ ...prev, [sessionId]: "" }));
+        setEditingResponse((prev) => ({ ...prev, [sessionId]: false }));
+        if (selected) openSessions(selected);
+      } else {
+        alert(result.error || "Failed to send response.");
+      }
+    } catch (err) {
+      console.error("Error sending response:", err);
+      alert("Failed to send response. Please try again.");
+    } finally {
+      setResponseSending((prev) => ({ ...prev, [sessionId]: false }));
+    }
+  };
 
   const unreadNotifications = notifications.filter((n) => !n.read).length;
 
@@ -311,7 +341,7 @@ const MentorPortal = () => {
                       : ""}
                   </p>
                   <p className="text-xs text-[#006F9E] font-bold mt-1">
-                    Cohort: {selected.cohort_name}
+                    {selected.cohort_name ? `Cohort: ${selected.cohort_name}` : selected.project_name ? `Project: ${selected.project_name}` : "Assigned Mentorship"}
                   </p>
                 </div>
               </div>
@@ -474,6 +504,81 @@ const MentorPortal = () => {
                             <strong className="text-[#111827]">Feedback:</strong>{" "}
                             {s.feedback}
                           </p>
+                        </div>
+                      )}
+                      {s.entrepreneur_reply && (
+                        <div className="space-y-3 mt-3">
+                          <div className="flex items-start gap-2 bg-emerald-50/80 border border-emerald-200 rounded-xl p-3.5">
+                            <MessageSquareText size={15} className="text-emerald-600 mt-0.5 shrink-0" />
+                            <div>
+                              <p className="text-sm text-emerald-900 leading-relaxed">
+                                <strong className="text-emerald-800">Entrepreneur Reply:</strong> {s.entrepreneur_reply}
+                              </p>
+                              {s.reply_at && (
+                                <span className="text-[10px] text-emerald-700 font-semibold block mt-1">
+                                  {new Date(s.reply_at).toLocaleString()}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {s.mentor_response && (
+                            <div className="flex items-start justify-between gap-2 bg-[#EAF8FC] border border-[#00ADEF]/20 rounded-xl p-3.5 ml-4">
+                              <div className="flex items-start gap-2">
+                                <MessageSquareText size={15} className="text-[#00ADEF] mt-0.5 shrink-0" />
+                                <div>
+                                  <p className="text-sm text-[#111827] leading-relaxed">
+                                    <strong className="text-[#006F9E]">Your Follow-up Response:</strong> {s.mentor_response}
+                                  </p>
+                                  {s.mentor_response_at && (
+                                    <span className="text-[10px] text-[#526274] font-semibold block mt-1">
+                                      {new Date(s.mentor_response_at).toLocaleString()}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => {
+                                  setResponseInputs({ ...responseInputs, [s.id]: s.mentor_response });
+                                  setEditingResponse({ ...editingResponse, [s.id]: true });
+                                }}
+                                className="inline-flex items-center gap-1 text-[11px] font-bold text-[#006F9E] hover:text-[#00ADEF] bg-white border border-[#00ADEF]/30 rounded-lg px-2.5 py-1 hover:bg-[#dff2fa] transition shrink-0"
+                              >
+                                <Pencil size={12} /> Edit
+                              </button>
+                            </div>
+                          )}
+
+                          <div className="pt-2 border-t border-[#D6E4EA]">
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="text"
+                                placeholder={editingResponse[s.id] ? "Edit your response..." : "Reply back to entrepreneur..."}
+                                value={responseInputs[s.id] || ""}
+                                onChange={(e) => setResponseInputs({ ...responseInputs, [s.id]: e.target.value })}
+                                onKeyDown={(e) => e.key === "Enter" && handleSendMentorResponse(s.id)}
+                                className="flex-1 px-3.5 py-2 bg-white border border-[#D6E4EA] rounded-xl text-xs font-medium outline-none focus:border-[#00ADEF]"
+                              />
+                              <button
+                                onClick={() => handleSendMentorResponse(s.id)}
+                                disabled={responseSending[s.id] || !responseInputs[s.id]?.trim()}
+                                className="px-4 py-2 bg-[#E38524] text-white text-xs font-extrabold rounded-xl hover:bg-[#C97019] disabled:opacity-40 transition shrink-0"
+                              >
+                                {responseSending[s.id] ? "Saving..." : editingResponse[s.id] ? "Update" : "Reply"}
+                              </button>
+                              {editingResponse[s.id] && (
+                                <button
+                                  onClick={() => {
+                                    setEditingResponse({ ...editingResponse, [s.id]: false });
+                                    setResponseInputs({ ...responseInputs, [s.id]: "" });
+                                  }}
+                                  className="px-3 py-2 bg-gray-100 text-gray-600 text-xs font-bold rounded-xl hover:bg-gray-200 transition shrink-0"
+                                >
+                                  Cancel
+                                </button>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -676,7 +781,7 @@ const MentorPortal = () => {
                       </p>
                       <p className="flex items-center gap-2">
                         <ClipboardCheck size={13} className="text-[#00ADEF]" />
-                        Cohort: {a.cohort_name} • {a.session_count || 0} sessions
+                        {a.cohort_name ? `Cohort: ${a.cohort_name}` : a.project_name ? `Project: ${a.project_name}` : "Mentorship"} • {a.session_count || 0} sessions
                       </p>
                     </div>
                     <button
