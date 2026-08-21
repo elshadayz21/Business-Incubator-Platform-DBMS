@@ -4,17 +4,41 @@ dns.setDefaultResultOrder("ipv4first");
 
 import nodemailer from "nodemailer";
 
+// `family: 4` on the transport isn't always enough — nodemailer can still
+// attempt an IPv6 address on retry/fallback and fail with ENETUNREACH on
+// networks without IPv6 connectivity. A custom `lookup` forces every DNS
+// resolution used by the SMTP connection to IPv4 only, no exceptions.
+const lookupIPv4 = (hostname, options, callback) => {
+    dns.lookup(hostname, { family: 4 }, callback);
+};
+
 // Configure the email transporter using your .env variables
+const smtpPort = parseInt(process.env.SMTP_PORT || "587", 10);
+// Respect SMTP_SECURE if set; otherwise default based on port (465 = implicit TLS, everything else = STARTTLS)
+const smtpSecure =
+  process.env.SMTP_SECURE !== undefined
+    ? process.env.SMTP_SECURE === "true"
+    : smtpPort === 465;
+
 const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST || "smtp.gmail.com",
-    port: parseInt(process.env.SMTP_PORT || "587"),
-    secure: false, // true for 465, false for other ports
+    port: smtpPort,
+    secure: smtpSecure, // true for 465 (implicit TLS), false for 587/others (STARTTLS)
     family: 4,
+    lookup: lookupIPv4,
     auth: {
         user: process.env.SMTP_USER, // your email
         pass: process.env.SMTP_PASS, // your app password
     },
 });
+
+// Fail fast and loud in the logs if SMTP isn't configured, instead of silently no-op'ing.
+if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    console.warn(
+        "⚠️  SMTP is not fully configured (SMTP_HOST/SMTP_USER/SMTP_PASS). " +
+        "Password reset and invitation emails will fail to send until these are set in .env."
+    );
+}
 
 /**
  * Sends a single email through the configured SMTP transporter.

@@ -1,4 +1,3 @@
-
 import pool from "../../config/db.js";
 import {
   findUserByEmail,
@@ -33,6 +32,9 @@ import {
   getSystemMetrics,
 } from "../../models/analytics/analytics.model.js";
 import eventBus from "../../utils/eventBus.js";
+import crypto from "crypto";
+import { sendEmail } from "../../utils/mailer.js";
+import { setResetToken, findUserByResetToken, clearResetToken } from "../../models/auth/auth.model.js";
 
 export const signupPage = (req, res) =>
   res.render("auth/signup", {
@@ -128,10 +130,15 @@ export const profilePage = async (req, res, next) => {
 export const register = async (req, res, next) => {
   try {
     console.log("Backend received signup request:", req.body);
-    const { name, email, password, token } = req.body;
+    const { name, email, password } = req.body;
+    // Guard against duplicate same-name form fields turning this into an
+    // array (Express/qs parses repeated keys as arrays) — always coerce
+    // to a single trimmed string before using it in a query.
+    const token = Array.isArray(req.body.token) ? req.body.token[0] : req.body.token;
+    const normalizedToken = typeof token === "string" ? token.trim() : token;
 
     // 1. SECURITY CHECK: Ensure a token was provided
-    if (!token) {
+    if (!normalizedToken) {
       req.flash("error", "Invitation token is required to sign up.");
       return res.redirect("/v1/auth/signup");
     }
@@ -139,30 +146,30 @@ export const register = async (req, res, next) => {
     // 2. Check if the token is valid, accepted, and not used
     const tokenRes = await pool.query(
         "SELECT * FROM applications WHERE invite_token = $1 AND status = 'Accepted' AND invite_used = false",
-        [token]
+        [normalizedToken]
     );
 
     if (tokenRes.rows.length === 0) {
       req.flash("error", "Invalid, expired, or already used invitation link.");
-      return res.redirect("/v1/auth/signup");
+      return res.redirect(`/v1/auth/signup?token=${normalizedToken}`);
     }
 
     // 3. Validate inputs
     if (!name || !email || !password) {
       req.flash("error", "All fields are required");
-      return res.redirect(`/v1/auth/signup?token=${token}`);
+      return res.redirect(`/v1/auth/signup?token=${normalizedToken}`);
     }
 
     if (password.length < 8) {
       req.flash("error", "Password must be at least 8 characters");
-      return res.redirect(`/v1/auth/signup?token=${token}`);
+      return res.redirect(`/v1/auth/signup?token=${normalizedToken}`);
     }
 
     // 4. Check if user already exists (Using your team's model function!)
     let user = await findUserByEmail(email);
     if (user) {
       req.flash("error", "User already exists with this email");
-      return res.redirect(`/v1/auth/signup?token=${token}`);
+      return res.redirect(`/v1/auth/signup?token=${normalizedToken}`);
     }
 
     // 5. Create the user (Using your team's model functions so password gets hashed!)
@@ -177,7 +184,7 @@ export const register = async (req, res, next) => {
     });
 
     // 6. Mark the token as used so it can't be used again!
-    await pool.query("UPDATE applications SET invite_used = true WHERE invite_token = $1", [token]);
+    await pool.query("UPDATE applications SET invite_used = true WHERE invite_token = $1", [normalizedToken]);
 
     req.flash("success", "Account created successfully! Please login.");
     res.redirect("/v1/auth/login");
@@ -440,6 +447,104 @@ export const changePassword = async (req, res, next) => {
   } catch (err) {
     req.flash("error", "Failed to change password. Please try again.");
     res.redirect("/v1/auth/profile");
+  }
+};
+
+export const forgotPasswordPage = (req, res) =>
+  res.render("auth/forgot-password", {
+    pageRoute: "/v1/auth/forgot-password",
+    error: req.flash("error")[0] || null,
+    success: req.flash("success")[0] || null,
+  });
+
+export const forgotPasswordRequest = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await findUserByEmail(email);
+
+    // Always show the same message, whether or not the email exists —
+    // prevents leaking which emails are registered.
+    const genericMessage =
+      "If an account exists for that email, we've sent a password reset link.";
+
+    if (user) {
+      const token = crypto.randomBytes(32).toString("hex");
+      const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+      await setResetToken(email, token, expires);
+
+      const baseUrl = process.env.BASE_URL || "http://localhost:3000";
+      const resetLink = `${baseUrl}/v1/auth/reset-password/${token}`;
+
+      await sendEmail({
+        to: email,
+        subject: "Reset your DxValley password",
+        html: `
+          <div style="font-family: sans-serif; max-width: 500px; margin: auto;">
+            <h2>Reset your password</h2>
+            <p>Click the button below to set a new password. This link expires in 1 hour.</p>
+            <a href="${resetLink}" style="display:inline-block;background:#E38524;color:white;padding:12px 24px;text-decoration:none;border-radius:8px;font-weight:bold;margin:16px 0;">Reset Password</a>
+            <p style="font-size:12px;color:#888;">If you didn't request this, you can safely ignore this email.</p>
+          </div>
+        `,
+      });
+    }
+
+    req.flash("success", genericMessage);
+    res.redirect("/v1/auth/forgot-password");
+  } catch (err) {
+    console.error("Forgot password error:", err);
+    req.flash("error", "Something went wrong. Please try again.");
+    res.redirect("/v1/auth/forgot-password");
+  }
+};
+
+export const resetPasswordPage = async (req, res) => {
+  const { token } = req.params;
+  const user = await findUserByResetToken(token);
+
+  if (!user) {
+    req.flash("error", "This reset link is invalid or has expired.");
+    return res.redirect("/v1/auth/forgot-password");
+  }
+
+  res.render("auth/reset-password", {
+    pageRoute: `/v1/auth/reset-password/${token}`,
+    token,
+    error: req.flash("error")[0] || null,
+  });
+};
+
+export const resetPasswordSubmit = async (req, res) => {
+  try {
+    const { token } = req.params;
+    const { newPassword, confirmPassword } = req.body;
+
+    const user = await findUserByResetToken(token);
+    if (!user) {
+      req.flash("error", "This reset link is invalid or has expired.");
+      return res.redirect("/v1/auth/forgot-password");
+    }
+
+    if (!newPassword || newPassword.length < 8) {
+      req.flash("error", "Password must be at least 8 characters.");
+      return res.redirect(`/v1/auth/reset-password/${token}`);
+    }
+
+    if (newPassword !== confirmPassword) {
+      req.flash("error", "Passwords do not match.");
+      return res.redirect(`/v1/auth/reset-password/${token}`);
+    }
+
+    const hashedPassword = await hashPassword(newPassword);
+    await updateUserPassword(user.id, hashedPassword);
+    await clearResetToken(user.id);
+
+    req.flash("success", "Password reset successfully. You can now log in.");
+    res.redirect("/v1/auth/login");
+  } catch (err) {
+    console.error("Reset password error:", err);
+    req.flash("error", "Something went wrong. Please try again.");
+    res.redirect("/v1/auth/forgot-password");
   }
 };
 
