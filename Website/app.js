@@ -49,8 +49,11 @@ app.use(setupMiddleware);
 
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 100,
+    max: 1000,
     handler: (req, res, next, options) => {
+        if (req.originalUrl.startsWith("/api/")) {
+            return res.status(429).json({ error: "Too many requests. Please wait a moment before trying again." });
+        }
         get429(req, res);
     },
 
@@ -93,6 +96,7 @@ app.use((req, res, next) => {
         funding: "/v1/funding",
     };
     res.locals.user = req.session?.userId ? { role: req.session.userRole } : null;
+    res.locals.signedIn = Boolean(req.session?.userId);
     next();
 });
 
@@ -101,7 +105,7 @@ app.get("/", async (req, res) => {
         // Fetch a small set of published gallery items for the homepage preview
         const limit = 3;
         const galleryRes = await pool.query(
-            `SELECT id, title, description, image_url, category, display_order, created_at
+            `SELECT id, title, description, image_url, video_url, category, display_order, created_at
              FROM gallery_items
              WHERE is_published = true
              ORDER BY display_order ASC, created_at DESC
@@ -112,6 +116,7 @@ app.get("/", async (req, res) => {
         const homePhotos = galleryRes.rows.map((item) => ({
             id: item.id,
             url: item.image_url,
+            video_url: item.video_url || "",
             title: item.title,
             description: item.description || "",
             category: item.category || "General",
