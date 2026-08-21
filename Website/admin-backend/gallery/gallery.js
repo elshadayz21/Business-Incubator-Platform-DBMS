@@ -98,7 +98,7 @@ export const getAllGalleryItems = async (options = {}) => {
   const total = parseInt(countRes.rows[0].total, 10) || 0;
 
   // Main query
-  const mainSQL = `SELECT id, title, description, image_url, category, display_order, is_published, created_at, updated_at
+  const mainSQL = `SELECT id, title, description, image_url, video_url, category, display_order, is_published, created_at, updated_at
     FROM gallery_items
     ${whereSQL}
     ORDER BY ${sortCol} ${dir}, created_at DESC
@@ -132,10 +132,13 @@ export const createGalleryItem = async (data) => {
     title,
     description = null,
     imageUrl,
+    videoUrl = null,
     category = "General",
     isPublished = false,
     displayOrder = 0,
   } = data;
+
+  const resolvedVideoUrl = videoUrl || data.video_url || null;
 
   if (!title || !imageUrl) {
     throw new Error("Title and image are required.");
@@ -147,13 +150,14 @@ export const createGalleryItem = async (data) => {
   }
 
   const result = await pool.query(
-    `INSERT INTO gallery_items (title, description, image_url, category, is_published, display_order)
-     VALUES ($1, $2, $3, $4, $5, $6)
+    `INSERT INTO gallery_items (title, description, image_url, video_url, category, is_published, display_order)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
      RETURNING *`,
     [
       title,
       description,
       imageUrl,
+      resolvedVideoUrl,
       category,
       toBoolean(isPublished),
       toInt(displayOrder),
@@ -169,6 +173,7 @@ export const updateGalleryItem = async (id, data) => {
   const title = data.title ?? existing.title;
   const description = data.description !== undefined ? data.description : existing.description;
   const imageUrl = data.imageUrl ?? existing.image_url;
+  const videoUrl = data.videoUrl !== undefined ? data.videoUrl : (data.video_url !== undefined ? data.video_url : existing.video_url);
   const category = data.category ?? existing.category;
   const isPublished = data.isPublished !== undefined ? data.isPublished : existing.is_published;
   const displayOrder = data.displayOrder !== undefined ? data.displayOrder : existing.display_order;
@@ -203,13 +208,14 @@ export const updateGalleryItem = async (id, data) => {
      SET title = $1,
          description = $2,
          image_url = $3,
-         category = $4,
-         is_published = $5,
-         display_order = $6,
+         video_url = $4,
+         category = $5,
+         is_published = $6,
+         display_order = $7,
          updated_at = CURRENT_TIMESTAMP
-     WHERE id = $7
+     WHERE id = $8
      RETURNING *`,
-    [title, description, imageUrl, category, toBoolean(isPublished), toInt(displayOrder), id],
+    [title, description, imageUrl, videoUrl, category, toBoolean(isPublished), toInt(displayOrder), id],
   );
   if (result.rows.length === 0) throw new Error("Gallery item not found.");
   return result.rows[0];
