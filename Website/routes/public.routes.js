@@ -74,7 +74,7 @@ router.get("/gallery", async (req, res) => {
 
         const whereSQL = whereClauses.length ? `WHERE ${whereClauses.join(" AND ")}` : "";
 
-        const sql = `SELECT id, title, description, image_url, category, display_order, created_at, updated_at
+        const sql = `SELECT id, title, description, image_url, video_url, category, display_order, created_at, updated_at
                      FROM gallery_items
                      ${whereSQL}
                      ORDER BY display_order ASC, created_at DESC`;
