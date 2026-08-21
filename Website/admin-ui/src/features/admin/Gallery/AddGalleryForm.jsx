@@ -23,6 +23,7 @@ const AddGalleryForm = ({ initialData = null, onClose, onSuccess, categories: pr
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [videoUrl, setVideoUrl] = useState("");
   const [category, setCategory] = useState(categories[0] || "Other");
   const [isPublished, setIsPublished] = useState(false);
   const [displayOrder, setDisplayOrder] = useState(0);
@@ -37,6 +38,7 @@ const AddGalleryForm = ({ initialData = null, onClose, onSuccess, categories: pr
     if (initialData) {
       setTitle(initialData.title || "");
       setDescription(initialData.description || "");
+      setVideoUrl(initialData.video_url || initialData.videoUrl || "");
       setCategory(initialData.category || categories[0] || "Other");
       setIsPublished(!!initialData.is_published);
       setDisplayOrder(initialData.display_order || 0);
@@ -117,6 +119,7 @@ const AddGalleryForm = ({ initialData = null, onClose, onSuccess, categories: pr
         payload.append("image", imageFile);
         payload.append("title", title);
         payload.append("description", description);
+        payload.append("videoUrl", videoUrl);
         payload.append("category", category);
         payload.append("displayOrder", displayOrder);
         payload.append("isPublished", isPublished ? "true" : "false");
@@ -124,6 +127,7 @@ const AddGalleryForm = ({ initialData = null, onClose, onSuccess, categories: pr
         payload = JSON.stringify({
           title,
           description,
+          videoUrl,
           category,
           imageUrl: imagePreview || "",
           displayOrder,
@@ -234,6 +238,18 @@ const AddGalleryForm = ({ initialData = null, onClose, onSuccess, categories: pr
           className="w-full px-4 py-2.5 rounded-xl border border-[#D6E4EA] bg-white text-sm"
           placeholder="Optional description or caption"
         />
+      </div>
+
+      <div>
+        <label className="block text-xs font-bold text-[#526274] mb-2">Video Link (Optional)</label>
+        <input
+          type="url"
+          value={videoUrl}
+          onChange={(e) => setVideoUrl(e.target.value)}
+          className="w-full px-4 py-2.5 rounded-xl border border-[#D6E4EA] bg-white text-sm"
+          placeholder="https://www.youtube.com/watch?v=... (Optional video link)"
+        />
+        <p className="text-[11px] text-[#8AA0B4] mt-1">If provided, clicking this photo on the public website will open the video link.</p>
       </div>
 
       <div>
