@@ -1,3 +1,7 @@
+// FIX: Load .env variables BEFORE creating the connection pool.
+// In CommonJS, requires execute top-to-bottom, so without this call
+// process.env.DB_PASS (etc.) would be undefined when `new Pool(config)`
+// runs below, making pg throw "client password must be a string".
 require("dotenv").config();
 const pkg = require("pg");
 const { Pool } = pkg;
