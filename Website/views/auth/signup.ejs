@@ -74,18 +74,18 @@
                             </div>
                         </div>
                     <% } %>
-                                        <!-- Invite-Only Warning Banner -->
-                                        <% if (typeof token === 'undefined' || !token) { %>
-                                            <div class="mb-6 flex items-start gap-3 rounded-xl border border-orange-200 bg-orange-50 p-4" role="alert">
-                                                <i class="fa-solid fa-lock mt-0.5 text-orange-600" aria-hidden="true"></i>
-                                                <div class="flex-1 text-sm font-semibold text-orange-700">
-                                                    Invitation Required: Signup is strictly by invitation only. Please use the secure link provided in your acceptance email to create an account.
-                                                </div>
-                                            </div>
-                                        <% } %>
+                    <!-- Invite-Only Warning Banner -->
+                    <% if (typeof token === 'undefined' || !token) { %>
+                        <div class="mb-6 flex items-start gap-3 rounded-xl border border-orange-200 bg-orange-50 p-4" role="alert">
+                            <i class="fa-solid fa-lock mt-0.5 text-orange-600" aria-hidden="true"></i>
+                            <div class="flex-1 text-sm font-semibold text-orange-700">
+                                Invitation Required: Signup is strictly by invitation only. Please use the secure link provided in your acceptance email to create an account.
+                            </div>
+                        </div>
+                    <% } %>
 
-                                        <form id="signupForm" action="/v1/auth/register" method="POST" class="space-y-6">
-                                            <input type="hidden" name="token" value="<%= typeof token !== 'undefined' ? token : '' %>" />
+                    <form id="signupForm" action="/v1/auth/register" method="POST" class="space-y-6">
+                        <input type="hidden" name="token" value="<%= typeof token !== 'undefined' ? token : '' %>" />
                         <div>
                             <label class="mb-2 block text-xs font-extrabold uppercase tracking-widest text-muted" for="name">Full name</label>
                             <div class="relative">

@@ -205,4 +205,109 @@ eventBus.on("mentor.session_booked", async ({ mentorId, date, time, notes, userI
   await sendNotification(mentorId, "mentor", `Entrepreneur '${userName}' booked a mentoring session with you on ${date} at ${time}. Notes: ${notes}`);
 });
 
+// 8. Application Status Changed (Admin action)
+eventBus.on("application.status_changed", async ({ application, status }) => {
+  if (!application) return;
+
+  let applicantUserId = null;
+  try {
+    const res = await pool.query("SELECT id FROM users WHERE LOWER(TRIM(email)) = LOWER(TRIM($1))", [application.email]);
+    if (res.rows[0]) applicantUserId = res.rows[0].id;
+  } catch (e) {
+    console.error(e);
+  }
+
+  if (applicantUserId) {
+    await logActivity(applicantUserId, "application.status_changed", `Your application status has been updated to '${status}'.`);
+    await sendNotification(applicantUserId, "application", `Your application has been ${status.toLowerCase()}.`);
+  }
+});
+
+// 9. Cohort Member Added (Admin action)
+eventBus.on("cohort.member_added", async ({ cohortId, userId }) => {
+  if (!userId || !cohortId) return;
+
+  let cohortName = "a cohort";
+  try {
+    const res = await pool.query("SELECT name FROM cohorts WHERE id = $1", [cohortId]);
+    if (res.rows[0]) cohortName = res.rows[0].name;
+  } catch (e) {
+    console.error(e);
+  }
+
+  await logActivity(userId, "cohort.member_added", `You have been enrolled in cohort '${cohortName}'.`);
+  await sendNotification(userId, "program", `You have been enrolled in cohort '${cohortName}'. Welcome aboard!`);
+});
+
+// 10. Cohort Member Removed (Admin action)
+eventBus.on("cohort.member_removed", async ({ cohortId, cohortName, userId }) => {
+  if (!userId) return;
+
+  await logActivity(userId, "cohort.member_removed", `You have been removed from cohort '${cohortName || "a cohort"}'.`);
+  await sendNotification(userId, "program", `You have been removed from cohort '${cohortName || "a cohort"}'. Please contact administration for details.`);
+});
+
+// 11. Mentor Assigned to Entrepreneur (Admin action)
+eventBus.on("mentor.assigned", async ({ mentorId, entrepreneurId, cohortId }) => {
+  if (!mentorId || !entrepreneurId) return;
+
+  let mentorName = "a mentor";
+  try {
+    const res = await pool.query("SELECT name FROM users WHERE id = $1", [mentorId]);
+    if (res.rows[0]) mentorName = res.rows[0].name;
+  } catch (e) {
+    console.error(e);
+  }
+
+  let entrepreneurName = "an entrepreneur";
+  try {
+    const res = await pool.query("SELECT name FROM users WHERE id = $1", [entrepreneurId]);
+    if (res.rows[0]) entrepreneurName = res.rows[0].name;
+  } catch (e) {
+    console.error(e);
+  }
+
+  await logActivity(entrepreneurId, "mentor.assigned", `Mentor '${mentorName}' has been assigned to you.`);
+  await logActivity(mentorId, "mentor.assigned", `You have been assigned as a mentor to entrepreneur '${entrepreneurName}'.`);
+  await sendNotification(entrepreneurId, "mentor", `A mentor '${mentorName}' has been assigned to you. You can now book mentoring sessions.`);
+  await sendNotification(mentorId, "mentor", `You have been assigned as a mentor to entrepreneur '${entrepreneurName}'.`);
+});
+
+// 12. Mentor Unassigned from Entrepreneur (Admin action)
+eventBus.on("mentor.unassigned", async ({ mentorId, entrepreneurId, cohortName }) => {
+  if (!mentorId || !entrepreneurId) return;
+
+  const suffix = cohortName ? ` from cohort '${cohortName}'` : "";
+  await logActivity(entrepreneurId, "mentor.unassigned", `Your mentor assignment has been removed${suffix}.`);
+  await logActivity(mentorId, "mentor.unassigned", `Your mentor assignment has been removed${suffix}.`);
+  await sendNotification(entrepreneurId, "mentor", `Your mentor assignment has been removed${suffix}. Please contact administration for details.`);
+  await sendNotification(mentorId, "mentor", `Your mentor assignment has been removed${suffix}.`);
+});
+
+// 13. Project Status Changed (Admin action)
+eventBus.on("project.status_changed", async ({ projectId, projectName, status, userId }) => {
+  if (!userId) return;
+
+  await logActivity(userId, "project.status_changed", `Project '${projectName}' status has been updated to '${status}'.`);
+  await sendNotification(userId, "project", `Your project '${projectName}' status has been updated to '${status}'.`);
+});
+
+// 14. Project Approval Toggled (Admin action)
+eventBus.on("project.approval_toggled", async ({ projectId, projectName, approved, userId }) => {
+  if (!userId) return;
+
+  const label = approved ? "approved" : "unapproved";
+  await logActivity(userId, "project.approval_toggled", `Project '${projectName}' has been ${label}.`);
+  await sendNotification(userId, "project", `Your project '${projectName}' has been ${label}.`);
+});
+
+// 15. Funding Reviewed by Admin (Admin path)
+eventBus.on("funding.admin_reviewed", async ({ request, projectName, status, userId }) => {
+  if (!userId || !request) return;
+
+  const amountStr = Number(request.amount).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+  await logActivity(userId, "funding.reviewed", `Your funding request of ${amountStr} for project '${projectName}' has been ${status}.`);
+  await sendNotification(userId, "funding", `Your funding request of ${amountStr} for project '${projectName}' has been ${status}.`);
+});
+
 console.log("[Subscribers] Decoupled domain subscribers initialized and listening.");

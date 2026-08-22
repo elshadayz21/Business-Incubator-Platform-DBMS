@@ -7,8 +7,6 @@ import {
   getFundingDashboard,
   getFundingByStage,
   getUserProjects,
-  getNegotiationsForRequest,
-  addNegotiationMessage,
 } from "../../models/funding/funding.model.js";
 
 import { BadRequestError } from "../../utils/error.js";
@@ -298,46 +296,5 @@ export const createFundingRequestFormController = async (req, res, next) => {
     console.error("Error in createFundingRequestFormController:", error);
     req.flash("error", "An error occurred while creating your funding request");
     res.redirect("/v1/funding/new");
-  }
-};
-
-export const getNegotiationsController = async (req, res, next) => {
-  try {
-    const request = await getFundingRequestById(parseInt(req.params.id));
-    if (!request) throw new BadRequestError("Funding request not found", 404);
-
-    const isOwner = request.founders?.some((f) => f.id === req.session.userId);
-    if (!isOwner && req.session.userRole !== "admin") {
-      throw new BadRequestError("Not authorized to view this negotiation thread", 403);
-    }
-
-    const negotiations = await getNegotiationsForRequest(req.params.id);
-    res.status(200).json({ success: true, data: negotiations });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const addNegotiationMessageController = async (req, res, next) => {
-  try {
-    const request = await getFundingRequestById(parseInt(req.params.id));
-    if (!request) throw new BadRequestError("Funding request not found", 404);
-
-    const isOwner = request.founders?.some((f) => f.id === req.session.userId);
-    if (!isOwner) {
-      throw new BadRequestError("Only the entrepreneur can reply here", 403);
-    }
-
-    const negotiation = await addNegotiationMessage({
-      funding_request_id: req.params.id,
-      sender_id: req.session.userId,
-      sender_role: "entrepreneur",
-      message: req.body.message,
-      proposed_amount: req.body.proposed_amount,
-    });
-
-    res.status(201).json({ success: true, data: negotiation });
-  } catch (error) {
-    next(error);
   }
 };

@@ -1,5 +1,6 @@
 import pool from "../../config/db.js";
-import { sendEmail } from "../../utils/mailer.js";
+import { sendEmail, sendInvitationEmail } from "../../utils/mailer.js";
+import crypto from "crypto";
 
 // Recipient source definitions (keys are persisted in email_campaigns)
 const RECIPIENT_SOURCES = [
@@ -125,14 +126,50 @@ export const sendEmailCampaign = async ({ name, subject, body, source, userId })
         process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS,
     );
 
+    const isInvitation = source === "accepted_applicants";
+
     let sentCount = 0;
     if (smtpConfigured) {
         for (const recipient of recipients) {
-            const ok = await sendEmail({
-                to: recipient.email,
-                subject: renderPersonalized(subject, recipient),
-                html: renderPersonalized(body, recipient),
-            });
+            let ok = false;
+            if (isInvitation) {
+                // For invitation emails, fetch or generate the invite token
+                const { rows: appRows } = await pool.query(
+                    "SELECT id, invite_token FROM applications WHERE email = $1 AND status = 'Accepted' LIMIT 1",
+                    [recipient.email]
+                );
+                let token = appRows[0]?.invite_token;
+                if (!token) {
+                    token = crypto.randomBytes(32).toString("hex");
+                    await pool.query(
+                        "UPDATE applications SET invite_token = $1 WHERE email = $2 AND status = 'Accepted'",
+                        [token, recipient.email]
+                    );
+                }
+                // Always append {link} if not present for accepted applicants
+                let emailBody = renderPersonalized(body, recipient);
+                if (!emailBody.includes("{link}")) {
+                    emailBody = emailBody + "\n\n{link}";
+                }
+                ok = await sendInvitationEmail(
+                    recipient.email,
+                    token,
+                    renderPersonalized(subject, recipient),
+                    emailBody
+                );
+                if (ok) {
+                    await pool.query(
+                        "UPDATE applications SET invite_sent = true WHERE email = $1 AND status = 'Accepted' AND invite_sent = false",
+                        [recipient.email]
+                    );
+                }
+            } else {
+                ok = await sendEmail({
+                    to: recipient.email,
+                    subject: renderPersonalized(subject, recipient),
+                    html: renderPersonalized(body, recipient),
+                });
+            }
             if (ok) sentCount++;
         }
     } else {
