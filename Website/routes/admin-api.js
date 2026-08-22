@@ -156,6 +156,7 @@ import {
 import { getSystemOverview } from "../admin-backend/system/system.js";
 import {
   getEmailSources,
+  getEmailRecipients,
   getEmailTemplates,
   createEmailTemplate,
   updateEmailTemplate,
@@ -1011,7 +1012,17 @@ router.post(
 // Mass Email (UR-B4) — Admin only
 router.get(
   "/emails/sources",
-  asyncHandler(async (req, res) => res.json(await getEmailSources())),
+  asyncHandler(async (req, res) =>
+    res.json(await getEmailSources(req.query.announcementId)),
+  ),
+);
+router.get(
+  "/emails/recipients",
+  asyncHandler(async (req, res) =>
+    res.json(
+      await getEmailRecipients(req.query.source, req.query.announcementId),
+    ),
+  ),
 );
 router.get(
   "/emails/templates",
