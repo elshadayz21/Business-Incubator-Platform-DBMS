@@ -3,6 +3,7 @@ import {
   User,
   Mail,
   Phone,
+  Key,
   Briefcase,
   Activity,
   Loader2,
@@ -16,6 +17,7 @@ const AddMentorForm = ({ onSuccess, onClose, initialData }) => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
+    password: "",
     expertise: "",
     phone: "",
     status: "active",
@@ -144,17 +146,34 @@ const AddMentorForm = ({ onSuccess, onClose, initialData }) => {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-[#526274] mb-1">Phone Number</label>
+            <label className="block text-xs font-bold text-[#526274] mb-1">
+              Login Password <span className="text-slate-400 font-normal">{isEditing ? "(Leave blank to keep unchanged)" : "(Default: Mentor123!)"}</span>
+            </label>
             <div className="relative">
-              <Phone size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#526274]" />
+              <Key size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#526274]" />
               <input
-                value={formData.phone}
-                onChange={(e) => handleChange("phone", e.target.value)}
-                placeholder="+251 911 000 000"
+                type="password"
+                value={formData.password}
+                onChange={(e) => handleChange("password", e.target.value)}
+                placeholder={isEditing ? "••••••••" : "Mentor123!"}
                 disabled={loading}
                 className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#D6E4EA] rounded-xl text-xs font-medium text-[#111827] outline-none focus:border-[#00ADEF]"
               />
             </div>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold text-[#526274] mb-1">Phone Number</label>
+          <div className="relative">
+            <Phone size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#526274]" />
+            <input
+              value={formData.phone}
+              onChange={(e) => handleChange("phone", e.target.value)}
+              placeholder="+251 911 000 000"
+              disabled={loading}
+              className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#D6E4EA] rounded-xl text-xs font-medium text-[#111827] outline-none focus:border-[#00ADEF]"
+            />
           </div>
         </div>
       </div>
@@ -181,6 +200,7 @@ const AddMentorForm = ({ onSuccess, onClose, initialData }) => {
                 <option value="Business">Business &amp; Finance</option>
                 <option value="Marketing">Marketing &amp; Growth</option>
                 <option value="Design">Design &amp; Product</option>
+                <option value="Others">Others</option>
               </select>
             </div>
           </div>

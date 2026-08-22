@@ -289,14 +289,6 @@ window.electron = {
         url = `/api/portal/mentor/sessions/${args[0]}`;
         options.method = "DELETE";
         break;
-      case "funding:getNegotiations":
-        url = `/api/admin/funding/${args[0]}/negotiations`;
-        break;
-      case "funding:addNegotiation":
-        url = `/api/admin/funding/${args[0]}/negotiations`;
-        options.method = "POST";
-        options.body = JSON.stringify(args[1]);
-        break;
 
       default:
         console.warn("Unknown IPC channel:", channel);

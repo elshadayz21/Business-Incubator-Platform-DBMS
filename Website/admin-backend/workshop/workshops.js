@@ -230,13 +230,38 @@ export const updateWorkshop = async (id, workshopData) => {
 
 // Delete workshop
 export const deleteWorkshop = async (id) => {
+  const client = await db.connect();
   try {
-    const query = `DELETE FROM workshops WHERE id = $1 RETURNING *`;
-    await db.query(query, [id]);
+    await client.query("BEGIN");
+
+    const workshopId = parseInt(id, 10);
+
+    // Delete related records to satisfy foreign key constraints
+    await client.query("DELETE FROM workshop_feedback WHERE workshop_id = $1", [workshopId]);
+    await client.query(
+      "DELETE FROM workshop_feedback WHERE enrollment_id IN (SELECT id FROM workshop_enrollments WHERE workshop_id = $1)",
+      [workshopId]
+    );
+    await client.query("DELETE FROM workshop_attendance WHERE workshop_id = $1", [workshopId]);
+    await client.query("DELETE FROM workshop_enrollments WHERE workshop_id = $1", [workshopId]);
+    await client.query("DELETE FROM mentor_workshop_assignments WHERE workshop_id = $1", [workshopId]);
+
+    // Delete workshop
+    const res = await client.query("DELETE FROM workshops WHERE id = $1 RETURNING *", [workshopId]);
+
+    await client.query("COMMIT");
+
+    if (res.rows.length === 0) {
+      throw new Error("Workshop not found to delete.");
+    }
+
     return { success: true, message: "Workshop deleted successfully" };
   } catch (error) {
+    await client.query("ROLLBACK");
     console.error("Error deleting workshop:", error);
     throw error;
+  } finally {
+    client.release();
   }
 };
 

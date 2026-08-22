@@ -1,6 +1,23 @@
 import pool from "../../config/db.js";
 import { createNotification } from "../../utils/notificationHelper.js";
 
+export const markNotificationsAsRead = async (userId) => {
+  await pool.query(
+    `UPDATE notifications SET read = true WHERE user_id = $1 AND read = false`,
+    [userId]
+  );
+};
+
+const safeQuery = async (label, queryFn) => {
+  try {
+    const result = await queryFn();
+    return { ok: true, data: result.rows };
+  } catch (err) {
+    console.error(`[Portal] Query failed (${label}):`, err.message);
+    return { ok: false, data: [], error: err.message };
+  }
+};
+
 export const getEntrepreneurDashboard = async (userId, email) => {
   const [userRes, applicationRes, projectsRes, cohortsRes, mentorsRes, fundingRes, workshopsRes, notificationsRes, activityLogsRes, statsRes, mentorSessionsRes] =
     await Promise.all([
@@ -121,43 +138,49 @@ export const getEntrepreneurDashboard = async (userId, email) => {
           [userId],
         ),
       ),
-      pool.query(
-        `SELECT p.id, p.name, p.domain, p.stage, p.status, p.created_at, pe.role_in_project
-         FROM project_entrepreneurs pe
-         JOIN projects p ON p.id = pe.project_id
-         WHERE pe.user_id = $1
-         ORDER BY p.created_at DESC`,
-        [userId],
+      safeQuery("workshops", () =>
+        pool.query(
+          `SELECT w.id, w.title, w.schedule, w.capacity, w.category, w.created_at,
+                  we.enrollment_date, we.attended
+           FROM workshops w
+           JOIN workshop_enrollments we ON w.id = we.workshop_id
+           WHERE we.entrepreneur_id = $1
+           ORDER BY w.schedule DESC`,
+          [userId],
+        ),
       ),
-      pool.query(
-        `SELECT c.id, c.name, c.type, c.status, c.start_date, c.end_date, cm.current_stage, cm.joined_at
-         FROM cohort_members cm
-         JOIN cohorts c ON c.id = cm.cohort_id
-         WHERE cm.user_id = $1
-         ORDER BY cm.joined_at DESC`,
-        [userId],
+      safeQuery("notifications", () =>
+        pool.query(
+          `SELECT id, type, message, read, created_at
+           FROM notifications
+           WHERE user_id = $1
+           ORDER BY created_at DESC`,
+          [userId],
+        ),
       ),
-      pool.query(
-        `SELECT ma.id AS assignment_id, u.id AS mentor_id, u.name AS mentor_name,
-                u.email AS mentor_email, u.expertise AS mentor_expertise,
-                c.id AS cohort_id, c.name AS cohort_name, c.status AS cohort_status,
-                ma.assigned_at
-         FROM mentor_assignments ma
-         JOIN users u ON u.id = ma.mentor_id
-         JOIN cohorts c ON c.id = ma.cohort_id
-         WHERE ma.entrepreneur_id = $1
-         ORDER BY ma.assigned_at DESC`,
-        [userId],
+      safeQuery("activityLogs", () =>
+        pool.query(
+          `SELECT id, action_type, details, created_at
+           FROM activity_logs
+           WHERE user_id = $1
+           ORDER BY created_at DESC
+           LIMIT 50`,
+          [userId],
+        ),
       ),
-      pool.query(
-        `SELECT fr.id, fr.project_id, p.name AS project_name, fr.amount, fr.status,
-                fr.funding_stage, fr.description, fr.requested_at, fr.reviewed_at, fr.notes
-         FROM funding_requests fr
-         JOIN projects p ON p.id = fr.project_id
-         JOIN project_entrepreneurs pe ON pe.project_id = fr.project_id
-         WHERE pe.user_id = $1
-         ORDER BY fr.requested_at DESC`,
-        [userId],
+      safeQuery("stats", () =>
+        pool.query(
+          `SELECT 'total_users' AS metric_key, COUNT(*)::int AS metric_value, NOW() AS updated_at FROM users
+           UNION ALL
+           SELECT 'total_projects', COUNT(*)::int, NOW() FROM projects
+           UNION ALL
+           SELECT 'total_workshops', COUNT(*)::int, NOW() FROM workshops
+           UNION ALL
+           SELECT 'total_funding_requested', COUNT(*)::int, NOW() FROM funding_requests
+           UNION ALL
+           SELECT 'total_funding_approved', COUNT(*)::int, NOW() FROM funding_requests WHERE LOWER(status) = 'approved'
+           ORDER BY metric_key ASC`,
+        ),
       ),
       safeQuery("mentorSessions", () =>
         pool.query(
@@ -173,11 +196,18 @@ export const getEntrepreneurDashboard = async (userId, email) => {
       ),
     ]);
 
-  const u = user.rows[0];
+  const u = userRes.ok ? userRes.data[0] : null;
+
+  if (!u) {
+    console.error(`[Portal] User not found for userId=${userId}, email=${email}`);
+  }
+
+  const cohortsData = cohortsRes.ok ? cohortsRes.data : [];
+  const projectsData = projectsRes.ok ? projectsRes.data : [];
 
   const milestones = [];
   const seen = new Set();
-  for (const cohort of cohorts.rows) {
+  for (const cohort of cohortsData) {
     if (!seen.has(cohort.current_stage)) {
       seen.add(cohort.current_stage);
       milestones.push({
@@ -189,7 +219,7 @@ export const getEntrepreneurDashboard = async (userId, email) => {
       });
     }
   }
-  for (const project of projects.rows) {
+  for (const project of projectsData) {
     if (!seen.has(project.stage)) {
       seen.add(project.stage);
       milestones.push({
@@ -211,6 +241,10 @@ export const getEntrepreneurDashboard = async (userId, email) => {
     mentorSessions: mentorSessionsRes.ok ? mentorSessionsRes.data : [],
     funding: fundingRes.ok ? fundingRes.data : [],
     milestones,
+    workshops: workshopsRes.ok ? workshopsRes.data : [],
+    notifications: notificationsRes.ok ? notificationsRes.data : [],
+    activityLogs: activityLogsRes.ok ? activityLogsRes.data : [],
+    stats: statsRes.ok ? statsRes.data : [],
   };
 };
 

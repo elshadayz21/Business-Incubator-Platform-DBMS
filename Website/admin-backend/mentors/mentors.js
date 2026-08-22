@@ -1,4 +1,6 @@
 import pool from "../../config/db.js";
+import { hashPassword } from "../../utils/hash.js";
+import { generateUserCode } from "../../utils/helpers.js";
 
 const VALID_STATUSES = ["active", "inactive"];
 
@@ -28,7 +30,7 @@ export const getAllMentors = async () => {
   }
 };
 
-// 2. Add New Mentor
+// 2. Add New Mentor (creates both Mentor profile and User login account)
 export const addMentor = async (data) => {
   const {
     name,
@@ -36,6 +38,7 @@ export const addMentor = async (data) => {
     phone,
     expertise,
     status,
+    password,
     assignedProject,
     assignedWorkshop,
   } = data;
@@ -51,16 +54,52 @@ export const addMentor = async (data) => {
   try {
     await client.query("BEGIN");
 
-    // A. Insert Mentor
+    // A. Create or update user account in "users" table so mentor can log in
+    let userId = null;
+    const userCheck = await client.query("SELECT id FROM users WHERE email = $1", [email]);
+
+    if (userCheck.rows.length > 0) {
+      userId = userCheck.rows[0].id;
+      if (password && password.trim().length >= 6) {
+        const hashed = await hashPassword(password.trim());
+        await client.query(
+          `UPDATE users 
+           SET role = 'mentor', name = COALESCE($1, name), expertise = COALESCE($2, expertise), status = COALESCE($3, status), password = $4, updated_at = CURRENT_TIMESTAMP
+           WHERE id = $5`,
+          [name, expertise, status || "active", hashed, userId]
+        );
+      } else {
+        await client.query(
+          `UPDATE users 
+           SET role = 'mentor', name = COALESCE($1, name), expertise = COALESCE($2, expertise), status = COALESCE($3, status), updated_at = CURRENT_TIMESTAMP
+           WHERE id = $4`,
+          [name, expertise, status || "active", userId]
+        );
+      }
+    } else {
+      const rawPass = password && password.trim().length >= 6 ? password.trim() : "Mentor123!";
+      const hashed = await hashPassword(rawPass);
+      const userCode = generateUserCode();
+
+      const userInsert = await client.query(
+        `INSERT INTO users (name, user_code, email, password, role, expertise, status)
+         VALUES ($1, $2, $3, $4, 'mentor', $5, $6)
+         RETURNING id`,
+        [name, userCode, email, hashed, expertise, status || "active"]
+      );
+      userId = userInsert.rows[0].id;
+    }
+
+    // B. Insert Mentor profile
     const insertRes = await client.query(
-      `INSERT INTO mentors (name, email, phone, expertise, status) 
-       VALUES ($1, $2, $3, $4, $5) 
+      `INSERT INTO mentors (user_id, name, email, phone, expertise, status) 
+       VALUES ($1, $2, $3, $4, $5, $6) 
        RETURNING *`,
-      [name, email, phone, expertise, status || "active"],
+      [userId, name, email, phone, expertise, status || "active"],
     );
     const newMentor = insertRes.rows[0];
 
-    // B. Handle Quick Assignments
+    // C. Handle Quick Assignments
     if (assignedProject) {
       await client.query(
         "INSERT INTO mentor_project_assignments (mentor_id, project_id) VALUES ($1, $2)",
@@ -80,7 +119,7 @@ export const addMentor = async (data) => {
   } catch (error) {
     await client.query("ROLLBACK");
     console.error("Error in addMentor:", error);
-    throw new Error("Failed to add mentor.");
+    throw new Error(error.message || "Failed to add mentor.");
   } finally {
     client.release();
   }
@@ -122,15 +161,18 @@ export const deleteMentor = async (id) => {
 };
 
 // 4. Update Mentor
-export const updateMentor = async (id, data) => {
-  const { name, email, phone, expertise, status } = data;
+export const updateMentor = async (id, data = {}) => {
+  const { name, email, phone, expertise, status, password } = data || {};
 
   if (status && !VALID_STATUSES.includes(status)) {
     throw new Error(`Invalid status: ${status}`);
   }
 
+  const client = await pool.connect();
   try {
-    const res = await pool.query(
+    await client.query("BEGIN");
+
+    const res = await client.query(
       `UPDATE mentors 
        SET name = COALESCE($1, name), 
            email = COALESCE($2, email), 
@@ -146,10 +188,36 @@ export const updateMentor = async (id, data) => {
     if (res.rows.length === 0) {
       throw new Error("Mentor not found to update.");
     }
-    return res.rows[0];
+    const updatedMentor = res.rows[0];
+
+    // Sync changes to users table
+    if (updatedMentor.email) {
+      if (password && password.trim().length >= 6) {
+        const hashed = await hashPassword(password.trim());
+        await client.query(
+          `UPDATE users 
+           SET name = COALESCE($1, name), expertise = COALESCE($2, expertise), status = COALESCE($3, status), password = $4, updated_at = CURRENT_TIMESTAMP
+           WHERE email = $5`,
+          [name, expertise, status, hashed, updatedMentor.email]
+        );
+      } else {
+        await client.query(
+          `UPDATE users 
+           SET name = COALESCE($1, name), expertise = COALESCE($2, expertise), status = COALESCE($3, status), updated_at = CURRENT_TIMESTAMP
+           WHERE email = $5`,
+          [name, expertise, status, updatedMentor.email]
+        );
+      }
+    }
+
+    await client.query("COMMIT");
+    return updatedMentor;
   } catch (error) {
+    await client.query("ROLLBACK");
     console.error(`Error in updateMentor (${id}):`, error);
-    throw new Error("Failed to update mentor.");
+    throw new Error(error.message || "Failed to update mentor.");
+  } finally {
+    client.release();
   }
 };
 

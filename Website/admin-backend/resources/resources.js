@@ -17,8 +17,8 @@ export const getAllResources = async () => {
 };
 
 // 2. Add New Resource
-export const addResource = async (data) => {
-  const { name, type, capacity, location } = data;
+export const addResource = async (data = {}) => {
+  const { name, type, capacity, location } = data || {};
 
   // Validation
   if (!name || !location) {
@@ -36,42 +36,37 @@ export const addResource = async (data) => {
   try {
     const res = await pool.query(
       "INSERT INTO resources (name, type, capacity, location) VALUES ($1, $2, $3, $4) RETURNING *",
-      [name, type, capacity, location],
+      [name, type, Number(capacity), location],
     );
     return res.rows[0];
   } catch (error) {
     console.error("Error in addResource:", error);
-    throw new Error("Failed to add resource.");
+    throw new Error(error.message || "Failed to add resource.");
   }
 };
 
 // 3. Update Resource
-export const updateResource = async (id, data) => {
-  const { name, type, capacity, location } = data;
+export const updateResource = async (id, data = {}) => {
+  const { name, type, capacity, location } = data || {};
 
-  if (!name) {
-    throw new Error("Resource name is required.");
+  if (!name || !location) {
+    throw new Error("Resource name and location are required.");
   }
-
-  // Make type validation case-insensitive
-  if (type && !VALID_RESOURCE_TYPES.includes(type.toLowerCase())) {
+  if (!VALID_RESOURCE_TYPES.includes(type)) {
     throw new Error(
-        `Invalid resource type: ${type}. Allowed: ${VALID_RESOURCE_TYPES.join(", ")}`,
+      `Invalid resource type: ${type}. Allowed: ${VALID_RESOURCE_TYPES.join(", ")}`,
     );
   }
-
-  // Handle capacity safely
-  const parsedCapacity = capacity ? Number(capacity) : 1;
-  if (isNaN(parsedCapacity) || parsedCapacity <= 0) {
-    throw new Error("Capacity must be a positive number.");
+  if (!Number.isInteger(Number(capacity)) || Number(capacity) <= 0) {
+    throw new Error("Capacity must be a positive integer.");
   }
 
   try {
     const res = await pool.query(
-        `UPDATE resources 
+      `UPDATE resources 
        SET name = $1, type = $2, capacity = $3, location = $4, updated_at = CURRENT_TIMESTAMP
        WHERE id = $5 RETURNING *`,
-        [name, type, parsedCapacity, location, id],
+      [name, type, Number(capacity), location, parseInt(id, 10)],
     );
     if (res.rows.length === 0) {
       throw new Error("Resource not found to update.");
@@ -79,7 +74,7 @@ export const updateResource = async (id, data) => {
     return res.rows[0];
   } catch (error) {
     console.error(`Error in updateResource (${id}):`, error);
-    throw new Error("Failed to update resource.");
+    throw new Error(error.message || "Failed to update resource.");
   }
 };
 

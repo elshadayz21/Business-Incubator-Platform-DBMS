@@ -62,7 +62,7 @@ const AddResourceForm = ({ onClose, onSuccess, initialData }) => {
     } catch (err) {
       console.error("Failed to save resource", err);
       setError(
-        isEditing ? "Failed to update resource. Please check inputs." : "Failed to add resource. Please check inputs.",
+        err.message || (isEditing ? "Failed to update resource. Please check inputs." : "Failed to add resource. Please check inputs."),
       );
     } finally {
       setLoading(false);
