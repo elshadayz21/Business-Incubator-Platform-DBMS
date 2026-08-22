@@ -16,15 +16,7 @@ import {
 const router = Router();
 
 const asyncHandler = (fn) => (req, res, next) => {
-  Promise.resolve(fn(req, res, next)).catch((err) => {
-    console.error("[Portal API] Error:", err);
-    if (req.originalUrl.startsWith("/api/")) {
-      const statusCode = err.statusCode || err.status || 400;
-      const errorMessage = err.message || "Internal server error";
-      return res.status(statusCode).json({ error: errorMessage });
-    }
-    next(err);
-  });
+  Promise.resolve(fn(req, res, next)).catch(next);
 };
 
 router.get(

@@ -72,59 +72,22 @@ export const resetUserPassword = async (id, password) => {
 };
 
 export const deleteUser = async (id) => {
-  const client = await pool.connect();
-  try {
-    await client.query("BEGIN");
-
-    const target = await client.query("SELECT role FROM users WHERE id = $1", [id]);
-    if (target.rows.length === 0) {
-      const err = new Error("User not found.");
-      err.statusCode = 404;
-      throw err;
+  const target = await pool.query("SELECT role FROM users WHERE id = $1", [id]);
+  if (target.rows.length === 0) throw new Error("User not found.");
+  if (target.rows[0].role === ROLES.SUPERADMIN) {
+    const superCount = await pool.query(
+      "SELECT COUNT(*)::int AS n FROM users WHERE role = 'superadmin'",
+    );
+    if (superCount.rows[0].n <= 1) {
+      throw new Error("Cannot delete the last superadmin account.");
     }
-
-    if (target.rows[0].role === ROLES.SUPERADMIN) {
-      const superCount = await client.query(
-        "SELECT COUNT(*)::int AS n FROM users WHERE role = 'superadmin'",
-      );
-      if (superCount.rows[0].n <= 1) {
-        const err = new Error("Cannot delete the last superadmin account.");
-        err.statusCode = 400;
-        throw err;
-      }
-    }
-
-    // Clean up dependent child records referencing user_id
-    await client.query("DELETE FROM project_entrepreneurs WHERE user_id = $1", [id]);
-    await client.query("DELETE FROM workshop_attendance WHERE user_id = $1", [id]);
-    await client.query("DELETE FROM notifications WHERE user_id = $1", [id]);
-    await client.query("DELETE FROM activity_logs WHERE user_id = $1", [id]);
-    await client.query("DELETE FROM cohort_members WHERE user_id = $1", [id]);
-    await client.query("DELETE FROM mentor_assignments WHERE mentor_id = $1 OR entrepreneur_id = $1", [id]);
-    await client.query("DELETE FROM mentors WHERE user_id = $1", [id]);
-
-    // Disassociate optional relations by setting foreign key columns to NULL
-    await client.query("UPDATE workshops SET trainer_id = NULL WHERE trainer_id = $1", [id]);
-    await client.query("UPDATE announcements SET author_id = NULL WHERE author_id = $1", [id]);
-    await client.query("UPDATE funding_requests SET investor_id = NULL WHERE investor_id = $1", [id]);
-    await client.query("UPDATE funding_requests SET reviewed_by = NULL WHERE reviewed_by = $1", [id]);
-    await client.query("UPDATE email_campaigns SET created_by = NULL WHERE created_by = $1", [id]);
-
-    // Clean up workshop_enrollments if table and column are present
-    await client.query("DELETE FROM workshop_enrollments WHERE entrepreneur_id = $1", [id]).catch(() => {});
-
-    // Finally delete user row
-    await client.query("DELETE FROM users WHERE id = $1", [id]);
-
-    await client.query("COMMIT");
-    return { success: true };
-  } catch (err) {
-    await client.query("ROLLBACK");
-    if (!err.statusCode) {
-      err.statusCode = 400;
-    }
-    throw err;
-  } finally {
-    client.release();
   }
+  try {
+    await pool.query("DELETE FROM users WHERE id = $1", [id]);
+  } catch (err) {
+    throw new Error(
+      "Cannot delete this user because they have related records. Deactivate the account instead.",
+    );
+  }
+  return { success: true };
 };

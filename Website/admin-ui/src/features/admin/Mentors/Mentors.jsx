@@ -61,22 +61,13 @@ const Mentors = () => {
     }
   };
 
-  const filteredMentors = mentors.filter((m) => {
-    const matchesSearch = (m.name || "").toLowerCase().includes(searchTerm.toLowerCase());
-    if (!matchesSearch) return false;
-    if (filterExpertise === "all") return true;
-    if (!m.expertise) return filterExpertise === "others";
-    const exp = m.expertise.toLowerCase();
-    if (filterExpertise === "others") {
-      return (
-        exp.includes("other") ||
-        !["technology", "tech", "software", "business", "finance", "marketing", "growth", "design", "product"].some(
-          (s) => exp.includes(s)
-        )
-      );
-    }
-    return exp.includes(filterExpertise.toLowerCase());
-  });
+  const filteredMentors = mentors.filter(
+    (m) =>
+      (filterExpertise === "all" ||
+        (m.expertise &&
+          m.expertise.toLowerCase() === filterExpertise.toLowerCase())) &&
+      m.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="space-y-6 font-sans">
@@ -169,7 +160,6 @@ const Mentors = () => {
             <option value="business">Business &amp; Finance</option>
             <option value="marketing">Marketing &amp; Growth</option>
             <option value="design">Design &amp; Product</option>
-            <option value="others">Others</option>
           </select>
         </div>
       </div>

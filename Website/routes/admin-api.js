@@ -32,6 +32,7 @@ import { getFormFields, saveFormFields } from "../admin-backend/applications/app
 import {
   getAllApplications,
   updateApplicationStatus,
+  sendMassInvites
 } from "../admin-backend/applications/applications.js";
 
 
@@ -83,14 +84,7 @@ import {
   deleteSubmission,
 } from "../admin-backend/inbox/inbox.js";
 //.............
-import {
-  getAllFundingRequests,
-  getFundingDashboard,
-  getFundingByStage,
-  getFundingRequestById,
-  updateFundingRequestStatus,
-  deleteFundingRequest,
-} from "../admin-backend/funding/funding.js";
+
 import loginRequest from "../admin-backend/auth/login.js";
 import {
   getAllUsers,
@@ -166,20 +160,21 @@ import {
 import ExcelJS from "exceljs";
 import { authorizeRole } from "../middleware/check_roles.middleware.js";
 import { ROLES } from "../utils/constants.js";
-
+import {
+  getAllFundingRequests,
+  getFundingDashboard,
+  getFundingByStage,
+  getFundingRequestById,
+  updateFundingRequestStatus,
+  deleteFundingRequest,
+  founderRespondToFunding,
+  getFundingHistory //
+} from "../admin-backend/funding/funding.js";
 
 const router = Router();
 
 const asyncHandler = (fn) => (req, res, next) => {
-  Promise.resolve(fn(req, res, next)).catch((err) => {
-    console.error("[Admin API] Error:", err);
-    if (req.originalUrl.startsWith("/api/")) {
-      const statusCode = err.statusCode || err.status || 400;
-      const errorMessage = err.message || "Internal server error";
-      return res.status(statusCode).json({ error: errorMessage });
-    }
-    next(err);
-  });
+  Promise.resolve(fn(req, res, next)).catch(next);
 };
 
 // Public Admin APIs
@@ -332,10 +327,10 @@ router.post(
   asyncHandler(async (req, res) => res.json(await addResource(req.body))),
 );
 router.put(
-  "/resources/:id",
-  asyncHandler(async (req, res) =>
-    res.json(await updateResource(req.params.id, req.body.data || req.body)),
-  ),
+    "/resources/:id",
+    asyncHandler(async (req, res) =>
+        res.json(await updateResource(req.params.id, req.body)),
+    ),
 );
 router.delete(
   "/resources/:id",
@@ -374,7 +369,7 @@ router.delete(
 router.put(
   "/mentors/:id",
   asyncHandler(async (req, res) =>
-    res.json(await updateMentor(req.params.id, req.body.data || req.body)),
+    res.json(await updateMentor(req.params.id, req.body.data)),
   ),
 );
 
@@ -998,13 +993,20 @@ router.post(
     "/announcements/:id/form-fields",
     asyncHandler(async (req, res) => {
       try {
-        console.log("Saving form fields for announcement:", req.params.id, "fields:", JSON.stringify(req.body.fields));
         const result = await saveFormFields(req.params.id, req.body.fields);
         res.json(result);
       } catch (error) {
         console.error("Error saving form fields:", error);
         res.status(500).json({ message: error.message });
       }
+    })
+);
+// Mass Email Route
+router.post(
+    "/applications/send-invites",
+    asyncHandler(async (req, res) => {
+      const { subject, body } = req.body;
+      res.json(await sendMassInvites(subject, body));
     })
 );
 
@@ -1050,6 +1052,19 @@ router.use((err, req, res, next) => {
   const status = err && err.statusCode ? err.statusCode : 500;
   res.status(status).json({ error: message });
 });
+
+// Get Funding History Route
+router.get(
+    "/funding/:id/history",
+    asyncHandler(async (req, res) => {
+      try {
+        const history = await getFundingHistory(req.params.id);
+        res.json(history);
+      } catch (error) {
+        res.status(500).json({ message: "Failed to load history." });
+      }
+    })
+);
 
 export default router;
 

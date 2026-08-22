@@ -83,8 +83,8 @@
                     <div class="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-white shadow-sm transition duration-300 hover:-translate-y-1.5 hover:border-cyan/30 hover:shadow-md project-card"
                          data-status="<%= project.status.toLowerCase() %>"
                          data-title="<%= project.title.toLowerCase() %>"
-                         data-description="<%= project.description.toLowerCase() %>"
-                         data-tech="<%= project.techStack.join(' ').toLowerCase() %>">
+                         data-description="<%= project.description?.toLowerCase() || '' %>"
+                         data-tech="<%= (project.techStack || []).join(' ').toLowerCase() %>"
 
                         <a href="/v1/projects/<%= project.id %>" class="flex flex-grow flex-col text-inherit no-underline hover:no-underline">
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import {
   ArrowLeft,
@@ -18,6 +18,19 @@ export default function FundingDetails({ request, onBack }) {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
   const [approvedAmount, setApprovedAmount] = useState(request?.approved_amount || request?.amount || "");
+
+
+  const [history, setHistory] = useState([]);
+
+  useEffect(() => {
+    if (request?.id) {
+      fetch(`/api/admin/funding/${request.id}/history`, { credentials: 'include' })
+          .then(res => res.json())
+          .then(data => setHistory(Array.isArray(data) ? data : []))
+          .catch(err => console.error("Error fetching history:", err));
+    }
+  }, [request?.id]);
+
 
   const handleUpdateStatus = async () => {
     if (!request?.id) return;
@@ -198,6 +211,46 @@ export default function FundingDetails({ request, onBack }) {
             <span>Save Status Decision</span>
           </button>
 
+
+          {/* Funding History Timeline */}
+          <div className="bg-white border border-[#D6E4EA] rounded-2xl p-6 shadow-xs space-y-4 lg:col-span-3">
+            <h2 className="text-base font-bold text-[#111827] font-['Space_Grotesk'] border-b border-[#D6E4EA] pb-3">
+              Status History & Audit Trail
+            </h2>
+
+            {history.length === 0 ? (
+                <p className="text-xs text-[#526274] italic">No history recorded yet.</p>
+            ) : (
+                <div className="relative pl-6 border-l-2 border-[#00ADEF]/30 space-y-6 mt-4">
+                  {history.map((log) => (
+                      <div key={log.id} className="relative">
+                        <div className="absolute -left-[30px] top-1.5 h-4 w-4 rounded-full border-4 border-white bg-[#00ADEF] shadow"></div>
+                        <div className="rounded-xl border border-[#D6E4EA] bg-[#F6FAFC] p-4">
+                          <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                      <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider border ${
+                          log.actor_role === 'Admin'
+                              ? 'bg-[#EAF8FC] text-[#006F9E] border-[#00ADEF]/20'
+                              : 'bg-[#FFF1E3] text-[#E38524] border-[#E38524]/20'
+                      }`}>
+                        {log.actor_role} Action
+                      </span>
+                            <span className="text-[10px] font-bold uppercase text-[#526274]">
+                        {new Date(log.created_at).toLocaleString()}
+                      </span>
+                          </div>
+                          <p className="text-sm font-semibold text-[#111827]">
+                            Status set to: <span className="font-bold">{log.status}</span>
+                          </p>
+                          {log.notes && (
+                              <p className="text-xs text-[#526274] mt-1 italic">Notes: "{log.notes}"</p>
+                          )}
+                          <p className="text-[10px] text-[#526274] mt-2">Acted by: {log.actor_name || 'System'}</p>
+                        </div>
+                      </div>
+                  ))}
+                </div>
+            )}
+          </div>
         </div>
 
       </div>

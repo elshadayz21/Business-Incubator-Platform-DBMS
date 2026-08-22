@@ -29,11 +29,8 @@ import {
 
 const MentorPortal = () => {
   const [assignments, setAssignments] = useState([]);
-  const [notifications, setNotifications] = useState([]);
-  const [activityLogs, setActivityLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [activeTab, setActiveTab] = useState("My Entrepreneurs");
   const [selected, setSelected] = useState(null);
   const [sessions, setSessions] = useState([]);
   const [sessionsLoading, setSessionsLoading] = useState(false);
@@ -83,31 +80,18 @@ const MentorPortal = () => {
     try {
       setLoading(true);
       const result = await getMentorDashboard();
-      setAssignments(result?.assignments || []);
-      setNotifications(result?.notifications || []);
-      setActivityLogs(result?.activityLogs || []);
+      setAssignments(result || []);
     } catch (err) {
       console.error("Error loading mentor dashboard:", err);
-      setError("Could not load your dashboard. Please try again.");
+      setError("Could not load your assignments. Please try again.");
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    document.title = "Dx Valley ICMS - Mentor Portal";
-    fetchDashboard();
-  }, [fetchDashboard]);
-
-  useEffect(() => {
-    if (activeTab === "Notifications" && unreadNotifications > 0) {
-      fetch("/api/portal/notifications/read", { method: "POST" })
-        .then(() => {
-          setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-        })
-        .catch((err) => console.error("Error marking notifications as read:", err));
-    }
-  }, [activeTab, unreadNotifications]);
+    fetchAssignments();
+  }, [fetchAssignments]);
 
   const openSessions = async (assignment) => {
     setSelected(assignment);
@@ -177,12 +161,6 @@ const MentorPortal = () => {
     window.location.href = "/v1/auth/login";
   };
 
-  const navItems = [
-    { id: 1, icon: Users, label: "My Entrepreneurs" },
-    { id: 2, icon: Bell, label: "Notifications", badge: unreadNotifications || null },
-    { id: 3, icon: Scroll, label: "Activity Timeline" },
-  ];
-
   return (
     <div className="flex h-screen bg-[#F6FAFC] font-sans text-[#111827] overflow-hidden selection:bg-[#E38524] selection:text-white">
       {/* Sidebar */}
@@ -234,35 +212,17 @@ const MentorPortal = () => {
           <div className="px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-wider text-[#526274]">
             Mentorship
           </div>
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeTab === item.label && !selected;
-            return (
-              <button
-                key={item.id}
-                onClick={() => {
-                  setActiveTab(item.label);
-                  closeSessions();
-                }}
-                className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl transition-all text-xs font-bold ${
-                  isActive
-                    ? "bg-[#EAF8FC] text-[#006F9E] border-l-4 border-[#00ADEF] shadow-xs"
-                    : "text-[#526274] hover:bg-[#F6FAFC] hover:text-[#111827]"
-                }`}
-              >
-                <Icon
-                  size={18}
-                  className={isActive ? "text-[#00ADEF]" : "text-[#526274]"}
-                />
-                <span>{item.label}</span>
-                {item.badge ? (
-                  <span className="ml-auto rounded-full bg-[#E38524] text-white min-w-5 h-5 flex items-center justify-center text-[10px] font-bold">
-                    {item.badge}
-                  </span>
-                ) : null}
-              </button>
-            );
-          })}
+          <button
+            onClick={closeSessions}
+            className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl transition-all text-xs font-bold ${
+              !selected
+                ? "bg-[#EAF8FC] text-[#006F9E] border-l-4 border-[#00ADEF] shadow-xs"
+                : "text-[#526274] hover:bg-[#F6FAFC] hover:text-[#111827]"
+            }`}
+          >
+            <Users size={18} className={!selected ? "text-[#00ADEF]" : "text-[#526274]"} />
+            <span>My Entrepreneurs</span>
+          </button>
         </nav>
 
         <div className="p-3 border-t border-[#D6E4EA] bg-[#F6FAFC] space-y-2">
@@ -306,7 +266,7 @@ const MentorPortal = () => {
             <div className="text-center space-y-3">
               <div className="w-10 h-10 border-4 border-[#00ADEF] border-t-transparent rounded-full animate-spin mx-auto" />
               <p className="text-sm font-bold text-[#006F9E]">
-                Loading your dashboard...
+                Loading your assignments...
               </p>
             </div>
           </div>
@@ -581,107 +541,6 @@ const MentorPortal = () => {
                           </div>
                         </div>
                       )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        ) : activeTab === "Notifications" ? (
-          /* -------- Notifications view -------- */
-          <div className="space-y-6">
-            <div className="bg-white rounded-2xl border border-[#D6E4EA] p-6 shadow-xs">
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#006F9E] block mb-1">
-                    Alerts
-                  </span>
-                  <h3 className="text-lg font-bold text-[#111827]">
-                    Notifications
-                  </h3>
-                </div>
-                {unreadNotifications > 0 && (
-                  <span className="rounded-full bg-[#E38524] text-white px-2.5 py-1 text-[10px] font-bold">
-                    {unreadNotifications} unread
-                  </span>
-                )}
-              </div>
-              {notifications.length === 0 ? (
-                <p className="text-sm text-[#526274] mt-4 font-semibold">
-                  All caught up! No notifications.
-                </p>
-              ) : (
-                <div className="mt-4 divide-y divide-[#D6E4EA] border border-[#D6E4EA] rounded-xl overflow-hidden">
-                  {notifications.map((n) => (
-                    <div
-                      key={n.id}
-                      className={`flex items-start gap-4 p-4 ${
-                        !n.read
-                          ? "border-l-4 border-[#00ADEF] bg-[#EAF8FC]/50"
-                          : "bg-white"
-                      }`}
-                    >
-                      <div className="w-9 h-9 rounded-full bg-[#EAF8FC] flex items-center justify-center text-[#006F9E] shrink-0 border border-[#00ADEF]/20">
-                        {n.type === "funding" ? (
-                          <HandCoins size={16} />
-                        ) : n.type === "workshop" ? (
-                          <GraduationCap size={16} />
-                        ) : n.type === "project" ? (
-                          <Rocket size={16} />
-                        ) : (
-                          <Bell size={16} />
-                        )}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold text-[#111827] leading-relaxed">
-                          {n.message}
-                        </p>
-                        <span className="mt-1 block text-[10px] font-bold uppercase tracking-wider text-[#526274]">
-                          {new Date(n.created_at).toLocaleString()}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        ) : activeTab === "Activity Timeline" ? (
-          /* -------- Activity Timeline view -------- */
-          <div className="space-y-6">
-            <div className="bg-white rounded-2xl border border-[#D6E4EA] p-6 shadow-xs">
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#006F9E] block mb-1">
-                    History
-                  </span>
-                  <h3 className="text-lg font-bold text-[#111827]">
-                    Activity Timeline
-                  </h3>
-                </div>
-              </div>
-              {activityLogs.length === 0 ? (
-                <p className="text-sm text-[#526274] mt-4 font-semibold">
-                  No activity yet. Actions you take will appear here.
-                </p>
-              ) : (
-                <div className="mt-6 relative pl-6 border-l-2 border-[#00ADEF]/30 space-y-6">
-                  {activityLogs.map((log) => (
-                    <div key={log.id} className="relative">
-                      <div className="absolute -left-[30px] top-1.5 h-4 w-4 rounded-full border-4 border-white bg-[#00ADEF] shadow" />
-                      <div className="rounded-xl border border-[#D6E4EA] bg-[#F6FAFC] p-4">
-                        <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-                          <span className="rounded-full bg-[#00ADEF] text-white px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider">
-                            {log.action_type}
-                          </span>
-                          <span className="text-[10px] font-bold uppercase text-[#526274]">
-                            {new Date(log.created_at).toLocaleString()}
-                          </span>
-                        </div>
-                        <p className="text-sm font-semibold text-[#111827]">
-                          {log.details}
-                        </p>
-                      </div>
                     </div>
                   ))}
                 </div>
