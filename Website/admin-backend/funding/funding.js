@@ -36,21 +36,32 @@ export const getAllFundingRequests = async (query = "") => {
     `;
 
         const params = [];
-        if (query.includes("status=")) {
-            const match = query.match(/status=([^&]+)/);
-            if (match) {
-                querySQL += ` WHERE fr.status = $${params.length + 1}`;
-                params.push(match[1]);
+        let statusVal = null;
+        let stageVal = null;
+
+        if (typeof query === "string") {
+            if (query.includes("status=")) {
+                const match = query.match(/status=([^&]+)/);
+                if (match && match[1] && match[1] !== "all") statusVal = decodeURIComponent(match[1]);
             }
+            if (query.includes("funding_stage=")) {
+                const match = query.match(/funding_stage=([^&]+)/);
+                if (match && match[1] && match[1] !== "all") stageVal = decodeURIComponent(match[1]);
+            }
+        } else if (query && typeof query === "object") {
+            if (query.status && query.status !== "all") statusVal = query.status;
+            if (query.funding_stage && query.funding_stage !== "all") stageVal = query.funding_stage;
         }
 
-        if (query.includes("funding_stage=")) {
-            const match = query.match(/funding_stage=([^&]+)/);
-            if (match) {
-                querySQL += querySQL.includes("WHERE") ? " AND" : " WHERE";
-                querySQL += ` fr.funding_stage = $${params.length + 1}`;
-                params.push(match[1]);
-            }
+        if (statusVal) {
+            querySQL += ` WHERE LOWER(fr.status) = LOWER($${params.length + 1})`;
+            params.push(statusVal);
+        }
+
+        if (stageVal) {
+            querySQL += querySQL.includes("WHERE") ? " AND" : " WHERE";
+            querySQL += ` LOWER(fr.funding_stage) = LOWER($${params.length + 1})`;
+            params.push(stageVal);
         }
 
         querySQL += ` ORDER BY fr.requested_at DESC`;

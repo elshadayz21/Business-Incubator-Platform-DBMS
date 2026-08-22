@@ -192,7 +192,7 @@ router.post(
   }),
 );
 
-const adminOnly = authorizeRole(ROLES.ADMIN);
+const adminOnly = authorizeRole(ROLES.ADMIN, ROLES.SUPERADMIN);
 const superadminOnly = authorizeRole(ROLES.SUPERADMIN);
 
 // Module access is strictly separated by role (no overlap):
@@ -411,7 +411,7 @@ router.put(
 router.get(
   "/funding",
   asyncHandler(async (req, res) =>
-    res.json(await getAllFundingRequests(req.query.query || "")),
+    res.json(await getAllFundingRequests(req.query)),
   ),
 );
 router.get(

@@ -1,11 +1,14 @@
-<section class="bg-surface pb-20 pt-12 lg:pt-20">
-  <div class="mx-auto max-w-7xl px-6 lg:px-10">
-    <div class="grid grid-cols-1 items-center gap-12 lg:grid-cols-2 lg:gap-16">
+<% const isUserSignedIn = (typeof signedIn !== 'undefined' && signedIn) || (typeof user !== 'undefined' && Boolean(user)); %>
+<main id="top" class="font-sans text-ink">
+  <section class="relative overflow-hidden bg-gradient-to-br from-cyan via-cyan-mid to-cyan-deep text-white">
+    <div class="pointer-events-none absolute -left-24 -top-20 h-[460px] w-[620px] rounded-[48%] border-[70px] border-white/10" aria-hidden="true"></div>
+    <div class="pointer-events-none absolute -right-40 bottom-[-240px] h-[620px] w-[760px] rounded-[50%] border-[90px] border-white/10" aria-hidden="true"></div>
+    <div class="pointer-events-none absolute right-[28%] top-14 h-20 w-20 rounded-full bg-white/10 blur-xl" aria-hidden="true"></div>
 
-      <!-- Left Side: Hero Text -->
-      <div class="space-y-8">
-        <div class="inline-flex items-center gap-2 rounded-full bg-cyan-soft px-4 py-2 text-xs font-bold uppercase tracking-wider text-cyan-dark border border-cyan/20">
-          <span class="h-2 w-2 rounded-full bg-orange"></span>
+    <div class="relative mx-auto grid max-w-7xl items-center gap-12 px-6 py-20 lg:grid-cols-[1.06fr_.94fr] lg:px-10 lg:py-24">
+      <div class="dv-reveal max-w-[680px]" data-delay="0">
+        <p class="mb-5 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[.24em] text-white/80">
+          <span class="h-2 w-2 rounded-full bg-orange" aria-hidden="true"></span>
           DxValley Incubation Center
         </div>
 
@@ -17,26 +20,18 @@
         <p class="max-w-xl text-lg leading-8 text-muted">
           We help bold ideas become investable, scalable businesses through structured cohorts, expert mentorship, and a community that keeps founders moving.
         </p>
-
-        <div class="flex flex-col gap-4 sm:flex-row">
-          <!-- HIDE APPLY BUTTON IF LOGGED IN -->
-          <% if (!user) { %>
-            <button onclick="handleGlobalApply()" class="inline-flex items-center justify-center gap-3 rounded-xl bg-orange px-7 py-4 text-sm font-extrabold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-orange-dark focus:outline-none focus:ring-2 focus:ring-orange focus:ring-offset-2">
-              Apply to the next cohort
-              <i class="fa-solid fa-arrow-right text-xs"></i>
-            </button>
-          <% } else { %>
-            <a href="/admin/" class="inline-flex items-center justify-center gap-3 rounded-xl bg-cyan px-7 py-4 text-sm font-extrabold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-cyan-dark focus:outline-none focus:ring-2 focus:ring-cyan focus:ring-offset-2">
-              Go to Dashboard
-              <i class="fa-solid fa-arrow-right text-xs"></i>
-            </a>
-          <% } %>
-
-          <a href="#programs" class="inline-flex items-center justify-center gap-3 rounded-xl border border-line bg-white px-7 py-4 text-sm font-bold text-ink transition hover:bg-surface hover:border-cyan">
-            Explore programs
-            <i class="fa-solid fa-chevron-right text-xs"></i>
-          </a>
-        </div>
+                <div class="mt-9 flex flex-col gap-3 sm:flex-row">
+                  <% if (!isUserSignedIn) { %>
+                    <a class="inline-flex items-center justify-center gap-3 rounded-md bg-orange px-6 py-3.5 text-sm font-extrabold text-white shadow-[0_10px_24px_rgba(141,67,10,.24)] transition hover:-translate-y-0.5 hover:bg-orange-dark focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-cyan-deep cursor-pointer" onclick="handleGlobalApply()">
+                      Apply to the next cohort
+                      <i class="fa-solid fa-arrow-right text-xs" aria-hidden="true"></i>
+                    </a>
+                  <% } %>
+                  <a class="inline-flex items-center justify-center gap-3 rounded-md border border-white/70 bg-white/5 px-6 py-3.5 text-sm font-bold text-white transition hover:bg-white hover:text-cyan-deep focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-cyan-deep" href="#programs">
+                    Explore programs
+                    <i class="fa-solid fa-chevron-right text-xs" aria-hidden="true"></i>
+                  </a>
+                </div>
       </div>
 
       <!-- Right Side: Photo Gallery (Replaces Static Dashboard) -->
@@ -99,11 +94,22 @@
         <span class="rounded-full border border-cyan/30 bg-cyan-soft px-4 py-2 text-xs font-bold text-cyan-dark">Build with signal</span>
       </article>
 
-      <article class="grid gap-8 py-9 lg:grid-cols-[1.35fr_1fr_auto] lg:items-center">
-        <div>
-          <p class="text-xs font-extrabold uppercase tracking-[.18em] text-cyan-dark">03 / Scale</p>
-          <h3 class="mt-3 text-2xl font-extrabold tracking-[-.03em] text-ink">Grow with confidence</h3>
-          <p class="mt-3 max-w-[560px] text-sm leading-7 text-muted">Prepare for the next chapter with accountable milestones, stronger partnerships, and a founder network that travels with you.</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <% homePhotos.forEach(function(photo, idx) { %>
+            <a href="<%= photo.video_url || routes.gallery %>" <% if (photo.video_url) { %>target="_blank" rel="noopener noreferrer"<% } %> class="group relative block overflow-hidden rounded-xl border border-line bg-surface" aria-label="Open gallery">
+              <img src="<%= photo.url %>" alt="<%= photo.title || 'Gallery photo' %>" class="aspect-[4/3] w-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='/assets/images/default-avatar.svg'" />
+              <% if (photo.video_url) { %>
+                <div class="absolute top-3 right-3 bg-red-600/90 text-white text-[11px] font-extrabold px-3 py-1 rounded-full flex items-center gap-1.5 shadow-md">
+                  <i class="fa-solid fa-play text-[9px]"></i>
+                  <span>Watch Video</span>
+                </div>
+              <% } %>
+              <div class="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-cyan-deep/95 via-cyan-deep/80 to-transparent px-4 pb-3 pt-12 text-left transition-opacity duration-300 opacity-0 group-hover:opacity-100">
+                <% if (photo.title) { %><span class="block text-sm font-bold text-white"><%= photo.title %></span><% } %>
+                <% if (photo.description) { %><span class="mt-1 block text-xs leading-5 text-white/85 line-clamp-2"><%= photo.description %></span><% } %>
+              </div>
+            </a>
+          <% }) %>
         </div>
         <div class="flex items-center gap-4">
           <span class="h-3 w-3 shrink-0 rounded-full bg-orange"></span>
@@ -211,63 +217,62 @@
     }
   })();
 
-  // --- Fetch Photo Gallery ---
-    // --- Fetch Photo Gallery & Auto-Slide ---
-    (async () => {
-      try {
-        const response = await fetch('/api/public/gallery');
-        const images = await response.json();
 
-        const imgElement = document.getElementById('home-gallery-image');
-        const captionBox = document.getElementById('home-gallery-caption-box');
-        const captionText = document.getElementById('home-gallery-caption');
+  <section id="how-it-works" class="bg-cyan text-white">
+    <div class="mx-auto max-w-7xl px-6 py-24 lg:px-10 lg:py-28">
+      <div class="flex flex-col justify-between gap-6 md:flex-row md:items-end">
+        <div><p class="text-xs font-extrabold uppercase tracking-[.2em] text-white/70">A focused progression</p><h2 class="mt-4 max-w-[650px] text-4xl font-extrabold tracking-[-.04em] sm:text-5xl">Your path from idea to impact</h2></div>
+        <p class="max-w-[320px] text-sm leading-7 text-white/75">Every cohort is designed to help you make the next useful decision — not just attend another program.</p>
+      </div>
 
-        if (!imgElement) return;
+      <div class="relative mt-16 grid gap-8 md:grid-cols-3 md:gap-6">
+        <div class="absolute left-[16.5%] right-[16.5%] top-7 hidden h-px bg-white/40 md:block" aria-hidden="true"></div>
+        <article class="dv-reveal relative" data-delay="0"><div class="relative z-10 grid h-14 w-14 place-items-center rounded-full bg-orange text-lg font-extrabold text-white ring-8 ring-cyan">01</div><div class="mt-8 rounded-2xl bg-white p-6 text-ink shadow-[0_14px_28px_rgba(0,67,103,.14)]"><h3 class="text-xl font-extrabold">Apply</h3><p class="mt-3 text-sm leading-7 text-muted">Tell us what you are building, who it serves, and what you need to learn next.</p></div></article>
+        <article class="dv-reveal relative" data-delay="90"><div class="relative z-10 grid h-14 w-14 place-items-center rounded-full bg-orange text-lg font-extrabold text-white ring-8 ring-cyan">02</div><div class="mt-8 rounded-2xl bg-white p-6 text-ink shadow-[0_14px_28px_rgba(0,67,103,.14)]"><h3 class="text-xl font-extrabold">Build</h3><p class="mt-3 text-sm leading-7 text-muted">Move through the right learning sprint with mentors, workshops, and a peer cohort.</p></div></article>
+        <article class="dv-reveal relative" data-delay="180"><div class="relative z-10 grid h-14 w-14 place-items-center rounded-full bg-orange text-lg font-extrabold text-white ring-8 ring-cyan">03</div><div class="mt-8 rounded-2xl bg-white p-6 text-ink shadow-[0_14px_28px_rgba(0,67,103,.14)]"><h3 class="text-xl font-extrabold">Scale</h3><p class="mt-3 text-sm leading-7 text-muted">Turn progress into proof, partnerships, and a stronger platform for sustainable growth.</p></div></article>
+      </div>
+    </div>
+  </section>
 
-        if (images.length === 0) {
-          imgElement.src = "https://images.unsplash.com/photo-1517245386807-bb43f82fee33?w=800"; // Fallback image
-          imgElement.classList.remove('opacity-0');
-          return;
-        }
+  <section id="community" class="bg-white">
+    <div class="mx-auto grid max-w-7xl gap-14 px-6 py-24 lg:grid-cols-[1.45fr_.55fr] lg:gap-24 lg:px-10 lg:py-28">
+      <article id="stories" class="dv-reveal overflow-hidden rounded-[26px] bg-surface" data-delay="0">
+        <div class="grid min-h-[350px] items-end bg-gradient-to-br from-cyan-soft via-white to-orange-soft p-7 sm:p-10">
+          <div class="max-w-[610px]"><p class="text-xs font-extrabold uppercase tracking-[.2em] text-orange">Inside the community</p><h2 class="mt-4 text-4xl font-extrabold leading-tight tracking-[-.04em] text-cyan-dark sm:text-5xl">Founders move further when they do the work together.</h2><blockquote class="mt-7 border-l-2 border-orange pl-5 text-base italic leading-7 text-muted">“DxValley gave us the structure to test the right assumptions, and the people around us made every hard week feel less lonely.”</blockquote><p class="mt-4 text-xs font-bold uppercase tracking-wider text-ink">— An incubatee, Batch 03</p></div>
+        </div>
+        <div class="flex flex-col items-start justify-between gap-4 border-t border-line bg-white px-7 py-5 sm:flex-row sm:items-center sm:px-10"><p class="text-sm font-semibold text-muted">A place to learn, share, and keep building.</p><a class="inline-flex items-center gap-2 text-sm font-bold text-cyan-dark transition hover:text-orange" href="#community">See the community <i class="fa-solid fa-arrow-right text-xs" aria-hidden="true"></i></a></div>
+      </article>
 
-        let currentIndex = 0;
+      <aside class="dv-reveal lg:pt-8" data-delay="120"><p class="text-xs font-extrabold uppercase tracking-[.2em] text-orange">The ecosystem</p><div class="mt-7 divide-y divide-line border-y border-line"><div class="py-5"><p class="text-4xl font-extrabold tracking-[-.05em] text-cyan-dark">2</p><p class="mt-1 text-sm font-semibold text-muted">cohorts each year</p></div><div class="py-5"><p class="text-4xl font-extrabold tracking-[-.05em] text-cyan-dark">4</p><p class="mt-1 text-sm font-semibold text-muted">roles in the ecosystem</p></div><div class="py-5"><p class="text-4xl font-extrabold tracking-[-.05em] text-cyan-dark">1</p><p class="mt-1 text-sm font-semibold text-muted">founder network</p></div></div></aside>
+    </div>
+  </section>
 
-        const showImage = (index) => {
-          // Fade out current image
-          imgElement.classList.add('opacity-0');
-          captionBox.classList.add('opacity-0');
+  <% if (!isUserSignedIn) { %>
+    <section id="apply" class="bg-cyan-soft">
+      <div class="mx-auto flex max-w-7xl flex-col items-start justify-between gap-8 px-6 py-16 lg:flex-row lg:items-center lg:px-10 lg:py-20">
+        <div><p class="text-xs font-extrabold uppercase tracking-[.2em] text-orange">Your next chapter starts here</p><h2 class="mt-3 max-w-[720px] text-4xl font-extrabold tracking-[-.04em] text-cyan-dark sm:text-5xl">Ready to turn your idea into impact?</h2><p class="mt-4 text-base text-muted">Applications are reviewed in cohorts. Bring the problem, the curiosity, and the courage to begin.</p></div>
+         <a class="inline-flex shrink-0 items-center gap-3 rounded-md bg-orange px-7 py-4 text-sm font-extrabold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-orange-dark focus:outline-none focus:ring-2 focus:ring-orange focus:ring-offset-2 cursor-pointer"
+         onclick="handleGlobalApply()">
+          Start your application
+         <i class="fa-solid fa-arrow-right text-xs" aria-hidden="true"></i></a>
+      </div>
+    </section>
+  <% } %>
+</main>
 
-          // Wait for fade out, then change image and fade back in
-          setTimeout(() => {
-            const img = images[index];
-            // Check for image_url or url depending on what the backend returns
-            const imgUrl = img.image_url || img.url;
-            const title = img.title || 'DxValley Moment';
-
-            imgElement.src = imgUrl;
-            imgElement.alt = title;
-            captionText.textContent = title;
-
-            // Fade in new image
-            imgElement.classList.remove('opacity-0');
-            captionBox.classList.remove('opacity-0');
-          }, 500); // 500ms matches the CSS transition duration
-        };
-
-        // Show first image immediately
-        showImage(currentIndex);
-
-        // Change image every 4 seconds
-        setInterval(() => {
-          currentIndex = (currentIndex + 1) % images.length;
-          showImage(currentIndex);
-        }, 4000);
-
-      } catch (error) {
-        console.error('Error fetching gallery:', error);
-        const imgElement = document.getElementById('home-gallery-image');
-        if (imgElement) imgElement.src = "https://images.unsplash.com/photo-1517245386807-bb43f82fee33?w=800";
-        if (imgElement) imgElement.classList.remove('opacity-0');
-      }
-    })();
+<script>
+  const revealItems = document.querySelectorAll('.dv-reveal');
+  if ('IntersectionObserver' in window) {
+    const revealObserver = new IntersectionObserver((entries, observer) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        entry.target.style.animationDelay = `${entry.target.dataset.delay || 0}ms`;
+        entry.target.classList.add('dv-visible');
+        observer.unobserve(entry.target);
+      });
+    }, { threshold: 0.12 });
+    revealItems.forEach((item) => revealObserver.observe(item));
+  } else {
+    revealItems.forEach((item) => item.classList.add('dv-visible'));
+  }
 </script>

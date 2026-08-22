@@ -87,7 +87,18 @@
   let countdownInterval;
 
     // 1. Smart Apply Button Logic
-    window.handleGlobalApply = () => {
+    window.handleGlobalApply = async () => {
+      if (!window.announcementData || window.announcementData.length === 0) {
+        try {
+          const res = await fetch('/api/public/announcements');
+          if (res.ok) {
+            window.announcementData = await res.json();
+          }
+        } catch (err) {
+          console.error("Error loading announcements for global apply:", err);
+        }
+      }
+
       if (window.announcementData && window.announcementData.length > 0) {
         // Find all active Open Calls
         const openCalls = window.announcementData.filter(ann => ann.is_open_call);
@@ -98,21 +109,25 @@
           openApplicationModal(openCallIndex);
           return;
         } else if (openCalls.length > 1) {
-          // If there are multiple Open Calls, scroll to the list so they can choose!
+          // If there are multiple Open Calls, scroll to list if on home page or open first call
           const updatesSection = document.getElementById('announcements');
           if (updatesSection) {
             updatesSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return;
+          } else {
+            const openCallIndex = window.announcementData.findIndex(ann => ann.id === openCalls[0].id);
+            openApplicationModal(openCallIndex);
             return;
           }
         }
       }
 
-      // If there are 0 Open Calls, also scroll to the list (or show alert)
+      // If there are 0 Open Calls
       const updatesSection = document.getElementById('announcements');
       if (updatesSection) {
         updatesSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
       } else {
-        alert('Applications are not open right now. Please check back soon!');
+        window.location.href = '/#announcements';
       }
     };
 

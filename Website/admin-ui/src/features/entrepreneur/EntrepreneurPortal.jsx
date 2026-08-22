@@ -16,6 +16,7 @@ import {
   Bell,
   Scroll,
   BarChart3,
+  Pencil,
 } from "lucide-react";
 import { getEntrepreneurDashboard } from "../../services/portalService";
 
@@ -49,8 +50,37 @@ const EntrepreneurPortal = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("Dashboard");
+  const [replyInputs, setReplyInputs] = useState({});
+  const [replySending, setReplySending] = useState({});
+  const [editingReply, setEditingReply] = useState({});
 
   const currentUser = JSON.parse(sessionStorage.getItem("user") || "{}");
+
+  const handleSendReply = async (sessionId) => {
+    const text = (replyInputs[sessionId] || "").trim();
+    if (!text) return;
+    setReplySending((prev) => ({ ...prev, [sessionId]: true }));
+    try {
+      const res = await fetch(`/api/portal/entrepreneur/sessions/${sessionId}/reply`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reply: text }),
+      });
+      const result = await res.json();
+      if (res.ok && result.success) {
+        setReplyInputs((prev) => ({ ...prev, [sessionId]: "" }));
+        setEditingReply((prev) => ({ ...prev, [sessionId]: false }));
+        fetchData();
+      } else {
+        alert(result.error || "Failed to send reply.");
+      }
+    } catch (err) {
+      console.error("Error sending reply:", err);
+      alert("Failed to send reply. Please try again.");
+    } finally {
+      setReplySending((prev) => ({ ...prev, [sessionId]: false }));
+    }
+  };
 
   const fetchData = useCallback(async () => {
     try {
@@ -70,6 +100,7 @@ const EntrepreneurPortal = () => {
   const projects = data?.projects || [];
   const cohorts = data?.cohorts || [];
   const mentors = data?.mentors || [];
+  const mentorSessions = data?.mentorSessions || [];
   const funding = data?.funding || [];
   const milestones = data?.milestones || [];
   const workshops = data?.workshops || [];
@@ -260,49 +291,193 @@ const EntrepreneurPortal = () => {
 
     if (activeTab === "My Mentor") {
       return (
-          <div className="space-y-6">
-            {mentors.length === 0 ? (
-                <div className="bg-white rounded-2xl border border-[#D6E4EA] p-8 text-center">
-                  <p className="text-sm font-bold text-[#526274]">
-                    No mentor assigned yet. Your program coordinator will assign one
-                    soon.
-                  </p>
+        <div className="space-y-6">
+          {mentors.length === 0 ? (
+            <div className="bg-white rounded-2xl border border-[#D6E4EA] p-8 text-center">
+              <p className="text-sm font-bold text-[#526274]">
+                No mentor assigned yet. Your program coordinator will assign one
+                soon.
+              </p>
+            </div>
+          ) : (
+            mentors.map((m) => (
+              <div
+                key={m.assignment_id}
+                className="bg-white rounded-2xl border border-[#D6E4EA] p-6 shadow-xs"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-full bg-[#00ADEF] text-white flex items-center justify-center font-bold text-lg shadow-xs overflow-hidden">
+                    {m.mentor_name?.charAt(0)?.toUpperCase() || "M"}
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-[#111827]">
+                      {m.mentor_name}
+                    </h3>
+                    <p className="text-xs text-[#526274] font-semibold">
+                      {m.mentor_email}
+                    </p>
+                    <p className="text-xs text-[#006F9E] font-bold mt-1">
+                      {m.mentor_expertise || "General Expertise"}
+                    </p>
+                  </div>
                 </div>
+                <div className="mt-5 flex items-center gap-2 text-xs text-[#526274] font-semibold bg-[#F6FAFC] border border-[#D6E4EA] rounded-xl p-3">
+                  <GraduationCap size={14} className="text-[#00ADEF]" />
+                  {m.cohort_name ? (
+                    <>Cohort: <strong className="text-[#111827]">{m.cohort_name}</strong></>
+                  ) : m.project_name ? (
+                    <>Project: <strong className="text-[#111827]">{m.project_name}</strong></>
+                  ) : (
+                    <strong className="text-[#111827]">Assigned Mentor</strong>
+                  )}
+                  <span className="text-[#D6E4EA]">•</span>
+                  Assigned:{" "}
+                  <strong className="text-[#111827]">
+                    {new Date(m.assigned_at).toLocaleDateString()}
+                  </strong>
+                </div>
+              </div>
+            ))
+          )}
+
+          {/* Mentorship Sessions & Feedback Section */}
+          <div className="bg-white rounded-2xl border border-[#D6E4EA] p-6 shadow-xs">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#006F9E] block mb-1">
+                  Session History &amp; Feedback
+                </span>
+                <h3 className="text-lg font-bold text-[#111827]">
+                  Mentorship Sessions &amp; Feedback
+                </h3>
+              </div>
+            </div>
+
+            {mentorSessions.length === 0 ? (
+              <p className="text-sm text-[#526274] font-semibold py-4 text-center">
+                No mentorship sessions or feedback logged yet by your mentor.
+              </p>
             ) : (
-                mentors.map((m) => (
-                    <div
-                        key={m.assignment_id}
-                        className="bg-white rounded-2xl border border-[#D6E4EA] p-6 shadow-xs"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 rounded-full bg-[#00ADEF] text-white flex items-center justify-center font-bold text-lg shadow-xs overflow-hidden">
-                          {m.mentor_name?.charAt(0)?.toUpperCase() || "M"}
-                        </div>
-                        <div>
-                          <h3 className="text-lg font-bold text-[#111827]">
-                            {m.mentor_name}
-                          </h3>
-                          <p className="text-xs text-[#526274] font-semibold">
-                            {m.mentor_email}
-                          </p>
-                          <p className="text-xs text-[#006F9E] font-bold mt-1">
-                            {m.mentor_expertise || "General Expertise"}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="mt-5 flex items-center gap-2 text-xs text-[#526274] font-semibold bg-[#F6FAFC] border border-[#D6E4EA] rounded-xl p-3">
-                        <GraduationCap size={14} className="text-[#00ADEF]" />
-                        Cohort: <strong className="text-[#111827]">{m.cohort_name}</strong>
-                        <span className="text-[#D6E4EA]">•</span>
-                        Assigned:{" "}
-                        <strong className="text-[#111827]">
-                          {new Date(m.assigned_at).toLocaleDateString()}
-                        </strong>
-                      </div>
+              <div className="space-y-4">
+                {mentorSessions.map((s) => (
+                  <div
+                    key={s.id}
+                    className="bg-[#F6FAFC] border border-[#D6E4EA] rounded-xl p-5"
+                  >
+                    <div className="flex items-center justify-between gap-4 mb-3">
+                      <span className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-[#006F9E]">
+                        <Calendar size={14} />
+                        {new Date(s.session_date).toLocaleDateString()} • {s.mentor_name}
+                      </span>
                     </div>
-                ))
+                    {s.notes && (
+                      <div className="mb-3 flex items-start gap-2">
+                        <FileText
+                          size={15}
+                          className="text-[#00ADEF] mt-0.5 shrink-0"
+                        />
+                        <p className="text-sm text-[#111827] leading-relaxed">
+                          <strong className="text-[#111827]">Progress Notes:</strong>{" "}
+                          {s.notes}
+                        </p>
+                      </div>
+                    )}
+                    {s.feedback && (
+                      <div className="space-y-3">
+                        <div className="flex items-start gap-2 bg-[#FFF1E3]/60 border border-[#E38524]/20 rounded-xl p-3.5">
+                          <HandCoins
+                            size={16}
+                            className="text-[#E38524] mt-0.5 shrink-0"
+                          />
+                          <p className="text-sm text-[#111827] leading-relaxed">
+                            <strong className="text-[#E38524]">Mentor Feedback:</strong>{" "}
+                            {s.feedback}
+                          </p>
+                        </div>
+
+                        {s.entrepreneur_reply && (
+                          <div className="space-y-2 ml-4">
+                            <div className="flex items-start justify-between gap-2 bg-emerald-50/80 border border-emerald-200 rounded-xl p-3.5">
+                              <div className="flex items-start gap-2">
+                                <CheckCircle2 size={16} className="text-emerald-600 mt-0.5 shrink-0" />
+                                <div>
+                                  <p className="text-sm text-emerald-900 leading-relaxed">
+                                    <strong className="text-emerald-800">Your Reply:</strong> {s.entrepreneur_reply}
+                                  </p>
+                                  {s.reply_at && (
+                                    <span className="text-[10px] text-emerald-700 font-semibold block mt-1">
+                                      {new Date(s.reply_at).toLocaleString()}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => {
+                                  setReplyInputs({ ...replyInputs, [s.id]: s.entrepreneur_reply });
+                                  setEditingReply({ ...editingReply, [s.id]: true });
+                                }}
+                                className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 hover:text-emerald-900 bg-white border border-emerald-300 rounded-lg px-2.5 py-1 hover:bg-emerald-100 transition shrink-0"
+                              >
+                                <Pencil size={12} /> Edit
+                              </button>
+                            </div>
+
+                            {s.mentor_response && (
+                              <div className="flex items-start gap-2 bg-[#EAF8FC] border border-[#00ADEF]/20 rounded-xl p-3.5 ml-4">
+                                <HandCoins size={16} className="text-[#006F9E] mt-0.5 shrink-0" />
+                                <div>
+                                  <p className="text-sm text-[#111827] leading-relaxed">
+                                    <strong className="text-[#006F9E]">Mentor Follow-up Response:</strong> {s.mentor_response}
+                                  </p>
+                                  {s.mentor_response_at && (
+                                    <span className="text-[10px] text-[#526274] font-semibold block mt-1">
+                                      {new Date(s.mentor_response_at).toLocaleString()}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        <div className="pt-2 border-t border-[#D6E4EA]">
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              placeholder={editingReply[s.id] ? "Edit your reply..." : "Write a message to your mentor..."}
+                              value={replyInputs[s.id] || ""}
+                              onChange={(e) => setReplyInputs({ ...replyInputs, [s.id]: e.target.value })}
+                              onKeyDown={(e) => e.key === "Enter" && handleSendReply(s.id)}
+                              className="flex-1 px-3.5 py-2 bg-white border border-[#D6E4EA] rounded-xl text-xs font-medium outline-none focus:border-[#00ADEF]"
+                            />
+                            <button
+                              onClick={() => handleSendReply(s.id)}
+                              disabled={replySending[s.id] || !replyInputs[s.id]?.trim()}
+                              className="px-4 py-2 bg-[#00ADEF] text-white text-xs font-extrabold rounded-xl hover:bg-[#006F9E] disabled:opacity-40 transition shrink-0"
+                            >
+                              {replySending[s.id] ? "Saving..." : editingReply[s.id] ? "Update" : "Reply"}
+                            </button>
+                            {editingReply[s.id] && (
+                              <button
+                                onClick={() => {
+                                  setEditingReply({ ...editingReply, [s.id]: false });
+                                  setReplyInputs({ ...replyInputs, [s.id]: "" });
+                                }}
+                                className="px-3 py-2 bg-gray-100 text-gray-600 text-xs font-bold rounded-xl hover:bg-gray-200 transition shrink-0"
+                              >
+                                Cancel
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             )}
           </div>
+        </div>
       );
     }
 
@@ -437,21 +612,59 @@ const EntrepreneurPortal = () => {
                   Request Funding
                 </a>
               </div>
-              {funding.length === 0 ? (
-                  <p className="text-sm text-[#526274] mt-4 font-semibold">
-                    No funding requests yet.
-                  </p>
-              ) : (
-                  <div className="mt-4 overflow-x-auto">
-                    <table className="w-full text-left text-sm min-w-[740px]">
-                      <thead>
-                      <tr className="text-[11px] font-extrabold uppercase tracking-wider text-[#526274] border-b border-[#D6E4EA]">
-                        <th className="py-3 pr-4">Project</th>
-                        <th className="py-3 pr-4">Requested</th>
-                        <th className="py-3 pr-4">Offered</th>
-                        <th className="py-3 pr-4">Date</th>
-                        <th className="py-3 pr-4">Status</th>
-                        <th className="py-3">Action</th>
+              <a
+                href="/v1/funding/new"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-[#E38524] px-3.5 py-2 text-[11px] font-bold uppercase tracking-wider text-white shadow-xs hover:-translate-y-0.5 transition-all"
+              >
+                <span className="text-sm leading-none">+</span>
+                Request Funding
+              </a>
+            </div>
+            {funding.length === 0 ? (
+              <p className="text-sm text-[#526274] mt-4 font-semibold">
+                No funding requests yet.
+              </p>
+            ) : (
+              <div className="mt-4 overflow-x-auto">
+                <table className="w-full text-left text-sm min-w-[700px]">
+                  <thead>
+                    <tr className="text-[11px] font-extrabold uppercase tracking-wider text-[#526274] border-b border-[#D6E4EA]">
+                      <th className="py-3 pr-4">Project</th>
+                      <th className="py-3 pr-4">Requested</th>
+                      <th className="py-3 pr-4">Approved</th>
+                      <th className="py-3 pr-4">Stage</th>
+                      <th className="py-3 pr-4">Date</th>
+                      <th className="py-3 pr-4">Admin Notes</th>
+                      <th className="py-3">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {funding.map((f) => (
+                      <tr
+                        key={f.id}
+                        className="border-b border-[#D6E4EA] last:border-0"
+                      >
+                        <td className="py-3 pr-4 font-bold text-[#111827]">
+                          {f.project_name}
+                        </td>
+                        <td className="py-3 pr-4 font-semibold text-[#111827]">
+                          {Number(f.amount).toLocaleString()} ETB
+                        </td>
+                        <td className="py-3 pr-4 font-bold text-emerald-700">
+                          {f.approved_amount ? `${Number(f.approved_amount).toLocaleString()} ETB` : "—"}
+                        </td>
+                        <td className="py-3 pr-4 capitalize text-[#526274] font-semibold">
+                          {f.funding_stage || "—"}
+                        </td>
+                        <td className="py-3 pr-4 text-[#526274] font-semibold">
+                          {new Date(f.requested_at).toLocaleDateString()}
+                        </td>
+                        <td className="py-3 pr-4 text-[#526274] text-xs font-medium max-w-[200px] truncate" title={f.notes || ""}>
+                          {f.notes || "—"}
+                        </td>
+                        <td className="py-3">
+                          <StageBadge status={f.status} />
+                        </td>
                       </tr>
                       </thead>
                       <tbody>

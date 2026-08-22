@@ -248,6 +248,31 @@ export const assignMentor = async (projectId, mentorId) => {
     const userId = ownerRes.rows[0]?.user_id;
 
     if (userId) {
+      let cohortRes = await pool.query(
+        "SELECT cohort_id FROM cohort_members WHERE user_id = $1 LIMIT 1",
+        [userId]
+      );
+      let cohortId = cohortRes.rows[0]?.cohort_id;
+      if (!cohortId) {
+        const anyCohort = await pool.query("SELECT id FROM cohorts ORDER BY created_at DESC LIMIT 1");
+        cohortId = anyCohort.rows[0]?.id;
+      }
+      if (cohortId) {
+        await pool.query(
+          `INSERT INTO cohort_members (cohort_id, user_id, joined_at, current_stage)
+           VALUES ($1, $2, NOW(), 'incubation')
+           ON CONFLICT (cohort_id, user_id) DO NOTHING`,
+          [cohortId, userId]
+        ).catch(() => {});
+
+        await pool.query(
+          `INSERT INTO mentor_assignments (mentor_id, entrepreneur_id, cohort_id)
+           VALUES ($1, $2, $3)
+           ON CONFLICT (mentor_id, entrepreneur_id, cohort_id) DO NOTHING`,
+          [mentorId, userId, cohortId]
+        ).catch(() => {});
+      }
+
       const projRes = await pool.query("SELECT name FROM projects WHERE id = $1", [projectId]);
       const projectName = projRes.rows[0]?.name || "your project";
 

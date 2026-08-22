@@ -8,6 +8,9 @@ import {
   getMentorAssignmentSessions,
   createMentorSession,
   deleteMentorSession,
+  replyToMentorSession,
+  mentorReplyToEntrepreneurSession,
+  markNotificationsAsRead,
 } from "../admin-backend/portal/portal.js";
 
 const router = Router();
@@ -44,6 +47,30 @@ router.get(
   }),
 );
 
+router.post(
+  "/entrepreneur/sessions/:id/reply",
+  isAuth,
+  authorizeRole(ROLES.ENTREPRENEUR, ROLES.SUPERADMIN, ROLES.ADMIN),
+  asyncHandler(async (req, res) => {
+    const result = await replyToMentorSession(
+      req.session.userId,
+      req.params.id,
+      req.body.reply,
+    );
+    res.json({ success: true, session: result });
+  }),
+);
+
+router.post(
+  "/notifications/read",
+  isAuth,
+  authorizeRole(ROLES.ENTREPRENEUR, ROLES.MENTOR, ROLES.SUPERADMIN, ROLES.ADMIN),
+  asyncHandler(async (req, res) => {
+    await markNotificationsAsRead(req.session.userId);
+    res.json({ success: true });
+  }),
+);
+
 router.get(
   "/mentor/dashboard",
   isAuth,
@@ -76,6 +103,20 @@ router.post(
     const session = await createMentorSession(req.session.userId, req.body);
     if (!session) return res.status(403).json({ error: "Access denied" });
     res.status(201).json(session);
+  }),
+);
+
+router.post(
+  "/mentor/sessions/:id/response",
+  isAuth,
+  authorizeRole(ROLES.MENTOR, ROLES.SUPERADMIN, ROLES.ADMIN),
+  asyncHandler(async (req, res) => {
+    const result = await mentorReplyToEntrepreneurSession(
+      req.session.userId,
+      req.params.id,
+      req.body.response,
+    );
+    res.json({ success: true, session: result });
   }),
 );
 
