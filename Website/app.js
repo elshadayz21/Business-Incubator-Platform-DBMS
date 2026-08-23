@@ -130,6 +130,22 @@ app.get("/", async (req, res) => {
     }
 });
 
+// Dedicated Apply Page
+app.get("/apply/:id", async (req, res) => {
+    try {
+        const result = await pool.query("SELECT * FROM announcements WHERE id = $1 AND is_open_call = true", [req.params.id]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).send("Open call not found.");
+        }
+
+        res.render("apply", { announcement: result.rows[0] });
+    } catch (error) {
+        console.error("Error fetching apply page:", error);
+        res.status(500).send("Server Error");
+    }
+});
+
 app.use("/v1", GlobalRouter);
 app.use("/api/admin", adminApiRoutes);
 app.use("/api/portal", portalApiRoutes);
