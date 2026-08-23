@@ -29,8 +29,12 @@ import {
 const RECIPIENT_PLACEHOLDER_HINT =
   "Available placeholders: {{first_name}}, {{name}}, {{email}}";
 
+const INVITATION_SUBJECT = "You're In! Welcome to DxValley \u{1F680}";
+const INVITATION_BODY = "Congratulations!\n\nYour application to DxValley has been accepted.\n\nTo complete your registration and access the Founder Dashboard, please click the link below:\n\n{link}";
+
 export default function MassEmail() {
   const [sources, setSources] = useState([]);
+  const [announcements, setAnnouncements] = useState([]);
   const [templates, setTemplates] = useState([]);
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -40,8 +44,13 @@ export default function MassEmail() {
   // Compose form
   const [name, setName] = useState("");
   const [source, setSource] = useState("");
+  const [batchId, setBatchId] = useState("");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
+
+  // Hand-picked recipients for inbox sources (subscribers / contacts)
+  const [recipients, setRecipients] = useState([]);
+  const [selectedIds, setSelectedIds] = useState([]);
 
   // Template form
   const [templateName, setTemplateName] = useState("");
@@ -51,21 +60,68 @@ export default function MassEmail() {
   const [templateSubmitting, setTemplateSubmitting] = useState(false);
   const [templateNotice, setTemplateNotice] = useState("");
 
+  // Recipient counts depend on the selected batch (announcement) filter
+  const fetchSources = async (batch) => {
+    try {
+      const query = batch ? `?announcementId=${encodeURIComponent(batch)}` : "";
+      const res = await fetch(`/api/admin/emails/sources${query}`, {
+        credentials: "include",
+      });
+      const data = await res.json();
+      setSources(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Error fetching email sources:", error);
+    }
+  };
+
+  // Individual entries of the chosen source for hand-picking recipients.
+  // For applicant sources, an optional batch narrows the list as well.
+  const fetchRecipients = async (src, batch) => {
+    if (!src) {
+      setRecipients([]);
+      return;
+    }
+    try {
+      const params = new URLSearchParams({ source: src });
+      if (
+        (src === "accepted_applicants" || src === "declined_applicants") &&
+        batch
+      ) {
+        params.set("announcementId", batch);
+      }
+      const res = await fetch(`/api/admin/emails/recipients?${params}`, {
+        credentials: "include",
+      });
+      const data = await res.json();
+      setRecipients(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Error fetching recipients:", error);
+      setRecipients([]);
+    }
+  };
+
   const fetchAll = async () => {
     try {
-      const [sourcesRes, templatesRes, campaignsRes] = await Promise.all([
-        fetch("/api/admin/emails/sources", { credentials: "include" }),
-        fetch("/api/admin/emails/templates", { credentials: "include" }),
-        fetch("/api/admin/emails/campaigns", { credentials: "include" }),
-      ]);
-      const [sourcesData, templatesData, campaignsData] = await Promise.all([
-        sourcesRes.json(),
-        templatesRes.json(),
-        campaignsRes.json(),
-      ]);
+      const [sourcesRes, templatesRes, campaignsRes, announcementsRes] =
+        await Promise.all([
+          fetch("/api/admin/emails/sources", { credentials: "include" }),
+          fetch("/api/admin/emails/templates", { credentials: "include" }),
+          fetch("/api/admin/emails/campaigns", { credentials: "include" }),
+          fetch("/api/admin/announcements", { credentials: "include" }),
+        ]);
+      const [sourcesData, templatesData, campaignsData, announcementsData] =
+        await Promise.all([
+          sourcesRes.json(),
+          templatesRes.json(),
+          campaignsRes.json(),
+          announcementsRes.json(),
+        ]);
       setSources(Array.isArray(sourcesData) ? sourcesData : []);
       setTemplates(Array.isArray(templatesData) ? templatesData : []);
       setCampaigns(Array.isArray(campaignsData) ? campaignsData : []);
+      setAnnouncements(
+        Array.isArray(announcementsData) ? announcementsData : [],
+      );
       if (Array.isArray(sourcesData) && sourcesData.length > 0 && !source) {
         setSource(sourcesData[0].key);
       }
@@ -82,11 +138,37 @@ export default function MassEmail() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Reload the hand-pick list whenever the source or target batch changes
+  useEffect(() => {
+    fetchRecipients(source, batchId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [source, batchId]);
+
   const activeSource = sources.find((s) => s.key === source);
+  const isAcceptedSource = source === "accepted_applicants";
+  const isApplicantSource =
+    source === "accepted_applicants" || source === "declined_applicants";
+  const selectedCount = selectedIds.length;
+  const effectiveCount =
+    selectedCount > 0 ? selectedCount : activeSource?.count ?? 0;
+
+  const toggleRecipient = (id) =>
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+
+  const toggleAllRecipients = () =>
+    setSelectedIds((prev) =>
+      prev.length === recipients.length ? [] : recipients.map((r) => r.id),
+    );
 
   const handleLoadTemplate = (tpl) => {
     setSubject(tpl.subject);
-    setBody(tpl.body);
+    let newBody = tpl.body;
+    if (isAcceptedSource && !newBody.includes("{link}")) {
+      newBody = newBody + "\n\n{link}";
+    }
+    setBody(newBody);
   };
 
   const handleSend = async (e) => {
@@ -99,7 +181,14 @@ export default function MassEmail() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ name, subject, body, source }),
+        body: JSON.stringify({
+          name,
+          subject,
+          body,
+          source,
+          announcementId: batchId || null,
+          ...(selectedIds.length > 0 ? { recipientIds: selectedIds } : {}),
+        }),
       });
       const data = await res.json();
       setSendResult(data);
@@ -280,7 +369,15 @@ export default function MassEmail() {
                   </label>
                   <select
                     value={source}
-                    onChange={(e) => setSource(e.target.value)}
+                    onChange={(e) => {
+                      const newSource = e.target.value;
+                      setSource(newSource);
+                      setSelectedIds([]);
+                      if (newSource === "accepted_applicants") {
+                        setSubject(INVITATION_SUBJECT);
+                        setBody(INVITATION_BODY);
+                      }
+                    }}
                     className={inputClass}
                   >
                     {sources.map((s) => (
@@ -291,10 +388,116 @@ export default function MassEmail() {
                   </select>
                   {activeSource && (
                     <p className="text-[11px] text-[#006F9E] mt-1.5 font-semibold">
-                      Sends to {activeSource.count} recipient
-                      {activeSource.count === 1 ? "" : "s"}
+                      Sends to {effectiveCount} recipient
+                      {effectiveCount === 1 ? "" : "s"}
+                      {selectedCount > 0 ? " (hand-picked)" : ""}
                     </p>
                   )}
+                </div>
+
+                {(source === "accepted_applicants" ||
+                  source === "declined_applicants") && (
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-[#526274] mb-2">
+                      Target batch (optional)
+                    </label>
+                    <select
+                      value={batchId}
+                      onChange={(e) => {
+                        const next = e.target.value;
+                        setBatchId(next);
+                        setSelectedIds([]);
+                        fetchSources(next);
+                      }}
+                      className={inputClass}
+                    >
+                      <option value="">All batches</option>
+                      {announcements.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.title}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-[11px] text-[#8AA0B4] mt-1.5">
+                      {batchId
+                        ? "Counts and sends are limited to applicants of this batch's open call."
+                        : "Pick an announcement to email only that batch's applicants."}
+                    </p>
+                  </div>
+                )}
+
+                <div>
+                  <div className="flex items-center justify-between gap-3 mb-2">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-[#526274]">
+                      Pick recipients ({selectedIds.length} of{" "}
+                      {recipients.length} selected)
+                    </label>
+                    {recipients.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={toggleAllRecipients}
+                        className="text-[11px] font-bold text-[#006F9E] hover:underline"
+                      >
+                        {selectedIds.length === recipients.length
+                          ? "Clear all"
+                          : "Select all"}
+                      </button>
+                    )}
+                  </div>
+                  <div className="max-h-52 overflow-y-auto border border-[#D6E4EA] rounded-xl divide-y divide-[#D6E4EA] bg-[#F6FAFC]">
+                    {recipients.length === 0 ? (
+                      <p className="p-4 text-xs text-[#8AA0B4]">
+                        No entries in this source yet.
+                      </p>
+                    ) : (
+                      recipients.map((r) => (
+                        <label
+                          key={r.id}
+                          className={`flex items-start gap-3 p-3 cursor-pointer transition-colors ${
+                            selectedIds.includes(r.id)
+                              ? "bg-[#EAF8FC]"
+                              : "hover:bg-[#EAF8FC]/50"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.includes(r.id)}
+                            onChange={() => toggleRecipient(r.id)}
+                            className="mt-0.5 w-4 h-4 accent-[#00ADEF]"
+                          />
+                          <span className="min-w-0 flex-1">
+                            <span className="flex items-center gap-2">
+                              <span className="block text-sm font-bold text-[#111827] truncate">
+                                {r.name || r.email}
+                              </span>
+                              {isApplicantSource && r.status && (
+                                <span
+                                  className={`px-1.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase border shrink-0 ${
+                                    r.status === "Accepted"
+                                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                      : "bg-rose-50 text-rose-700 border-rose-200"
+                                  }`}
+                                >
+                                  {r.status}
+                                </span>
+                              )}
+                            </span>
+                            <span className="block text-xs text-[#526274] truncate">
+                              {r.email} •{" "}
+                              {new Date(r.created_at).toLocaleDateString()}
+                            </span>
+                          </span>
+                        </label>
+                      ))
+                    )}
+                  </div>
+                  <p className="text-[11px] text-[#8AA0B4] mt-1.5">
+                    Leave everyone unchecked to send to all{" "}
+                    {activeSource?.count ?? 0}.{" "}
+                    {isApplicantSource
+                      ? "Tick specific applicants — e.g. late arrivals after your first acceptance wave — to email just them."
+                      : "Check specific people to reply only to them."}
+                  </p>
                 </div>
 
                 {templates.length > 0 && (
@@ -349,9 +552,32 @@ export default function MassEmail() {
                     placeholder={`Dear {{first_name}},\n\nWelcome to the DxValley incubation program...`}
                   />
                   <p className="text-[11px] text-[#8AA0B4] mt-1.5">
-                    {RECIPIENT_PLACEHOLDER_HINT}
+                    {isAcceptedSource
+                      ? "Type {link} where you want the signup button to appear. Also available: {{first_name}}, {{name}}, {{email}}"
+                      : RECIPIENT_PLACEHOLDER_HINT}
                   </p>
                 </div>
+
+                {isAcceptedSource && body.includes("{link}") && (
+                  <div className="bg-[#EAF8FC] border border-[#00ADEF]/20 rounded-xl p-4">
+                    <p className="text-[11px] font-extrabold uppercase tracking-wider text-[#006F9E] mb-2">
+                      Preview (Link Area)
+                    </p>
+                    <div className="text-sm text-[#111827]">
+                      {body.split("\n").map((line, i) => (
+                        <p key={i} className="mb-2">
+                          {line.includes("{link}") ? (
+                            <span className="inline-block bg-[#E38524] text-white px-4 py-2 rounded-lg font-bold text-xs cursor-pointer">
+                              Complete Registration
+                            </span>
+                          ) : (
+                            line
+                          )}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <button
                   type="submit"
@@ -361,7 +587,8 @@ export default function MassEmail() {
                   {sending ? (
                     <>
                       <Loader2 size={18} className="animate-spin" />
-                      Sending to {activeSource?.count || 0} recipients...
+                      Sending to {effectiveCount} recipient
+                      {effectiveCount === 1 ? "" : "s"}...
                     </>
                   ) : (
                     <>
@@ -536,12 +763,13 @@ export default function MassEmail() {
 
             {campaigns.length > 0 ? (
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse min-w-[760px]">
+                <table className="w-full text-left border-collapse min-w-[860px]">
                   <thead>
                     <tr className="bg-[#F6FAFC] border-b border-[#D6E4EA] text-[#526274] text-xs font-bold uppercase tracking-wider">
                       <th className="p-4">Campaign</th>
                       <th className="p-4">Subject</th>
                       <th className="p-4">Source</th>
+                      <th className="p-4">Batch</th>
                       <th className="p-4">Sent</th>
                       <th className="p-4">Status</th>
                       <th className="p-4">Date</th>
@@ -568,6 +796,9 @@ export default function MassEmail() {
                           <span className="inline-flex px-2.5 py-1 rounded-full bg-[#EAF8FC] text-[#006F9E] text-xs font-bold border border-[#00ADEF]/20 capitalize">
                             {c.recipient_source.replace(/_/g, " ")}
                           </span>
+                        </td>
+                        <td className="p-4 text-xs font-semibold text-[#526274] max-w-[180px] truncate">
+                          {c.announcement_title || "All batches"}
                         </td>
                         <td className="p-4 text-xs font-semibold text-[#111827]">
                           {c.sent_count} / {c.recipient_count}

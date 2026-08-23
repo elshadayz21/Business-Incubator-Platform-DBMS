@@ -13,6 +13,12 @@ import {
   UserRound,
   ClipboardCheck,
   X,
+  Bell,
+  Scroll,
+  HandCoins,
+  GraduationCap,
+  Rocket,
+  Pencil,
 } from "lucide-react";
 import {
   getMentorDashboard,
@@ -23,8 +29,11 @@ import {
 
 const MentorPortal = () => {
   const [assignments, setAssignments] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [activityLogs, setActivityLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [activeTab, setActiveTab] = useState("My Entrepreneurs");
   const [selected, setSelected] = useState(null);
   const [sessions, setSessions] = useState([]);
   const [sessionsLoading, setSessionsLoading] = useState(false);
@@ -36,25 +45,69 @@ const MentorPortal = () => {
   });
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState("");
+  const [responseInputs, setResponseInputs] = useState({});
+  const [responseSending, setResponseSending] = useState({});
+  const [editingResponse, setEditingResponse] = useState({});
 
   const currentUser = JSON.parse(sessionStorage.getItem("user") || "{}");
 
-  const fetchAssignments = useCallback(async () => {
+  const handleSendMentorResponse = async (sessionId) => {
+    const text = (responseInputs[sessionId] || "").trim();
+    if (!text) return;
+    setResponseSending((prev) => ({ ...prev, [sessionId]: true }));
+    try {
+      const res = await fetch(`/api/portal/mentor/sessions/${sessionId}/response`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ response: text }),
+      });
+      const result = await res.json();
+      if (res.ok && result.success) {
+        setResponseInputs((prev) => ({ ...prev, [sessionId]: "" }));
+        setEditingResponse((prev) => ({ ...prev, [sessionId]: false }));
+        if (selected) openSessions(selected);
+      } else {
+        alert(result.error || "Failed to send response.");
+      }
+    } catch (err) {
+      console.error("Error sending response:", err);
+      alert("Failed to send response. Please try again.");
+    } finally {
+      setResponseSending((prev) => ({ ...prev, [sessionId]: false }));
+    }
+  };
+
+  const unreadNotifications = notifications.filter((n) => !n.read).length;
+
+  const fetchDashboard = useCallback(async () => {
     try {
       setLoading(true);
       const result = await getMentorDashboard();
-      setAssignments(result || []);
+      setAssignments(result?.assignments || []);
+      setNotifications(result?.notifications || []);
+      setActivityLogs(result?.activityLogs || []);
     } catch (err) {
       console.error("Error loading mentor dashboard:", err);
-      setError("Could not load your assignments. Please try again.");
+      setError("Could not load your dashboard. Please try again.");
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchAssignments();
-  }, [fetchAssignments]);
+    document.title = "Dx Valley ICMS - Mentor Portal";
+    fetchDashboard();
+  }, [fetchDashboard]);
+
+  useEffect(() => {
+    if (activeTab === "Notifications" && unreadNotifications > 0) {
+      fetch("/api/portal/notifications/read", { method: "POST" })
+        .then(() => {
+          setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+        })
+        .catch((err) => console.error("Error marking notifications as read:", err));
+    }
+  }, [activeTab, unreadNotifications]);
 
   const openSessions = async (assignment) => {
     setSelected(assignment);
@@ -124,6 +177,12 @@ const MentorPortal = () => {
     window.location.href = "/v1/auth/login";
   };
 
+  const navItems = [
+    { id: 1, icon: Users, label: "My Entrepreneurs" },
+    { id: 2, icon: Bell, label: "Notifications", badge: unreadNotifications || null },
+    { id: 3, icon: Scroll, label: "Activity Timeline" },
+  ];
+
   return (
     <div className="flex h-screen bg-[#F6FAFC] font-sans text-[#111827] overflow-hidden selection:bg-[#E38524] selection:text-white">
       {/* Sidebar */}
@@ -175,17 +234,35 @@ const MentorPortal = () => {
           <div className="px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-wider text-[#526274]">
             Mentorship
           </div>
-          <button
-            onClick={closeSessions}
-            className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl transition-all text-xs font-bold ${
-              !selected
-                ? "bg-[#EAF8FC] text-[#006F9E] border-l-4 border-[#00ADEF] shadow-xs"
-                : "text-[#526274] hover:bg-[#F6FAFC] hover:text-[#111827]"
-            }`}
-          >
-            <Users size={18} className={!selected ? "text-[#00ADEF]" : "text-[#526274]"} />
-            <span>My Entrepreneurs</span>
-          </button>
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.label && !selected;
+            return (
+              <button
+                key={item.id}
+                onClick={() => {
+                  setActiveTab(item.label);
+                  closeSessions();
+                }}
+                className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl transition-all text-xs font-bold ${
+                  isActive
+                    ? "bg-[#EAF8FC] text-[#006F9E] border-l-4 border-[#00ADEF] shadow-xs"
+                    : "text-[#526274] hover:bg-[#F6FAFC] hover:text-[#111827]"
+                }`}
+              >
+                <Icon
+                  size={18}
+                  className={isActive ? "text-[#00ADEF]" : "text-[#526274]"}
+                />
+                <span>{item.label}</span>
+                {item.badge ? (
+                  <span className="ml-auto rounded-full bg-[#E38524] text-white min-w-5 h-5 flex items-center justify-center text-[10px] font-bold">
+                    {item.badge}
+                  </span>
+                ) : null}
+              </button>
+            );
+          })}
         </nav>
 
         <div className="p-3 border-t border-[#D6E4EA] bg-[#F6FAFC] space-y-2">
@@ -229,7 +306,7 @@ const MentorPortal = () => {
             <div className="text-center space-y-3">
               <div className="w-10 h-10 border-4 border-[#00ADEF] border-t-transparent rounded-full animate-spin mx-auto" />
               <p className="text-sm font-bold text-[#006F9E]">
-                Loading your assignments...
+                Loading your dashboard...
               </p>
             </div>
           </div>
@@ -264,7 +341,7 @@ const MentorPortal = () => {
                       : ""}
                   </p>
                   <p className="text-xs text-[#006F9E] font-bold mt-1">
-                    Cohort: {selected.cohort_name}
+                    {selected.cohort_name ? `Cohort: ${selected.cohort_name}` : selected.project_name ? `Project: ${selected.project_name}` : "Assigned Mentorship"}
                   </p>
                 </div>
               </div>
@@ -429,6 +506,182 @@ const MentorPortal = () => {
                           </p>
                         </div>
                       )}
+                      {s.entrepreneur_reply && (
+                        <div className="space-y-3 mt-3">
+                          <div className="flex items-start gap-2 bg-emerald-50/80 border border-emerald-200 rounded-xl p-3.5">
+                            <MessageSquareText size={15} className="text-emerald-600 mt-0.5 shrink-0" />
+                            <div>
+                              <p className="text-sm text-emerald-900 leading-relaxed">
+                                <strong className="text-emerald-800">Entrepreneur Reply:</strong> {s.entrepreneur_reply}
+                              </p>
+                              {s.reply_at && (
+                                <span className="text-[10px] text-emerald-700 font-semibold block mt-1">
+                                  {new Date(s.reply_at).toLocaleString()}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {s.mentor_response && (
+                            <div className="flex items-start justify-between gap-2 bg-[#EAF8FC] border border-[#00ADEF]/20 rounded-xl p-3.5 ml-4">
+                              <div className="flex items-start gap-2">
+                                <MessageSquareText size={15} className="text-[#00ADEF] mt-0.5 shrink-0" />
+                                <div>
+                                  <p className="text-sm text-[#111827] leading-relaxed">
+                                    <strong className="text-[#006F9E]">Your Follow-up Response:</strong> {s.mentor_response}
+                                  </p>
+                                  {s.mentor_response_at && (
+                                    <span className="text-[10px] text-[#526274] font-semibold block mt-1">
+                                      {new Date(s.mentor_response_at).toLocaleString()}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => {
+                                  setResponseInputs({ ...responseInputs, [s.id]: s.mentor_response });
+                                  setEditingResponse({ ...editingResponse, [s.id]: true });
+                                }}
+                                className="inline-flex items-center gap-1 text-[11px] font-bold text-[#006F9E] hover:text-[#00ADEF] bg-white border border-[#00ADEF]/30 rounded-lg px-2.5 py-1 hover:bg-[#dff2fa] transition shrink-0"
+                              >
+                                <Pencil size={12} /> Edit
+                              </button>
+                            </div>
+                          )}
+
+                          <div className="pt-2 border-t border-[#D6E4EA]">
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="text"
+                                placeholder={editingResponse[s.id] ? "Edit your response..." : "Reply back to entrepreneur..."}
+                                value={responseInputs[s.id] || ""}
+                                onChange={(e) => setResponseInputs({ ...responseInputs, [s.id]: e.target.value })}
+                                onKeyDown={(e) => e.key === "Enter" && handleSendMentorResponse(s.id)}
+                                className="flex-1 px-3.5 py-2 bg-white border border-[#D6E4EA] rounded-xl text-xs font-medium outline-none focus:border-[#00ADEF]"
+                              />
+                              <button
+                                onClick={() => handleSendMentorResponse(s.id)}
+                                disabled={responseSending[s.id] || !responseInputs[s.id]?.trim()}
+                                className="px-4 py-2 bg-[#E38524] text-white text-xs font-extrabold rounded-xl hover:bg-[#C97019] disabled:opacity-40 transition shrink-0"
+                              >
+                                {responseSending[s.id] ? "Saving..." : editingResponse[s.id] ? "Update" : "Reply"}
+                              </button>
+                              {editingResponse[s.id] && (
+                                <button
+                                  onClick={() => {
+                                    setEditingResponse({ ...editingResponse, [s.id]: false });
+                                    setResponseInputs({ ...responseInputs, [s.id]: "" });
+                                  }}
+                                  className="px-3 py-2 bg-gray-100 text-gray-600 text-xs font-bold rounded-xl hover:bg-gray-200 transition shrink-0"
+                                >
+                                  Cancel
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        ) : activeTab === "Notifications" ? (
+          /* -------- Notifications view -------- */
+          <div className="space-y-6">
+            <div className="bg-white rounded-2xl border border-[#D6E4EA] p-6 shadow-xs">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#006F9E] block mb-1">
+                    Alerts
+                  </span>
+                  <h3 className="text-lg font-bold text-[#111827]">
+                    Notifications
+                  </h3>
+                </div>
+                {unreadNotifications > 0 && (
+                  <span className="rounded-full bg-[#E38524] text-white px-2.5 py-1 text-[10px] font-bold">
+                    {unreadNotifications} unread
+                  </span>
+                )}
+              </div>
+              {notifications.length === 0 ? (
+                <p className="text-sm text-[#526274] mt-4 font-semibold">
+                  All caught up! No notifications.
+                </p>
+              ) : (
+                <div className="mt-4 divide-y divide-[#D6E4EA] border border-[#D6E4EA] rounded-xl overflow-hidden">
+                  {notifications.map((n) => (
+                    <div
+                      key={n.id}
+                      className={`flex items-start gap-4 p-4 ${
+                        !n.read
+                          ? "border-l-4 border-[#00ADEF] bg-[#EAF8FC]/50"
+                          : "bg-white"
+                      }`}
+                    >
+                      <div className="w-9 h-9 rounded-full bg-[#EAF8FC] flex items-center justify-center text-[#006F9E] shrink-0 border border-[#00ADEF]/20">
+                        {n.type === "funding" ? (
+                          <HandCoins size={16} />
+                        ) : n.type === "workshop" ? (
+                          <GraduationCap size={16} />
+                        ) : n.type === "project" ? (
+                          <Rocket size={16} />
+                        ) : (
+                          <Bell size={16} />
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-[#111827] leading-relaxed">
+                          {n.message}
+                        </p>
+                        <span className="mt-1 block text-[10px] font-bold uppercase tracking-wider text-[#526274]">
+                          {new Date(n.created_at).toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        ) : activeTab === "Activity Timeline" ? (
+          /* -------- Activity Timeline view -------- */
+          <div className="space-y-6">
+            <div className="bg-white rounded-2xl border border-[#D6E4EA] p-6 shadow-xs">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#006F9E] block mb-1">
+                    History
+                  </span>
+                  <h3 className="text-lg font-bold text-[#111827]">
+                    Activity Timeline
+                  </h3>
+                </div>
+              </div>
+              {activityLogs.length === 0 ? (
+                <p className="text-sm text-[#526274] mt-4 font-semibold">
+                  No activity yet. Actions you take will appear here.
+                </p>
+              ) : (
+                <div className="mt-6 relative pl-6 border-l-2 border-[#00ADEF]/30 space-y-6">
+                  {activityLogs.map((log) => (
+                    <div key={log.id} className="relative">
+                      <div className="absolute -left-[30px] top-1.5 h-4 w-4 rounded-full border-4 border-white bg-[#00ADEF] shadow" />
+                      <div className="rounded-xl border border-[#D6E4EA] bg-[#F6FAFC] p-4">
+                        <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                          <span className="rounded-full bg-[#00ADEF] text-white px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+                            {log.action_type}
+                          </span>
+                          <span className="text-[10px] font-bold uppercase text-[#526274]">
+                            {new Date(log.created_at).toLocaleString()}
+                          </span>
+                        </div>
+                        <p className="text-sm font-semibold text-[#111827]">
+                          {log.details}
+                        </p>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -528,7 +781,7 @@ const MentorPortal = () => {
                       </p>
                       <p className="flex items-center gap-2">
                         <ClipboardCheck size={13} className="text-[#00ADEF]" />
-                        Cohort: {a.cohort_name} • {a.session_count || 0} sessions
+                        {a.cohort_name ? `Cohort: ${a.cohort_name}` : a.project_name ? `Project: ${a.project_name}` : "Mentorship"} • {a.session_count || 0} sessions
                       </p>
                     </div>
                     <button

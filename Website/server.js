@@ -1,5 +1,11 @@
+// FIX: Must stay as the FIRST import. ES module imports are hoisted and
+// executed before any other code in this file, so "dotenv/config" runs
+// before ./config/db.js creates its pool. Using `import { config } from
+// "dotenv"` + a later config() call was too late, leaving process.env.DB_*
+// undefined and pg failing with "client password must be a string".
 import "dotenv/config";
-console.log("HOST IS:", process.env.DB_HOST); // <-- Add this lin
+// DEBUG: temporary log to verify .env values are loaded (safe to remove).
+console.log("HOST IS:", process.env.DB_HOST);
 import app from "./app.js";
 import pool from "./config/db.js";
 import { exec } from "child_process";
@@ -32,5 +38,7 @@ testConnection()
     });
   })
     .catch((err) => {
-      console.error("Failed to connect DB or start server:", err); // <-- now it will show the full error
+      // FIX: log the full error object (not just err.message) so DB
+      // connection failures show their real cause instead of being swallowed.
+      console.error("Failed to connect DB or start server:", err);
     });

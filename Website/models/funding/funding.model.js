@@ -383,24 +383,3 @@ export const getInvestorPortfolio = async (investorId) => {
     throw error;
   }
 };
-
-export const getNegotiationsForRequest = async (fundingRequestId) => {
-  const res = await pool.query(
-    `SELECT n.*, u.name AS sender_name
-     FROM funding_negotiations n
-     JOIN users u ON u.id = n.sender_id
-     WHERE n.funding_request_id = $1
-     ORDER BY n.created_at ASC`,
-    [fundingRequestId]
-  );
-  return res.rows;
-};
-
-export const addNegotiationMessage = async ({ funding_request_id, sender_id, sender_role, message, proposed_amount }) => {
-  const res = await pool.query(
-    `INSERT INTO funding_negotiations(funding_request_id, sender_id, sender_role, message, proposed_amount)
-     VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-    [funding_request_id, sender_id, sender_role, message || null, proposed_amount || null]
-  );
-  return res.rows[0];
-};

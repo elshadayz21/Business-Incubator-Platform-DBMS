@@ -332,6 +332,15 @@ export default function Gallery() {
                     <span className="text-xs text-[#526274] px-2">Display order: <span className="font-bold text-[#111827]">{viewItem.display_order || 0}</span></span>
                   </div>
 
+                  {viewItem.video_url && (
+                    <div className="bg-[#F6FAFC] border border-[#D6E4EA] rounded-xl p-3">
+                      <div className="text-[11px] font-bold uppercase tracking-wider text-[#526274]">Video Link</div>
+                      <a href={viewItem.video_url} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-[#00ADEF] hover:underline break-all block mt-1">
+                        {viewItem.video_url}
+                      </a>
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-2 gap-3 text-xs text-[#526274]">
                     <div>
                       <div className="text-[11px] font-bold uppercase tracking-wider text-[#526274]">Created</div>

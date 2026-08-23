@@ -32,7 +32,6 @@ import { getFormFields, saveFormFields } from "../admin-backend/applications/app
 import {
   getAllApplications,
   updateApplicationStatus,
-  sendMassInvites
 } from "../admin-backend/applications/applications.js";
 
 
@@ -91,8 +90,6 @@ import {
   getFundingRequestById,
   updateFundingRequestStatus,
   deleteFundingRequest,
-  getNegotiations,
-  addNegotiation,
 } from "../admin-backend/funding/funding.js";
 import loginRequest from "../admin-backend/auth/login.js";
 import {
@@ -159,6 +156,7 @@ import {
 import { getSystemOverview } from "../admin-backend/system/system.js";
 import {
   getEmailSources,
+  getEmailRecipients,
   getEmailTemplates,
   createEmailTemplate,
   updateEmailTemplate,
@@ -174,7 +172,15 @@ import { ROLES } from "../utils/constants.js";
 const router = Router();
 
 const asyncHandler = (fn) => (req, res, next) => {
-  Promise.resolve(fn(req, res, next)).catch(next);
+  Promise.resolve(fn(req, res, next)).catch((err) => {
+    console.error("[Admin API] Error:", err);
+    if (req.originalUrl.startsWith("/api/")) {
+      const statusCode = err.statusCode || err.status || 400;
+      const errorMessage = err.message || "Internal server error";
+      return res.status(statusCode).json({ error: errorMessage });
+    }
+    next(err);
+  });
 };
 
 // Public Admin APIs
@@ -192,7 +198,7 @@ router.post(
   }),
 );
 
-const adminOnly = authorizeRole(ROLES.ADMIN);
+const adminOnly = authorizeRole(ROLES.ADMIN, ROLES.SUPERADMIN);
 const superadminOnly = authorizeRole(ROLES.SUPERADMIN);
 
 // Module access is strictly separated by role (no overlap):
@@ -329,7 +335,7 @@ router.post(
 router.put(
   "/resources/:id",
   asyncHandler(async (req, res) =>
-    res.json(await updateResource(req.params.id, req.body.data)),
+    res.json(await updateResource(req.params.id, req.body.data || req.body)),
   ),
 );
 router.delete(
@@ -369,7 +375,7 @@ router.delete(
 router.put(
   "/mentors/:id",
   asyncHandler(async (req, res) =>
-    res.json(await updateMentor(req.params.id, req.body.data)),
+    res.json(await updateMentor(req.params.id, req.body.data || req.body)),
   ),
 );
 
@@ -411,7 +417,7 @@ router.put(
 router.get(
   "/funding",
   asyncHandler(async (req, res) =>
-    res.json(await getAllFundingRequests(req.query.query || "")),
+    res.json(await getAllFundingRequests(req.query)),
   ),
 );
 router.get(
@@ -441,25 +447,6 @@ router.delete(
   "/funding/:id",
   asyncHandler(async (req, res) =>
     res.json(await deleteFundingRequest(req.params.id)),
-  ),
-);
-
-router.get(
-  "/funding/:id/negotiations",
-  asyncHandler(async (req, res) => res.json(await getNegotiations(req.params.id))),
-);
-router.post(
-  "/funding/:id/negotiations",
-  asyncHandler(async (req, res) =>
-    res.json(
-      await addNegotiation({
-        funding_request_id: req.params.id,
-        sender_id: req.session.userId,
-        sender_role: "admin",
-        message: req.body.message,
-        proposed_amount: req.body.proposed_amount,
-      }),
-    ),
   ),
 );
 
@@ -1012,6 +999,7 @@ router.post(
     "/announcements/:id/form-fields",
     asyncHandler(async (req, res) => {
       try {
+        console.log("Saving form fields for announcement:", req.params.id, "fields:", JSON.stringify(req.body.fields));
         const result = await saveFormFields(req.params.id, req.body.fields);
         res.json(result);
       } catch (error) {
@@ -1020,19 +1008,21 @@ router.post(
       }
     })
 );
-// Mass Email Route
-router.post(
-    "/applications/send-invites",
-    asyncHandler(async (req, res) => {
-      const { subject, body } = req.body;
-      res.json(await sendMassInvites(subject, body));
-    })
-);
 
 // Mass Email (UR-B4) — Admin only
 router.get(
   "/emails/sources",
-  asyncHandler(async (req, res) => res.json(await getEmailSources())),
+  asyncHandler(async (req, res) =>
+    res.json(await getEmailSources(req.query.announcementId)),
+  ),
+);
+router.get(
+  "/emails/recipients",
+  asyncHandler(async (req, res) =>
+    res.json(
+      await getEmailRecipients(req.query.source, req.query.announcementId),
+    ),
+  ),
 );
 router.get(
   "/emails/templates",

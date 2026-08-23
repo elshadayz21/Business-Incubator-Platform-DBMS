@@ -56,9 +56,15 @@
           <% if (photos.length > 0) { %>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               <% photos.forEach((photo, index) => { %>
-                    <div class="gallery-item group relative overflow-hidden rounded-2xl border border-line bg-surface focus-within:ring-2 focus-within:ring-orange focus-within:ring-offset-2" data-photo="<%= photo.url %>" data-index="<%= index %>" data-title="<%= photo.title %>" data-description="<%= photo.description %>" data-category="<%= photo.category %>" data-created="<%= photo.created_at ? new Date(photo.created_at).toISOString() : '' %>">
-                      <button type="button" class="w-full h-56 block cursor-zoom-in" data-photo="<%= photo.url %>" data-index="<%= index %>" data-title="<%= photo.title %>" data-description="<%= photo.description %>" data-category="<%= photo.category %>" data-created="<%= photo.created_at ? new Date(photo.created_at).toISOString() : '' %>" aria-label="Open <%= photo.title || ('photo ' + (index + 1)) %>">
+                    <div class="gallery-item group relative overflow-hidden rounded-2xl border border-line bg-surface focus-within:ring-2 focus-within:ring-orange focus-within:ring-offset-2 cursor-pointer" data-photo="<%= photo.url %>" data-video="<%= photo.video_url || '' %>" data-index="<%= index %>" data-title="<%= photo.title %>" data-description="<%= photo.description %>" data-category="<%= photo.category %>" data-created="<%= photo.created_at ? new Date(photo.created_at).toISOString() : '' %>">
+                      <button type="button" class="w-full h-56 block relative" aria-label="Open <%= photo.title || ('photo ' + (index + 1)) %>">
                         <img src="<%= photo.url %>" alt="<%= photo.title || ('DxValley photo ' + (index + 1)) %>" class="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03] group-hover:opacity-90" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='/assets/images/default-avatar.svg'" />
+                        <% if (photo.video_url) { %>
+                          <div class="absolute top-3 right-3 bg-red-600/90 text-white text-[11px] font-extrabold px-3 py-1 rounded-full flex items-center gap-1.5 shadow-md">
+                            <i class="fa-solid fa-play text-[9px]"></i>
+                            <span>Watch Video</span>
+                          </div>
+                        <% } %>
                       </button>
 
                       <div class="gallery-overlay absolute inset-x-0 bottom-0 bg-gradient-to-t from-cyan-deep/90 to-transparent px-4 pb-3 pt-10 text-left transition duration-300 opacity-0 translate-y-3 group-hover:opacity-100 group-hover:translate-y-0">
@@ -73,7 +79,7 @@
                       </div>
 
                       <div class="absolute inset-0 grid place-items-center bg-cyan-deep/0 opacity-0 transition group-hover:bg-cyan-deep/20 group-hover:opacity-100" aria-hidden="true">
-                        <i class="fa-solid fa-magnifying-glass-plus text-2xl text-white"></i>
+                        <i class="fa-solid <%= photo.video_url ? 'fa-circle-play text-4xl' : 'fa-magnifying-glass-plus text-2xl' %> text-white"></i>
                       </div>
                     </div>
                   <% }); %>
@@ -137,7 +143,13 @@
         const showNext = () => openLightbox((current + 1) % items.length);
         const showPrev = () => openLightbox((current - 1 + items.length) % items.length);
 
-        items.forEach((item) => item.addEventListener('click', () => openLightbox(Number(item.dataset.index))));
+        items.forEach((item) => item.addEventListener('click', () => {
+          if (item.dataset.video) {
+            window.open(item.dataset.video, '_blank', 'noopener,noreferrer');
+            return;
+          }
+          openLightbox(Number(item.dataset.index));
+        }));
         document.getElementById('lightbox-close')?.addEventListener('click', closeLightbox);
         document.getElementById('lightbox-next')?.addEventListener('click', showNext);
         document.getElementById('lightbox-prev')?.addEventListener('click', showPrev);

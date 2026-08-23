@@ -1,5 +1,5 @@
 import pool from "../../config/db.js";
-import { createNotification } from "../../utils/notificationHelper.js";
+import eventBus from "../../utils/eventBus.js";
 
 // Get all funding requests
 export const getAllFundingRequests = async (query = "") => {
@@ -35,23 +35,34 @@ export const getAllFundingRequests = async (query = "") => {
       LEFT JOIN users u ON pe.user_id = u.id
     `;
 
-        // Parse query parameters for filtering
+        // Parse query parameters for filtering (supports string or object)
         const params = [];
-        if (query.includes("status=")) {
-            const match = query.match(/status=([^&]+)/);
-            if (match) {
-                querySQL += ` WHERE fr.status = $${params.length + 1}`;
-                params.push(match[1]);
+        let statusVal = null;
+        let stageVal = null;
+
+        if (typeof query === "string") {
+            if (query.includes("status=")) {
+                const match = query.match(/status=([^&]+)/);
+                if (match && match[1] && match[1] !== "all") statusVal = decodeURIComponent(match[1]);
             }
+            if (query.includes("funding_stage=")) {
+                const match = query.match(/funding_stage=([^&]+)/);
+                if (match && match[1] && match[1] !== "all") stageVal = decodeURIComponent(match[1]);
+            }
+        } else if (query && typeof query === "object") {
+            if (query.status && query.status !== "all") statusVal = query.status;
+            if (query.funding_stage && query.funding_stage !== "all") stageVal = query.funding_stage;
         }
 
-        if (query.includes("funding_stage=")) {
-            const match = query.match(/funding_stage=([^&]+)/);
-            if (match) {
-                querySQL += querySQL.includes("WHERE") ? " AND" : " WHERE";
-                querySQL += ` fr.funding_stage = $${params.length + 1}`;
-                params.push(match[1]);
-            }
+        if (statusVal) {
+            querySQL += ` WHERE LOWER(fr.status) = LOWER($${params.length + 1})`;
+            params.push(statusVal);
+        }
+
+        if (stageVal) {
+            querySQL += querySQL.includes("WHERE") ? " AND" : " WHERE";
+            querySQL += ` LOWER(fr.funding_stage) = LOWER($${params.length + 1})`;
+            params.push(stageVal);
         }
 
         querySQL += ` ORDER BY fr.requested_at DESC`;
@@ -229,6 +240,7 @@ export const getFundingRequestById = async (id) => {
 
 // Update funding request status
 export const updateFundingRequestStatus = async (id, status, notes, approvedAmount = null) => {
+  try {
     // 1. Parse amount safely so it doesn't crash if left blank
     const parsedAmount = approvedAmount && !isNaN(approvedAmount) ? approvedAmount : null;
 
@@ -237,81 +249,96 @@ export const updateFundingRequestStatus = async (id, status, notes, approvedAmou
 
     // 3. Update the database FIRST!
     const res = await pool.query(
-        `UPDATE funding_requests 
-     SET status = $1, notes = $2, approved_amount = $3, founder_action = 'Pending', updated_at = CURRENT_TIMESTAMP 
-     WHERE id = $4 RETURNING *`,
-        [finalStatus, notes, parsedAmount, id]
+      `UPDATE funding_requests 
+      SET 
+        status = $1,
+        reviewed_at = NOW(),
+        notes = $2,
+        updated_at = NOW()
+      WHERE id = $3
+      RETURNING *`,
+      [status, notes, id],
     );
 
-    const funding = res.rows[0];
-    if (!funding) return null;
-
-    // 4. NOW that 'funding' is defined, find the owner and send notification!
-    try {
-        const ownerRes = await pool.query(
-            "SELECT user_id FROM project_entrepreneurs WHERE project_id = $1 AND (role_in_project IS NULL OR role_in_project != 'Mentor') LIMIT 1",
-            [funding.project_id]
-        );
-        const userId = ownerRes.rows[0]?.user_id;
-
-        const projRes = await pool.query("SELECT name FROM projects WHERE id = $1", [funding.project_id]);
-        const projectName = projRes.rows[0]?.name || "your project";
-
-        if (userId && finalStatus === 'Offer Under Review') {
-            const message = `Funding offer made for "${projectName}"! The admin offered $${parsedAmount}. Please review and Accept or Decline.`;
-            await createNotification(
-                userId,
-                'funding_approval',
-                message,
-                { fundingId: funding.id, projectId: funding.project_id },
-                `/v1/auth/profile?tab=funding`
-            );
-        }
-    } catch (error) {
-        console.error("Error sending funding notification:", error);
+    if (res.rows.length === 0) {
+      return { success: false, data: null };
     }
 
-    return funding;
+    const request = res.rows[0];
+
+    const entrepreneurs = await pool.query(
+      `SELECT pe.user_id
+       FROM project_entrepreneurs pe
+       WHERE pe.project_id = $1`,
+      [request.project_id]
+    );
+
+    let projectName = "unknown project";
+    try {
+      const pRes = await pool.query("SELECT name FROM projects WHERE id = $1", [request.project_id]);
+      if (pRes.rows[0]) projectName = pRes.rows[0].name;
+    } catch (e) { /* ignore */ }
+
+    for (const row of entrepreneurs.rows) {
+      eventBus.emit("funding.admin_reviewed", {
+        request,
+        projectName,
+        status,
+        userId: row.user_id,
+      });
+    }
+
+    return { success: true, data: request };
+  } catch (error) {
+    console.error("Error updating funding request:", error);
+    throw error;
+  }
 };
 
-// ENTREPRENEUR ACCEPTS OR REJECTS FUNDING
-export const founderRespondToFunding = async (fundingId, userId, action) => {
-    // 1. Get the funding request
-    const fundRes = await pool.query("SELECT * FROM funding_requests WHERE id = $1", [fundingId]);
-    if (fundRes.rows.length === 0) throw new Error("Funding request not found.");
+// Founder respond to funding offer
+export const founderRespondToFunding = async (requestId, userId, action) => {
+    try {
+        // 1. Get the funding request
+        const frRes = await pool.query(
+            `SELECT * FROM funding_requests WHERE id = $1`,
+            [requestId]
+        );
+        if (frRes.rows.length === 0) {
+            throw new Error("Funding request not found.");
+        }
+        const request = frRes.rows[0];
 
-    const funding = fundRes.rows[0];
+        // 2. Verify user is a founder/entrepreneur of the project
+        const peRes = await pool.query(
+            `SELECT 1 FROM project_entrepreneurs WHERE project_id = $1 AND user_id = $2`,
+            [request.project_id, userId]
+        );
+        if (peRes.rows.length === 0) {
+            throw new Error("You are not a founder of this project.");
+        }
 
-    // 2. Safely find the project owner from project_entrepreneurs
-    const ownerRes = await pool.query(
-        "SELECT user_id FROM project_entrepreneurs WHERE project_id = $1 AND (role_in_project IS NULL OR role_in_project != 'Mentor') LIMIT 1",
-        [funding.project_id]
-    );
-    const projectOwnerId = ownerRes.rows[0]?.user_id;
+        // 3. Only allowed if current status is "Offer Under Review"
+        if (request.status !== "Offer Under Review") {
+            throw new Error("You can only accept or decline offers that are under review.");
+        }
 
-    // Security check: Make sure the founder owns this project
-    if (projectOwnerId !== userId) {
-        throw new Error("Unauthorized: You do not own this project.");
+        // 4. Update founder_action and status
+        const newStatus = action === "Founder Accepted" ? "Founder Accepted" : "Founder Declined";
+        const res = await pool.query(
+            `UPDATE funding_requests
+             SET founder_action = $1,
+                 status = $2,
+                 updated_at = NOW()
+             WHERE id = $3
+             RETURNING *`,
+            [action, newStatus, requestId]
+        );
+
+        return { success: true, data: res.rows[0] };
+    } catch (error) {
+        console.error("Error in founderRespondToFunding:", error.message);
+        throw error;
     }
-
-    // 3. Determine the final status for the Admin table
-    let finalStatus = 'Offer Under Review';
-    if (action === 'Founder Accepted') finalStatus = 'Approved';
-    if (action === 'Founder Declined') finalStatus = 'Rejected';
-
-    // 4. Update the main status column AND the founder_action column
-    const res = await pool.query(
-        "UPDATE funding_requests SET status = $1, founder_action = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3 RETURNING *",
-        [finalStatus, action, fundingId]
-    );
-
-    // 5. Notify the Admin that the founder responded!
-    const projRes = await pool.query("SELECT name FROM projects WHERE id = $1", [funding.project_id]);
-    const projectName = projRes.rows[0]?.name || "a project";
-
-    await createNotification(1, 'funding_response', `Founder ${action === 'Founder Accepted' ? 'accepted' : 'declined'} the funding for project "${projectName}".`, { fundingId });
-
-    return res.rows[0];
 };
 
 // Delete funding request
@@ -331,25 +358,4 @@ export const deleteFundingRequest = async (id) => {
         console.error("Error deleting funding request:", error);
         throw error;
     }
-};
-
-export const getNegotiations = async (fundingRequestId) => {
-  const res = await pool.query(
-    `SELECT n.*, u.name AS sender_name
-     FROM funding_negotiations n
-     JOIN users u ON u.id = n.sender_id
-     WHERE n.funding_request_id = $1
-     ORDER BY n.created_at ASC`,
-    [fundingRequestId]
-  );
-  return { success: true, data: res.rows };
-};
-
-export const addNegotiation = async ({ funding_request_id, sender_id, sender_role, message, proposed_amount }) => {
-  const res = await pool.query(
-    `INSERT INTO funding_negotiations(funding_request_id, sender_id, sender_role, message, proposed_amount)
-     VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-    [funding_request_id, sender_id, sender_role, message || null, proposed_amount || null]
-  );
-  return { success: true, data: res.rows[0] };
 };

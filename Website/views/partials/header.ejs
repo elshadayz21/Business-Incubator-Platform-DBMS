@@ -1,29 +1,5 @@
 <% const signedIn = typeof user !== 'undefined' && user; %>
-<header class="border-b border-line bg-white" data-site-header>
-  <div class="bg-cyan text-white">
-    <div class="mx-auto flex max-w-7xl items-center justify-between gap-6 px-6 py-2 text-[11px] font-semibold tracking-wide lg:px-10">
-      <nav aria-label="Utility navigation" class="flex items-center gap-5 overflow-x-auto whitespace-nowrap">
-        <a class="opacity-90 transition hover:opacity-100 hover:underline" href="/v1/about#faq">FAQ</a>
-        <a class="opacity-90 transition hover:opacity-100 hover:underline" href="/v1/workshop">Events</a>
-        <a class="opacity-90 transition hover:opacity-100 hover:underline" href="/#stories">Stories</a>
-        <a class="opacity-90 transition hover:opacity-100 hover:underline" href="/#partners">Partners</a>
-        <a class="opacity-90 transition hover:opacity-100 hover:underline" href="/contact">Contact</a>
-      </nav>
-
-              <div class="mt-7 flex items-center gap-2" aria-label="Social links">
-                <a aria-label="LinkedIn" class="grid h-8 w-8 place-items-center rounded-full border border-white/50 transition hover:bg-white hover:text-cyan" href="https://linktr.ee/CoopDxValley" target="_blank" rel="noopener noreferrer" title="View all social links">
-                  <i class="fa-brands fa-linkedin-in text-sm" aria-hidden="true"></i>
-                </a>
-                <a aria-label="YouTube" class="grid h-8 w-8 place-items-center rounded-full border border-white/50 transition hover:bg-white hover:text-cyan" href="https://linktr.ee/CoopDxValley" target="_blank" rel="noopener noreferrer" title="View all social links">
-                  <i class="fa-brands fa-youtube text-sm" aria-hidden="true"></i>
-                </a>
-                <a aria-label="Instagram" class="grid h-8 w-8 place-items-center rounded-full border border-white/50 transition hover:bg-white hover:text-cyan" href="https://linktr.ee/CoopDxValley" target="_blank" rel="noopener noreferrer" title="View all social links">
-                  <i class="fa-brands fa-instagram text-sm" aria-hidden="true"></i>
-                </a>
-              </div>
-    </div>
-  </div>
-
+<header class="sticky top-0 z-50 border-b border-line bg-white shadow-sm" data-site-header>
   <div class="mx-auto max-w-7xl px-6 lg:px-10">
     <div class="flex min-h-[88px] items-center justify-between gap-6 py-4">
       <div class="flex min-w-0 items-center gap-4">
@@ -37,18 +13,48 @@
         </div>
       </div>
 
-      <div class="hidden items-center gap-4 lg:flex">
-        <form class="relative" action="/v1/search" method="GET" role="search">
-          <label class="sr-only" for="site-search">Search DxValley</label>
-          <i class="fa-solid fa-magnifying-glass pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted" aria-hidden="true"></i>
-          <input id="site-search" name="q" class="h-10 w-[200px] rounded-full border border-line bg-surface pl-9 pr-4 text-xs outline-none transition placeholder:text-slate-400 focus:border-cyan focus:ring-2 focus:ring-cyan/20" placeholder="Search DxValley" type="search" />
-        </form>
-                <% if (!signedIn) { %>
-                        <a class="inline-flex items-center gap-2 rounded-full bg-orange px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-orange-dark focus:outline-none focus:ring-2 focus:ring-orange focus:ring-offset-2" href="/#announcements">
-                          Apply now
-                          <i class="fa-solid fa-arrow-up-right-from-square text-xs" aria-hidden="true"></i>
-                        </a>
-                <% } %>
+      <div class="hidden items-center gap-6 lg:flex">
+        <nav aria-label="Main navigation" class="flex items-center gap-6 text-sm font-semibold text-ink">
+          <!-- Platforms Dropdown -->
+          <div class="relative" x-data="{ platOpen: false }" @mouseenter="platOpen = true" @mouseleave="platOpen = false">
+            <button class="flex items-center gap-1.5 transition hover:text-cyan-dark cursor-pointer">
+              Platforms
+              <i class="fa-solid fa-chevron-down text-[9px] transition" :class="platOpen ? 'rotate-180' : ''" aria-hidden="true"></i>
+            </button>
+            <div x-show="platOpen" x-transition class="absolute left-1/2 -translate-x-1/2 top-full mt-3 w-56 bg-white border border-[#D6E4EA] rounded-xl shadow-lg py-2 z-[60]" style="display: none;">
+              <a class="block px-4 py-2 text-sm font-semibold hover:bg-[#EAF8FC] hover:text-cyan-dark transition" href="/#programs">Programs</a>
+              <a class="block px-4 py-2 text-sm hover:bg-[#EAF8FC] hover:text-cyan-dark transition" href="<%= routes.mentors %>">Mentors</a>
+              <a class="block px-4 py-2 text-sm hover:bg-[#EAF8FC] hover:text-cyan-dark transition" href="<%= routes.workshops %>">Workshops</a>
+              <a class="block px-4 py-2 text-sm hover:bg-[#EAF8FC] hover:text-cyan-dark transition" href="/#resources">Resources</a>
+            </div>
+          </div>
+
+          <a class="transition hover:text-cyan-dark" href="/v1/workshop">Events</a>
+          <a class="transition hover:text-cyan-dark" href="/v1/search">Project Search</a>
+
+          <!-- About DxValley Dropdown -->
+          <div class="relative" x-data="{ aboutOpen: false }" @mouseenter="aboutOpen = true" @mouseleave="aboutOpen = false">
+            <a href="/#about" class="flex items-center gap-1.5 transition hover:text-cyan-dark cursor-pointer">
+              About DxValley
+              <i class="fa-solid fa-chevron-down text-[9px] transition" :class="aboutOpen ? 'rotate-180' : ''" aria-hidden="true"></i>
+            </a>
+            <div x-show="aboutOpen" x-transition class="absolute left-1/2 -translate-x-1/2 top-full mt-3 w-56 bg-white border border-[#D6E4EA] rounded-xl shadow-lg py-2 z-[60]" style="display: none;">
+              <a class="block px-4 py-2 text-sm hover:bg-[#EAF8FC] hover:text-cyan-dark transition" href="/#announcements">Announcements</a>
+              <a class="block px-4 py-2 text-sm hover:bg-[#EAF8FC] hover:text-cyan-dark transition" href="/v1/gallery">Gallery</a>
+              <a class="block px-4 py-2 text-sm hover:bg-[#EAF8FC] hover:text-cyan-dark transition" href="/v1/terms">Terms &amp; conditions</a>
+              <a class="block px-4 py-2 text-sm hover:bg-[#EAF8FC] hover:text-cyan-dark transition" href="/contact">Contact</a>
+            </div>
+          </div>
+        </nav>
+
+        <div class="flex items-center gap-3 border-l border-line pl-6">
+          <% if (signedIn) { %>
+            <a href="/v1/auth/profile" class="text-xs font-semibold text-cyan-dark hover:underline">Profile</a>
+            <button type="button" onclick="handleLogout()" class="rounded-md bg-ink px-3 py-2 text-xs font-semibold text-white transition hover:bg-slate-700">Logout</button>
+          <% } else { %>
+            <a href="<%= routes.loginRoute %>" class="text-xs font-semibold text-muted hover:text-cyan-dark hover:underline">Sign in</a>
+          <% } %>
+        </div>
       </div>
 
       <button id="menu-toggle" aria-controls="mobile-navigation" aria-expanded="false" aria-label="Open navigation menu" class="grid h-10 w-10 place-items-center rounded-full border border-line text-cyan-dark transition hover:bg-cyan-soft lg:hidden" title="Open navigation menu" type="button">
@@ -56,85 +62,62 @@
       </button>
     </div>
 
-    <div class="hidden border-t border-line py-4 lg:block">
-      <nav aria-label="Main navigation" class="flex items-center justify-end gap-8 text-sm font-semibold text-ink">
-                <nav aria-label="Main navigation" class="flex items-center justify-end gap-8 text-sm font-semibold text-ink">
-                  <a class="transition hover:text-cyan-dark" href="/">Home</a>
-
-
-                          <!-- Platforms Dropdown (Wrapper has the hover events) -->
-                          <div class="relative" x-data="{ platOpen: false }" @mouseenter="platOpen = true" @mouseleave="platOpen = false">
-                            <button class="flex items-center gap-1.5 transition hover:text-cyan-dark cursor-pointer">
-                              Platforms
-                              <i class="fa-solid fa-chevron-down text-[9px] transition" :class="platOpen ? 'rotate-180' : ''" aria-hidden="true"></i>
-                            </button>
-                            <!-- Dropdown box with the visual gap (mt-3) -->
-                            <div x-show="platOpen" x-transition class="absolute left-1/2 -translate-x-1/2 top-full mt-3 w-56 bg-white border border-[#D6E4EA] rounded-xl shadow-lg py-2 z-50" style="display: none;">
-                              <a class="block px-4 py-2 text-sm hover:bg-[#EAF8FC] hover:text-cyan-dark transition" href="/#programs">Programs</a>
-                              <a class="block px-4 py-2 text-sm hover:bg-[#EAF8FC] hover:text-cyan-dark transition" href="<%= routes.mentors %>">Mentors</a>
-                              <a class="block px-4 py-2 text-sm hover:bg-[#EAF8FC] hover:text-cyan-dark transition" href="<%= routes.workshops %>">Workshops</a>
-                              <a class="block px-4 py-2 text-sm hover:bg-[#EAF8FC] hover:text-cyan-dark transition" href="/v1/search">Project Search</a>
-                              <a class="block px-4 py-2 text-sm hover:bg-[#EAF8FC] hover:text-cyan-dark transition" href="/#resources">Resources</a>
-                            </div>
-                          </div>
-
-                </nav>
-        <a class="transition hover:text-cyan-dark" href="/#about">About DxValley</a>
-
-        <a class="transition hover:text-cyan-dark" href="/#how-it-works">How it works</a>
-        <a class="transition hover:text-cyan-dark" href="/#community">Community</a>
-
-      </nav>
-    </div>
-
     <div id="mobile-navigation" class="hidden border-t border-line py-4 lg:hidden">
-            <nav aria-label="Mobile navigation" class="flex flex-col gap-1 text-sm font-semibold text-ink">
-              <a class="rounded-md px-3 py-3 transition hover:bg-cyan-soft hover:text-cyan-dark" href="/">Home</a>
-              <a class="rounded-md px-3 py-3 transition hover:bg-cyan-soft hover:text-cyan-dark" href="/#about">About DxValley</a>
+      <nav aria-label="Mobile navigation" class="flex flex-col gap-1 text-sm font-semibold text-ink">
+        <a class="rounded-md px-3 py-3 transition hover:bg-cyan-soft hover:text-cyan-dark" href="/">Home</a>
 
-              <!-- Mobile Click-to-Open Dropdown -->
-              <details class="group">
-                <summary class="rounded-md px-3 py-3 transition hover:bg-cyan-soft hover:text-cyan-dark cursor-pointer list-none flex justify-between items-center">
-                  <span>Platforms</span>
-                  <i class="fa-solid fa-chevron-down text-[10px] group-open:rotate-180 transition"></i>
-                </summary>
-                <div class="pl-4 mt-1 flex flex-col gap-1">
-                  <a class="rounded-md px-3 py-2 text-sm transition hover:bg-cyan-soft hover:text-cyan-dark" href="/#programs">Programs</a>
-                  <a class="rounded-md px-3 py-2 text-sm transition hover:bg-cyan-soft hover:text-cyan-dark" href="<%= routes.mentors %>">Mentors</a>
-                  <a class="rounded-md px-3 py-2 text-sm transition hover:bg-cyan-soft hover:text-cyan-dark" href="<%= routes.workshops %>">Workshops</a>
-                  <a class="rounded-md px-3 py-2 text-sm transition hover:bg-cyan-soft hover:text-cyan-dark" href="/v1/search">Project Search</a>
-                </div>
-              </details>
-            </nav>
-      <form class="relative mt-4" action="/v1/search" method="GET" role="search">
-        <label class="sr-only" for="mobile-site-search">Search DxValley</label>
-        <i class="fa-solid fa-magnifying-glass pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted" aria-hidden="true"></i>
-        <input id="mobile-site-search" name="q" class="h-11 w-full rounded-md border border-line bg-surface pl-9 pr-4 text-sm outline-none transition placeholder:text-slate-400 focus:border-cyan focus:ring-2 focus:ring-cyan/20" placeholder="Search DxValley" type="search" />
-      </form>
-            <a class="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-md bg-orange px-5 py-3 text-sm font-bold text-white transition hover:bg-orange-dark" href="/#announcements">
-              Apply now
-              <i class="fa-solid fa-arrow-up-right-from-square text-xs" aria-hidden="true"></i>
-            </a>
-    </div>
+        <!-- Mobile Platforms Dropdown -->
+        <details class="group">
+          <summary class="rounded-md px-3 py-3 transition hover:bg-cyan-soft hover:text-cyan-dark cursor-pointer list-none flex justify-between items-center">
+            <span>Platforms</span>
+            <i class="fa-solid fa-chevron-down text-[10px] group-open:rotate-180 transition"></i>
+          </summary>
+          <div class="pl-4 mt-1 flex flex-col gap-1">
+            <a class="rounded-md px-3 py-2 text-sm font-semibold transition hover:bg-cyan-soft hover:text-cyan-dark" href="/#programs">Programs</a>
+            <a class="rounded-md px-3 py-2 text-sm transition hover:bg-cyan-soft hover:text-cyan-dark" href="<%= routes.mentors %>">Mentors</a>
+            <a class="rounded-md px-3 py-2 text-sm transition hover:bg-cyan-soft hover:text-cyan-dark" href="<%= routes.workshops %>">Workshops</a>
+            <a class="rounded-md px-3 py-2 text-sm transition hover:bg-cyan-soft hover:text-cyan-dark" href="/#resources">Resources</a>
+          </div>
+        </details>
 
-    <% if (signedIn) { %>
-      <div class="flex items-center justify-end gap-3 border-t border-line py-3 text-xs font-semibold lg:hidden">
-        <a href="/v1/auth/profile" class="text-cyan-dark hover:underline">Profile</a>
-        <button type="button" onclick="handleLogout()" class="rounded-md bg-ink px-3 py-2 text-white transition hover:bg-slate-700">Logout</button>
+        <a class="rounded-md px-3 py-3 transition hover:bg-cyan-soft hover:text-cyan-dark" href="/v1/workshop">Events</a>
+        <a class="rounded-md px-3 py-3 transition hover:bg-cyan-soft hover:text-cyan-dark" href="/v1/search">Project Search</a>
+
+        <!-- Mobile About DxValley Dropdown -->
+        <details class="group">
+          <summary class="rounded-md px-3 py-3 transition hover:bg-cyan-soft hover:text-cyan-dark cursor-pointer list-none flex justify-between items-center">
+            <span>About DxValley</span>
+            <i class="fa-solid fa-chevron-down text-[10px] group-open:rotate-180 transition"></i>
+          </summary>
+          <div class="pl-4 mt-1 flex flex-col gap-1">
+            <a class="rounded-md px-3 py-2 text-sm transition hover:bg-cyan-soft hover:text-cyan-dark" href="/#about">About DxValley</a>
+            <a class="rounded-md px-3 py-2 text-sm transition hover:bg-cyan-soft hover:text-cyan-dark" href="/#announcements">Announcements</a>
+            <a class="rounded-md px-3 py-2 text-sm transition hover:bg-cyan-soft hover:text-cyan-dark" href="/v1/gallery">Gallery</a>
+            <a class="rounded-md px-3 py-2 text-sm transition hover:bg-cyan-soft hover:text-cyan-dark" href="/v1/terms">Terms &amp; conditions</a>
+            <a class="rounded-md px-3 py-2 text-sm transition hover:bg-cyan-soft hover:text-cyan-dark" href="/contact">Contact</a>
+          </div>
+        </details>
+      </nav>
+      <div class="mt-4 flex flex-col gap-2 border-t border-line pt-4">
+        <% if (signedIn) { %>
+          <a href="/v1/auth/profile" class="rounded-md px-3 py-3 text-cyan-dark transition hover:bg-cyan-soft hover:underline">Profile</a>
+          <button type="button" onclick="handleLogout()" class="rounded-md bg-ink px-3 py-3 text-sm font-semibold text-white transition hover:bg-slate-700">Logout</button>
+        <% } else { %>
+          <a href="<%= routes.loginRoute %>" class="rounded-md px-3 py-3 text-muted transition hover:bg-cyan-soft hover:text-cyan-dark">Sign in</a>
+        <% } %>
       </div>
-    <% } %>
-  </div>
-
-  <div class="hidden lg:block">
-    <div class="mx-auto flex max-w-7xl items-center justify-end gap-3 px-6 pb-3 lg:px-10">
-      <% if (signedIn) { %>
-        <a href="/v1/auth/profile" class="text-xs font-semibold text-cyan-dark hover:underline">Profile</a>
-        <button type="button" onclick="handleLogout()" class="rounded-md bg-ink px-3 py-2 text-xs font-semibold text-white transition hover:bg-slate-700">Logout</button>
-      <% } else { %>
-        <a href="<%= routes.loginRoute %>" class="text-xs font-semibold text-muted hover:text-cyan-dark hover:underline">Log in</a>
-        <a href="<%= routes.signupRoute %>" class="rounded-md border border-cyan px-3 py-2 text-xs font-bold text-cyan-dark transition hover:bg-cyan-soft">Sign up</a>
-      <% } %>
     </div>
+
+    <% if (!signedIn) { %>
+    <div id="header-apply-bar" class="hidden border-t border-line bg-[#F6FAFC]">
+      <div class="mx-auto flex max-w-7xl justify-end px-6 py-2.5 lg:px-10">
+        <button type="button" onclick="handleGlobalApply()" class="inline-flex items-center gap-2 rounded-full bg-orange px-5 py-2 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-orange-dark focus:outline-none focus:ring-2 focus:ring-orange focus:ring-offset-2">
+          Apply now
+          <i class="fa-solid fa-arrow-up-right-from-square text-xs" aria-hidden="true"></i>
+        </button>
+      </div>
+    </div>
+    <% } %>
   </div>
 </header>
 
@@ -182,4 +165,62 @@
       window.alert('An error occurred during logout.');
     }
   }
+
+  window.isActiveOpenCall = (ann) => {
+    if (!ann?.is_open_call) return false;
+    if (ann.deadline && new Date(ann.deadline).getTime() < Date.now()) return false;
+    if (ann.capacity && parseInt(ann.application_count || 0, 10) >= parseInt(ann.capacity, 10)) return false;
+    return true;
+  };
+
+  window.updateHeaderApplyBar = async (announcements) => {
+    const bar = document.getElementById('header-apply-bar');
+    if (!bar) return;
+
+    try {
+      let data = announcements;
+      if (!data) {
+        const response = await fetch('/api/public/announcements');
+        if (!response.ok) {
+          bar.classList.add('hidden');
+          return;
+        }
+        data = await response.json();
+      }
+
+      window.announcementData = data;
+
+      const hasActiveOpenCall = data.some(window.isActiveOpenCall);
+      bar.classList.toggle('hidden', !hasActiveOpenCall);
+    } catch (error) {
+      console.error('Error updating header apply bar:', error);
+      bar.classList.add('hidden');
+    }
+  };
+
+  if (!window.handleGlobalApply) {
+    window.handleGlobalApply = async () => {
+      if (!window.announcementData?.length) {
+        await window.updateHeaderApplyBar();
+      }
+
+      const openCalls = (window.announcementData || []).filter(window.isActiveOpenCall);
+
+      if (openCalls.length === 1 && typeof window.openApplicationModal === 'function') {
+        const openCallIndex = window.announcementData.findIndex((ann) => ann.id === openCalls[0].id);
+        window.openApplicationModal(openCallIndex);
+        return;
+      }
+
+      const updatesSection = document.getElementById('announcements');
+      if (updatesSection) {
+        updatesSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else {
+        window.location.href = '/#announcements';
+      }
+    };
+  }
+
+  window.updateHeaderApplyBar();
+  setInterval(window.updateHeaderApplyBar, 30000);
 </script>

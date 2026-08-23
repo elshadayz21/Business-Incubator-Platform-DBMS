@@ -61,6 +61,7 @@ const Workshops = () => {
         fetchWorkshops();
       } catch (error) {
         console.error("Error deleting workshop:", error);
+        alert(error.message || "Failed to delete workshop.");
       }
     }
   };
