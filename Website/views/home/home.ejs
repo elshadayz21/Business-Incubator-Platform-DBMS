@@ -309,6 +309,10 @@
       
       // Update countdown
       startHomeCountdown(announcements);
+
+      if (typeof window.updateHeaderApplyBar === 'function') {
+        window.updateHeaderApplyBar(announcements);
+      }
     } catch (error) {
       console.error('Error refreshing announcements:', error);
     }
@@ -324,6 +328,8 @@
 
       if (announcements.length === 0) {
         container.innerHTML = '<div class="py-4 text-center text-sm font-semibold text-muted">No new announcements at this time. Check back soon!</div>';
+        window.announcementData = [];
+        if (typeof window.updateHeaderApplyBar === 'function') window.updateHeaderApplyBar([]);
         return;
       }
 
@@ -333,6 +339,10 @@
 
             // Start countdown for the latest open call
             startHomeCountdown(announcements);
+
+            if (typeof window.updateHeaderApplyBar === 'function') {
+              window.updateHeaderApplyBar(announcements);
+            }
 
             // Auto-refresh every 30 seconds to catch deadline updates
             homeRefreshInterval = setInterval(refreshAnnouncements, 30000);
