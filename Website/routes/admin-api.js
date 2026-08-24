@@ -198,6 +198,27 @@ router.post(
   }),
 );
 
+// Returns whichever account is currently active for this browser session.
+// The browser cookie (and therefore the session) is shared by every tab on
+// the same site, so this always reflects the most recently signed-in
+// account. The frontend uses this — instead of a per-tab sessionStorage
+// cache — so that every open tab stays in sync with whichever account is
+// actually authenticated.
+router.get("/auth/me", (req, res) => {
+  if (!req.session || !req.session.userId) {
+    return res.status(401).json({ success: false, message: "Not authenticated" });
+  }
+  res.json({
+    success: true,
+    user: {
+      id: req.session.userId,
+      role: req.session.userRole,
+      name: req.session.userName,
+      email: req.session.userEmail,
+    },
+  });
+});
+
 const adminOnly = authorizeRole(ROLES.ADMIN, ROLES.SUPERADMIN);
 const superadminOnly = authorizeRole(ROLES.SUPERADMIN);
 

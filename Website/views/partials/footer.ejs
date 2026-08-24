@@ -125,4 +125,34 @@
   })();
 </script>
 
+<script>
+  // A sign-in/sign-out anywhere on this site is a browser-wide event: the
+  // session cookie is shared by every open tab, so only one account can
+  // ever be "the" logged-in account at a time. When that changes in
+  // another tab (localStorage.isLoggedIn flips, written by login/logout),
+  // reload this tab so it picks up whichever account is now actually
+  // signed in instead of continuing to show stale, mismatched content.
+  (function () {
+    window.addEventListener('storage', function (e) {
+      if (e.key === 'isLoggedIn' && e.newValue !== e.oldValue) {
+        window.location.reload();
+      }
+    });
+
+    // Safety net: also resync when the user switches back to this tab,
+    // in case a login/logout happened elsewhere without a 'storage' event
+    // reaching this tab (e.g. it was asleep/frozen in the background).
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState !== 'visible') return;
+      var lastKnown = sessionStorage.getItem('dxvalley_lastKnownLoginState');
+      var current = localStorage.getItem('isLoggedIn');
+      if (lastKnown !== null && lastKnown !== current) {
+        window.location.reload();
+      }
+      sessionStorage.setItem('dxvalley_lastKnownLoginState', current);
+    });
+    sessionStorage.setItem('dxvalley_lastKnownLoginState', localStorage.getItem('isLoggedIn'));
+  })();
+</script>
+
 <%- include('./chatbot') %>

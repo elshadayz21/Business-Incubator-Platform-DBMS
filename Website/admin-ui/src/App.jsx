@@ -34,31 +34,59 @@ function App() {
     setIsLoading(false);
   }, []);
 
+  // A browser cookie (and therefore the server-side session) is shared by
+  // every tab open on this site — there is no such thing as a separate
+  // logged-in account per tab. So at any moment there is exactly one
+  // "currently signed-in account", and it's whichever tab logged in most
+  // recently. This function makes the CURRENT tab match that reality: it
+  // asks the server who is actually logged in right now and, if this tab's
+  // cached copy is out of date (a different account, or logged out), it
+  // reloads so every part of the portal — sidebar, data fetches, everything
+  // — comes up fresh and consistent for the account that's really active.
   const syncUserFromServer = useCallback(() => {
     const stored = sessionStorage.getItem("user");
-    if (!stored) return;
-
-    let storedUser;
-    try {
-      storedUser = JSON.parse(stored);
-    } catch {
-      return;
+    let storedUser = null;
+    if (stored) {
+      try {
+        storedUser = JSON.parse(stored);
+      } catch {
+        storedUser = null;
+      }
     }
 
-    fetch("/v1/auth/me")
+    fetch("/api/admin/auth/me", { credentials: "include" })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (!data?.user) return;
-        const serverUser = data.user;
+        const serverUser = data?.user || null;
 
-        // The session cookie is shared across tabs, but sessionStorage is
-        // per-tab. Only refresh this tab's data when the server session
-        // belongs to the SAME account, otherwise this tab could pick up
-        // another account's profile image.
-        if (!serverUser.id || !storedUser.id || serverUser.id !== storedUser.id) {
+        if (!serverUser) {
+          // No one is signed in on this browser anymore (logged out from
+          // another tab). Drop back to the login screen.
+          if (storedUser) {
+            sessionStorage.clear();
+            localStorage.setItem("isLoggedIn", "false");
+            window.location.reload();
+          }
           return;
         }
 
+        if (!storedUser || serverUser.id !== storedUser.id) {
+          // A different account is now the active session for this browser
+          // (someone signed in from another tab). Adopt it here too and
+          // reload so this tab is fully re-initialized for that account,
+          // instead of mixing a stale cached identity with fresh data.
+          sessionStorage.setItem(
+            "user",
+            JSON.stringify({ ...storedUser, ...serverUser })
+          );
+          sessionStorage.setItem("isLoggedIn", "true");
+          localStorage.setItem("isLoggedIn", "true");
+          window.location.reload();
+          return;
+        }
+
+        // Same account — just refresh any fields that may have changed
+        // (profile picture, name, etc.) without a full reload.
         try {
           storedUser.profile_image =
             serverUser.profile_image ?? storedUser.profile_image ?? null;
@@ -75,10 +103,12 @@ function App() {
   }, []);
 
   useEffect(() => {
-    // Cross-tab auth state changes (localStorage writes) - only re-check
-    // this tab's own sessionStorage, never re-fetch the shared session.
+    // Cross-tab auth state changes (localStorage writes from another tab
+    // logging in/out) - re-check this tab's own auth flag and resync
+    // against whichever account is now actually signed in.
     const handleStorageChange = () => {
       checkAuth();
+      syncUserFromServer();
     };
 
     // Same-tab login/logout updates - re-check and refresh this tab's data.
@@ -87,8 +117,19 @@ function App() {
       syncUserFromServer();
     };
 
+    // When the user switches back to this tab (it's now "the tab being
+    // used"), make sure it reflects whichever account is currently signed
+    // in, in case a login/logout happened in another tab while this one
+    // was in the background.
+    const handleFocusOrVisible = () => {
+      if (document.visibilityState === "hidden") return;
+      syncUserFromServer();
+    };
+
     window.addEventListener("storage", handleStorageChange);
     window.addEventListener("auth-change", handleAuthChange);
+    window.addEventListener("focus", handleFocusOrVisible);
+    document.addEventListener("visibilitychange", handleFocusOrVisible);
 
     const initialCheck = setTimeout(() => checkAuth(), 0);
 
@@ -96,6 +137,8 @@ function App() {
       clearTimeout(initialCheck);
       window.removeEventListener("storage", handleStorageChange);
       window.removeEventListener("auth-change", handleAuthChange);
+      window.removeEventListener("focus", handleFocusOrVisible);
+      document.removeEventListener("visibilitychange", handleFocusOrVisible);
     };
   }, [checkAuth, syncUserFromServer]);
 
