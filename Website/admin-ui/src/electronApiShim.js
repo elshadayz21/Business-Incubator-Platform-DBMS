@@ -128,6 +128,14 @@ window.electron = {
       case "projects:getStats":
         url = "/api/admin/projects/stats";
         break;
+      case "projects:inviteMentor":
+        url = `/api/admin/projects/${args[0]}/invite-mentor`;
+        options.method = "POST";
+        options.body = JSON.stringify({ mentorId: args[1], message: args[2] });
+        break;
+      case "projects:getInvitations":
+        url = `/api/admin/projects/${args[0]}/invitations`;
+        break;
 
       // Funding
       case "funding:getAll":
