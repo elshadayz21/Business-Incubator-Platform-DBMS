@@ -90,81 +90,16 @@ export default function LoginPage() {
       </header>
 
       {/* 3. Hero Section - Exact Cyan Gradient Palette from Landing Page */}
-      <main className="flex-1 relative overflow-hidden bg-gradient-to-br from-[#00ADEF] via-[#078CC8] to-[#0878B4] text-white py-12 lg:py-20 px-6 lg:px-10 flex items-center">
+      <main className="flex-1 relative overflow-hidden bg-gradient-to-br from-[#00ADEF] via-[#078CC8] to-[#0878B4] text-white py-12 lg:py-20 px-6 lg:px-10 flex items-center justify-center">
         
         {/* Decorative Background Concentric Rings (Matching Landing Page Hero) */}
         <div className="pointer-events-none absolute -left-24 -top-20 h-[460px] w-[620px] rounded-[48%] border-[70px] border-white/10" aria-hidden="true" />
         <div className="pointer-events-none absolute -right-40 bottom-[-240px] h-[620px] w-[760px] rounded-[50%] border-[90px] border-white/10" aria-hidden="true" />
         <div className="pointer-events-none absolute right-[28%] top-14 h-20 w-20 rounded-full bg-white/10 blur-xl" aria-hidden="true" />
 
-        <div className="relative mx-auto max-w-7xl w-full grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
-          
-          {/* Left Column: Brand & Portal Introduction */}
-          <div className="lg:col-span-7 space-y-7 max-w-[680px]">
-            <div>
-              <p className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/15 px-3.5 py-1 text-xs font-bold uppercase tracking-[.22em] text-white">
-                <span className="h-2 w-2 rounded-full bg-[#E38524]" aria-hidden="true" />
-                DxValley ICMS • Back-Office
-              </p>
-              
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-[1.04] tracking-[-.04em]">
-                Admin &amp; Staff <br />
-                <span className="text-white/80">Management Portal</span>
-              </h1>
-
-              <p className="mt-6 border-l-4 border-white/40 pl-5 text-base sm:text-lg leading-relaxed text-white/90">
-                Unified control center for DxValley incubation managers to evaluate startup applications, assign mentors, coordinate workshops, and oversee cohort progress.
-              </p>
-            </div>
-
-            {/* Feature Highlight Cards (Matching Landing Glassmorphism) */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
-              <div className="rounded-2xl border border-white/25 bg-white/10 p-4.5 backdrop-blur-md">
-                <div className="mb-2.5 grid h-10 w-10 place-items-center rounded-xl bg-white/20 text-white text-lg">
-                  <i className="fa-solid fa-chart-line" aria-hidden="true" />
-                </div>
-                <h3 className="font-bold text-sm text-white">Cohort Tracking</h3>
-                <p className="mt-1 text-xs text-white/75 leading-normal">
-                  Review &amp; guide startups from Idea → MVP → Scale-up.
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-white/25 bg-white/10 p-4.5 backdrop-blur-md">
-                <div className="mb-2.5 grid h-10 w-10 place-items-center rounded-xl bg-white/20 text-white text-lg">
-                  <i className="fa-solid fa-user-gear" aria-hidden="true" />
-                </div>
-                <h3 className="font-bold text-sm text-white">Mentors &amp; Events</h3>
-                <p className="mt-1 text-xs text-white/75 leading-normal">
-                  Match startup founders with experts &amp; host workshops.
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-white/25 bg-white/10 p-4.5 backdrop-blur-md">
-                <div className="mb-2.5 grid h-10 w-10 place-items-center rounded-xl bg-white/20 text-white text-lg">
-                  <i className="fa-solid fa-hand-holding-dollar" aria-hidden="true" />
-                </div>
-                <h3 className="font-bold text-sm text-white">Resources &amp; Funds</h3>
-                <p className="mt-1 text-xs text-white/75 leading-normal">
-                  Process workspace bookings &amp; manage funding.
-                </p>
-              </div>
-            </div>
-
-            {/* Sub-text Co-branding */}
-            <div className="flex items-center gap-3 pt-2 text-xs text-white/80">
-              <img
-                src="/brand/coopbank-mark.jpeg"
-                alt="Coop Bank"
-                className="h-7 w-7 rounded-full object-cover border border-white/40 shadow-sm"
-              />
-              <span>Empowering Ethiopian Founders &amp; Startups • <strong>Cooperative Bank of Oromia</strong></span>
-            </div>
-          </div>
-
-          {/* Right Column: Clean White Login Card */}
-          <div className="lg:col-span-5 lg:justify-self-end w-full max-w-[480px]">
+        {/* Sign-In Card */}
+        <div className="relative w-full max-w-[480px]">
             <div className="relative rounded-[28px] border border-white/30 bg-white p-7 sm:p-9 text-[#111827] shadow-[0_20px_60px_rgba(0,63,102,0.3)]">
-              
               {/* Card Header */}
               <div className="flex items-start justify-between gap-4 pb-5 border-b border-[#D6E4EA] mb-6">
                 <div>
@@ -296,7 +231,6 @@ export default function LoginPage() {
             </div>
           </div>
 
-        </div>
       </main>
 
       {/* 4. Footer - Matching Landing Page Footer Style */}
