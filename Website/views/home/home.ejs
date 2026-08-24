@@ -298,21 +298,29 @@
     homeCountdownInterval = setInterval(() => updateCountdownValues(deadlineDate), 1000);
   }
 
-  // Fetch announcements and update everything
+  // --- SMART APPLY BUTTON LOGIC (NOW REDIRECTS TO DEDICATED PAGE!) ---
+  window.handleGlobalApply = () => {
+    if (window.announcementData && window.announcementData.length > 0) {
+      const openCall = window.announcementData.find(ann => ann.is_open_call);
+      if (openCall) {
+        window.location.href = `/apply/${openCall.id}`; // REDIRECTS!
+        return;
+      }
+    }
+    const updatesSection = document.getElementById('announcements');
+    if (updatesSection) {
+      updatesSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else {
+      alert('Applications are not open right now. Please check back soon!');
+    }
+  };
+
   async function refreshAnnouncements() {
     try {
       const response = await fetch('/api/public/announcements');
       let announcements = await response.json();
-      
-      // Store globally
       window.announcementData = announcements;
-      
-      // Update countdown
       startHomeCountdown(announcements);
-
-      if (typeof window.updateHeaderApplyBar === 'function') {
-        window.updateHeaderApplyBar(announcements);
-      }
     } catch (error) {
       console.error('Error refreshing announcements:', error);
     }
@@ -329,46 +337,35 @@
       if (announcements.length === 0) {
         container.innerHTML = '<div class="py-4 text-center text-sm font-semibold text-muted">No new announcements at this time. Check back soon!</div>';
         window.announcementData = [];
-        if (typeof window.updateHeaderApplyBar === 'function') window.updateHeaderApplyBar([]);
         return;
       }
 
+      window.announcementData = announcements;
+      startHomeCountdown(announcements);
+      homeRefreshInterval = setInterval(refreshAnnouncements, 30000);
 
-            // Store the data in a global variable so we can access it on click!
-            window.announcementData = announcements;
+      container.innerHTML = announcements.map((ann, index) => {
+        const dateStr = new Date(ann.created_at).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
+        const isOpenCall = ann.is_open_call;
 
-            // Start countdown for the latest open call
-            startHomeCountdown(announcements);
-
-            if (typeof window.updateHeaderApplyBar === 'function') {
-              window.updateHeaderApplyBar(announcements);
-            }
-
-            // Auto-refresh every 30 seconds to catch deadline updates
-            homeRefreshInterval = setInterval(refreshAnnouncements, 30000);
-
-            container.innerHTML = announcements.map((ann, index) => {
-              const dateStr = new Date(ann.created_at).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
-                      const isOpenCall = ann.is_open_call;
-
-              if (isOpenCall) {
-                return `
-                  <div class="group flex gap-4 py-4 cursor-pointer rounded-xl hover:bg-[#F6FAFC] transition p-2" onclick="openApplicationModal(${index})">
-                    <span class="w-20 shrink-0 text-xs font-semibold text-muted">${dateStr}</span>
-                    <span class="text-sm font-semibold leading-6 text-ink transition group-hover:text-cyan-dark flex-grow">${ann.title}</span>
-                    <span class="ml-auto text-xs font-bold text-[#E38524] bg-[#FFF1E3] px-2 py-1 rounded-full border border-[#E38524]/20">Apply Now</span>
-                  </div>
-                `;
-              } else {
-                return `
-                  <div class="group flex gap-4 py-4 cursor-pointer rounded-xl hover:bg-[#F6FAFC] transition p-2" onclick="openAnnouncementDetail(${index})">
-                    <span class="w-20 shrink-0 text-xs font-semibold text-muted">${dateStr}</span>
-                    <span class="text-sm font-semibold leading-6 text-ink transition group-hover:text-cyan-dark flex-grow">${ann.title}</span>
-                    <i class="fa-solid fa-arrow-up-right-from-square ml-auto mt-1 shrink-0 text-xs text-cyan" aria-hidden="true"></i>
-                  </div>
-                `;
-              }
-            }).join('');
+        if (isOpenCall) {
+          return `
+            <div class="group flex gap-4 py-4 cursor-pointer rounded-xl hover:bg-[#F6FAFC] transition p-2" onclick="window.location.href='/apply/${ann.id}'">
+              <span class="w-20 shrink-0 text-xs font-semibold text-muted">${dateStr}</span>
+              <span class="text-sm font-semibold leading-6 text-ink transition group-hover:text-cyan-dark flex-grow">${ann.title}</span>
+              <span class="ml-auto text-xs font-bold text-[#E38524] bg-[#FFF1E3] px-2 py-1 rounded-full border border-[#E38524]/20">Apply Now</span>
+            </div>
+          `;
+        } else {
+          return `
+            <div class="group flex gap-4 py-4 cursor-pointer rounded-xl hover:bg-[#F6FAFC] transition p-2" onclick="openAnnouncementDetail(${index})">
+              <span class="w-20 shrink-0 text-xs font-semibold text-muted">${dateStr}</span>
+              <span class="text-sm font-semibold leading-6 text-ink transition group-hover:text-cyan-dark flex-grow">${ann.title}</span>
+              <i class="fa-solid fa-arrow-up-right-from-square ml-auto mt-1 shrink-0 text-xs text-cyan" aria-hidden="true"></i>
+            </div>
+          `;
+        }
+      }).join('');
 
     } catch (error) {
       console.error('Error fetching home announcements:', error);
@@ -398,7 +395,7 @@
     <div class="mx-auto grid max-w-7xl gap-14 px-6 py-24 lg:grid-cols-[1.45fr_.55fr] lg:gap-24 lg:px-10 lg:py-28">
       <article id="stories" class="dv-reveal overflow-hidden rounded-[26px] bg-surface" data-delay="0">
         <div class="grid min-h-[350px] items-end bg-gradient-to-br from-cyan-soft via-white to-orange-soft p-7 sm:p-10">
-          <div class="max-w-[610px]"><p class="text-xs font-extrabold uppercase tracking-[.2em] text-orange">Inside the community</p><h2 class="mt-4 text-4xl font-extrabold leading-tight tracking-[-.04em] text-cyan-dark sm:text-5xl">Founders move further when they do the work together.</h2><blockquote class="mt-7 border-l-2 border-orange pl-5 text-base italic leading-7 text-muted">“DxValley gave us the structure to test the right assumptions, and the people around us made every hard week feel less lonely.”</blockquote><p class="mt-4 text-xs font-bold uppercase tracking-wider text-ink">— An incubatee, Batch 03</p></div>
+          <div class="max-w-[610px]"><p class="text-xs font-extrabold uppercase tracking-[.2em] text-orange">Inside the community</p><h2 class="mt-4 text-4xl font-extrabold leading-tight tracking-[-.04em] text-cyan-dark sm:text-5xl">Founders move further when they do the work together.</h2><blockquote class="mt-7 border-l-2 border-orange pl-5 text-base italic leading-7 text-muted">“DxValley gave us the structure to test the right assumptions, and the people around us made every hard week feel less lonely.”</blockquote><p class="mt-4 text-xs font-bold uppercase tracking-wider text-ink"></p></div>
         </div>
         <div class="flex flex-col items-start justify-between gap-4 border-t border-line bg-white px-7 py-5 sm:flex-row sm:items-center sm:px-10"><p class="text-sm font-semibold text-muted">A place to learn, share, and keep building.</p><a class="inline-flex items-center gap-2 text-sm font-bold text-cyan-dark transition hover:text-orange" href="#community">See the community <i class="fa-solid fa-arrow-right text-xs" aria-hidden="true"></i></a></div>
       </article>
