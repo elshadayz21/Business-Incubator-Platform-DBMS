@@ -11,6 +11,7 @@ import {
   replyToMentorSession,
   mentorReplyToEntrepreneurSession,
   markNotificationsAsRead,
+  respondToMentorInvitation,
 } from "../admin-backend/portal/portal.js";
 
 const router = Router();
@@ -86,6 +87,27 @@ router.get(
   asyncHandler(async (req, res) => {
     const dashboard = await getMentorDashboard(req.session.userId);
     res.json(dashboard);
+  }),
+);
+
+router.post(
+  "/mentor/invitations/:id/respond",
+  isAuth,
+  authorizeRole(ROLES.MENTOR, ROLES.SUPERADMIN, ROLES.ADMIN),
+  asyncHandler(async (req, res) => {
+    try {
+      const result = await respondToMentorInvitation(
+        req.session.userId,
+        req.params.id,
+        req.body.action,
+        req.body.reason,
+      );
+      res.json(result);
+    } catch (err) {
+      // Business errors (already responded, not found, etc.) as JSON 400 so the
+      // portal UI can display them instead of failing to parse an HTML error page.
+      res.status(400).json({ success: false, error: err.message });
+    }
   }),
 );
 

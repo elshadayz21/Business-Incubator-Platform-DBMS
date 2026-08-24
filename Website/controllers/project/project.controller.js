@@ -115,7 +115,7 @@ export const createProjectController = async (req, res, next) => {
       return res.redirect("/v1/projects/new");
     }
 
-    const validStages = ["idea", "mvp", "scale-up"];
+    const validStages = ["idea", "in-progress", "completed"];
     if (stage && !validStages.includes(stage)) {
       req.flash("error", "Invalid development stage selected");
       return res.redirect("/v1/projects/new");
@@ -216,7 +216,7 @@ export const createProjectController = async (req, res, next) => {
       solution: solution.trim(),
       tech_stack: tech_stack.trim(),
       stage: stage || "idea",
-      status: status || "Pending",
+      status: stage || "idea",
       github_url: github_url?.trim() || null,
       demo_url: demo_url?.trim() || null,
       team_type,

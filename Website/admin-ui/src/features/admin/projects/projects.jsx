@@ -25,6 +25,16 @@ const invoke =
     return [];
   });
 
+// Normalize legacy/variant stage labels to the canonical filter values.
+// e.g. rows created before the schema cleanup: "MVP", "mvp" -> "in-progress",
+// "Scale-Up"/"scaleup" -> "completed", "Idea" -> "idea".
+const normalizeStage = (stage) => {
+  const s = (stage || "").toLowerCase().trim();
+  if (s === "mvp" || s === "in progress" || s === "inprogress") return "in-progress";
+  if (s === "scale-up" || s === "scaleup" || s === "scale up") return "completed";
+  return s;
+};
+
 export default function Projects() {
   const [filter, setFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
@@ -107,7 +117,7 @@ export default function Projects() {
   };
 
   const filteredProjects = projects.filter((project) => {
-    const matchesFilter = filter === "all" || project.stage === filter;
+    const matchesFilter = filter === "all" || normalizeStage(project.stage) === filter;
     const matchesSearch =
       project.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       project.domain?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -256,14 +266,14 @@ export default function Projects() {
                     <td className="p-4">
                       <span
                         className={`inline-flex px-2.5 py-1 rounded-full text-xs font-bold ${
-                          project.stage === "completed"
+                          normalizeStage(project.stage) === "completed"
                             ? "bg-emerald-50 text-emerald-800 border border-emerald-300"
-                            : project.stage === "in-progress"
+                            : normalizeStage(project.stage) === "in-progress"
                             ? "bg-[#EAF8FC] text-[#006F9E] border border-[#00ADEF]/30"
                             : "bg-[#FFF1E3] text-[#E38524] border border-[#E38524]/30"
                         }`}
                       >
-                        {project.stage === "in-progress" ? "MVP / Building" : project.stage}
+                        {normalizeStage(project.stage) === "in-progress" ? "MVP / Building" : normalizeStage(project.stage)}
                       </span>
                     </td>
 
