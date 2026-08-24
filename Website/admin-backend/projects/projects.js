@@ -20,9 +20,19 @@ export const getProjectById = async (id) => {
 
 // Update Project Status
 export const updateProjectStatus = async (id, status) => {
+  const normalized = (status || "").toLowerCase().trim();
+  // Keep `stage` in sync for pipeline statuses so stage filters/stats stay consistent.
+  const pipelineStages = ["idea", "in-progress", "completed"];
+  const syncStage = pipelineStages.includes(normalized) ? normalized : null;
+
   const res = await pool.query(
-    "UPDATE projects SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *",
-    [status, id],
+    `UPDATE projects
+     SET status = $1,
+         stage = COALESCE($2, stage),
+         updated_at = CURRENT_TIMESTAMP
+     WHERE id = $3
+     RETURNING *`,
+    [normalized, syncStage, id],
   );
   const project = res.rows[0];
 
@@ -134,17 +144,30 @@ export const toggleProjectApproved = async (id) => {
 };
 
 // Get Projects Statistics
+// Counts by the pipeline stage (falling back to status) with legacy value
+// mapping, so the four cards always add up to the total.
 export const getProjectsStats = async () => {
   const res = await pool.query(`
-    SELECT 
-      COUNT(*) as total,
-      COUNT(*) FILTER (WHERE status = 'idea') as idea,
-      COUNT(*) FILTER (WHERE status = 'in-progress') as in_progress,
-      COUNT(*) FILTER (WHERE status = 'completed') as completed,
-      COUNT(*) FILTER (WHERE status = 'pending') as pending,
-      COUNT(*) FILTER (WHERE status = 'approved') as approved,
-      COUNT(*) FILTER (WHERE status = 'rejected') as rejected
-    FROM projects
+    WITH pipeline AS (
+      SELECT CASE
+        WHEN LOWER(TRIM(COALESCE(NULLIF(TRIM(stage), ''), status))) IN ('completed', 'scale-up', 'scaleup', 'scale up')
+          THEN 'completed'
+        WHEN LOWER(TRIM(COALESCE(NULLIF(TRIM(stage), ''), status))) IN ('in-progress', 'in progress', 'inprogress', 'mvp')
+          THEN 'in-progress'
+        WHEN LOWER(TRIM(COALESCE(NULLIF(TRIM(stage), ''), status))) = 'idea'
+          THEN 'idea'
+        -- Anything unrecognized (e.g. legacy 'Pending'/'Approved' review states)
+        -- still belongs to a card: treat it as active work in the incubator.
+        ELSE 'in-progress'
+      END AS stage_norm
+      FROM projects
+    )
+    SELECT
+      COUNT(*) AS total,
+      COUNT(*) FILTER (WHERE stage_norm = 'idea') AS idea,
+      COUNT(*) FILTER (WHERE stage_norm = 'in-progress') AS in_progress,
+      COUNT(*) FILTER (WHERE stage_norm = 'completed') AS completed
+    FROM pipeline
   `);
   return res.rows[0];
 };
@@ -290,3 +313,199 @@ export const assignMentor = async (projectId, mentorId) => {
     return { success: false, message: "Server error assigning mentor." };
   }
 };
+
+// --- PRE-ASSIGNMENT MENTOR INVITATIONS ---
+let mentorInvitationsTableReady = false;
+export const ensureMentorInvitationsTable = async () => {
+  if (mentorInvitationsTableReady) return;
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS mentor_invitations (
+        id SERIAL PRIMARY KEY,
+        project_id INT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+        mentor_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        invited_by INT REFERENCES users(id) ON DELETE SET NULL,
+        status VARCHAR(50) NOT NULL DEFAULT 'pending',
+        message TEXT,
+        invited_at TIMESTAMP DEFAULT NOW(),
+        responded_at TIMESTAMP,
+        decline_reason TEXT,
+        UNIQUE(project_id, mentor_id)
+      )
+    `);
+    // Older installs may have created the table before this column existed.
+    await pool.query("ALTER TABLE mentor_invitations ADD COLUMN IF NOT EXISTS decline_reason TEXT");
+    mentorInvitationsTableReady = true;
+  } catch (err) {
+    console.error("Failed to ensure mentor_invitations table:", err.message);
+  }
+};
+
+export const inviteMentorToProject = async (projectId, mentorId, adminId, message = "") => {
+  await ensureMentorInvitationsTable();
+  try {
+    // 1. Check if the project ALREADY has an assigned mentor
+    const mentorCheck = await pool.query(
+      "SELECT * FROM project_entrepreneurs WHERE project_id = $1 AND LOWER(role_in_project) = 'mentor'",
+      [projectId]
+    );
+
+    if (mentorCheck.rows.length > 0) {
+      return { success: false, message: "This project already has an assigned mentor." };
+    }
+
+    // 2. Check if an invitation for this project has ALREADY been accepted
+    const acceptedCheck = await pool.query(
+      "SELECT 1 FROM mentor_invitations WHERE project_id = $1 AND status = 'accepted'",
+      [projectId]
+    );
+
+    if (acceptedCheck.rows.length > 0) {
+      return { success: false, message: "A mentor has already accepted the invitation for this project." };
+    }
+
+    // 3. Only ONE pending invitation allowed per project at a time.
+    //    If the invited mentor declines, the project becomes open again for other mentors.
+    const pendingCheck = await pool.query(
+      "SELECT 1 FROM mentor_invitations WHERE project_id = $1 AND status = 'pending' AND mentor_id <> $2 LIMIT 1",
+      [projectId, mentorId]
+    );
+
+    if (pendingCheck.rows.length > 0) {
+      return { success: false, message: "An invitation is already pending for this project. You can invite another mentor after it is declined." };
+    }
+
+    const res = await pool.query(
+      `INSERT INTO mentor_invitations (project_id, mentor_id, invited_by, status, message, invited_at)
+       VALUES ($1, $2, $3, 'pending', $4, NOW())
+       ON CONFLICT (project_id, mentor_id) 
+       DO UPDATE SET status = 'pending', message = EXCLUDED.message, invited_at = NOW()
+       RETURNING *`,
+      [projectId, mentorId, adminId || null, message || ""]
+    );
+
+    const projRes = await pool.query("SELECT name FROM projects WHERE id = $1", [projectId]);
+    const projectName = projRes.rows[0]?.name || "a startup project";
+
+    await createNotification(
+      mentorId,
+      "mentor_invitation",
+      `You have been invited to mentor the project "${projectName}". Please review and respond in your mentor portal.`,
+      { projectId, invitationId: res.rows[0].id },
+      `/v1/auth/profile?tab=invitations`
+    );
+
+    return { success: true, invitation: res.rows[0], message: `Invitation sent to mentor for "${projectName}"` };
+  } catch (error) {
+    console.error("Error in inviteMentorToProject:", error);
+    return { success: false, message: "Server error sending mentor invitation." };
+  }
+};
+
+export const getProjectInvitations = async (projectId) => {
+  await ensureMentorInvitationsTable();
+  try {
+    // LEFT JOIN so invitation history survives even if the mentor's account was deleted.
+    const res = await pool.query(
+      `SELECT mi.*, u.name as mentor_name, u.email as mentor_email, u.expertise as mentor_expertise
+       FROM mentor_invitations mi
+       LEFT JOIN users u ON u.id = mi.mentor_id
+       WHERE mi.project_id = $1
+       ORDER BY mi.invited_at DESC`,
+      [projectId]
+    );
+
+    // Currently assigned mentor (if any). LEFT JOIN keeps orphaned rows visible
+    // after the mentor account is gone so admins can still replace them.
+    const curRes = await pool.query(
+      `SELECT pe.user_id AS mentor_id, u.name AS mentor_name, u.email AS mentor_email,
+              (u.id IS NULL) AS account_removed
+       FROM project_entrepreneurs pe
+       LEFT JOIN users u ON u.id = pe.user_id
+       WHERE pe.project_id = $1 AND LOWER(pe.role_in_project) = 'mentor'
+       LIMIT 1`,
+      [projectId]
+    );
+
+    return { success: true, data: res.rows, currentMentor: curRes.rows[0] || null };
+  } catch (error) {
+    console.error("Error in getProjectInvitations:", error);
+    return { success: false, data: [], currentMentor: null };
+  }
+};
+
+// --- REMOVE / REPLACE CURRENT PROJECT MENTOR ---
+// Used when a mentor leaves or their account was deleted. Frees the project so
+// another mentor can be invited or directly assigned.
+export const removeProjectMentor = async (projectId) => {
+  try {
+    // 1. Find the currently assigned mentor row (works for orphaned rows too).
+    const curRes = await pool.query(
+      `SELECT pe.user_id AS mentor_id, u.name AS mentor_name
+       FROM project_entrepreneurs pe
+       LEFT JOIN users u ON u.id = pe.user_id
+       WHERE pe.project_id = $1 AND LOWER(pe.role_in_project) = 'mentor'
+       LIMIT 1`,
+      [projectId]
+    );
+
+    if (curRes.rows.length === 0) {
+      return { success: false, message: "This project has no assigned mentor." };
+    }
+
+    const oldMentorId = curRes.rows[0].mentor_id;
+    const oldMentorName = curRes.rows[0].mentor_name || "The previous mentor";
+
+    // 2. Remove the mentor role row from the project team.
+    await pool.query(
+      "DELETE FROM project_entrepreneurs WHERE project_id = $1 AND LOWER(role_in_project) = 'mentor'",
+      [projectId]
+    );
+
+    // 3. Revoke any pending/accepted invitations for this project so new ones can be sent.
+    await pool.query(
+      `UPDATE mentor_invitations
+       SET status = 'revoked', responded_at = NOW()
+       WHERE project_id = $1 AND status IN ('pending', 'accepted')`,
+      [projectId]
+    );
+
+    // 4. Remove portal mentorship assignments linking the old mentor to this project's founders.
+    if (oldMentorId) {
+      await pool.query(
+        `DELETE FROM mentor_assignments ma
+         USING project_entrepreneurs pe
+         WHERE pe.project_id = $1
+           AND pe.user_id = ma.entrepreneur_id
+           AND ma.mentor_id = $2`,
+        [projectId, oldMentorId]
+      ).catch(() => {});
+    }
+
+    // 5. Notify the project founders about the change.
+    const foundersRes = await pool.query(
+      `SELECT user_id FROM project_entrepreneurs
+       WHERE project_id = $1 AND (role_in_project IS NULL OR LOWER(role_in_project) != 'mentor')`,
+      [projectId]
+    );
+
+    const projRes = await pool.query("SELECT name FROM projects WHERE id = $1", [projectId]);
+    const projectName = projRes.rows[0]?.name || "your project";
+
+    for (const founder of foundersRes.rows) {
+      await createNotification(
+        founder.user_id,
+        "mentor_assignment",
+        `${oldMentorName} is no longer the mentor of "${projectName}". A new mentor will be assigned soon.`,
+        { projectId, removedMentorId: oldMentorId },
+        `/v1/auth/profile?tab=projects`
+      ).catch(() => {});
+    }
+
+    return { success: true, message: `${oldMentorName === "The previous mentor" ? "Previous mentor" : oldMentorName} removed from "${projectName}". You can now invite another mentor.` };
+  } catch (error) {
+    console.error("Error in removeProjectMentor:", error);
+    return { success: false, message: "Server error removing mentor." };
+  }
+};
+
