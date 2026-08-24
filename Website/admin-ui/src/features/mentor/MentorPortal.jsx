@@ -29,6 +29,8 @@ import {
 
 const MentorPortal = () => {
   const [assignments, setAssignments] = useState([]);
+  const [invitations, setInvitations] = useState([]);
+  const [respondingInvId, setRespondingInvId] = useState(null);
   const [notifications, setNotifications] = useState([]);
   const [activityLogs, setActivityLogs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -48,6 +50,9 @@ const MentorPortal = () => {
   const [responseInputs, setResponseInputs] = useState({});
   const [responseSending, setResponseSending] = useState({});
   const [editingResponse, setEditingResponse] = useState({});
+  const [declineTarget, setDeclineTarget] = useState(null);
+  const [declineReason, setDeclineReason] = useState("");
+  const [declineSending, setDeclineSending] = useState(false);
 
   const currentUser = JSON.parse(sessionStorage.getItem("user") || "{}");
 
@@ -84,6 +89,7 @@ const MentorPortal = () => {
       setLoading(true);
       const result = await getMentorDashboard();
       setAssignments(result?.assignments || []);
+      setInvitations(result?.invitations || []);
       setNotifications(result?.notifications || []);
       setActivityLogs(result?.activityLogs || []);
     } catch (err) {
@@ -93,6 +99,44 @@ const MentorPortal = () => {
       setLoading(false);
     }
   }, []);
+
+  const handleRespondInvitation = async (invitationId, action, reason = "") => {
+    setRespondingInvId(invitationId);
+    try {
+      const res = await fetch(`/api/portal/mentor/invitations/${invitationId}/respond`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, reason }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        alert(action === "accept" ? "You have accepted the project mentorship invitation!" : "You have declined the project invitation.");
+        setInvitations((prev) => prev.filter((i) => i.id !== invitationId));
+        fetchDashboard();
+        return true;
+      } else {
+        alert(data.error || "Failed to process invitation.");
+        return false;
+      }
+    } catch (err) {
+      console.error("Error responding to invitation:", err);
+      alert("Server error processing your response.");
+      return false;
+    } finally {
+      setRespondingInvId(null);
+    }
+  };
+
+  const handleConfirmDecline = async () => {
+    if (!declineReason.trim()) return;
+    setDeclineSending(true);
+    const ok = await handleRespondInvitation(declineTarget.id, "decline", declineReason.trim());
+    setDeclineSending(false);
+    if (ok) {
+      setDeclineTarget(null);
+      setDeclineReason("");
+    }
+  };
 
   useEffect(() => {
     document.title = "Dx Valley ICMS - Mentor Portal";
@@ -212,6 +256,10 @@ const MentorPortal = () => {
                   src={currentUser.profile_image}
                   alt={currentUser.name || "Profile"}
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = "/assets/images/default-avatar.svg";
+                  }}
                 />
               ) : (
                 (currentUser.name || "M").charAt(0).toUpperCase()
@@ -325,6 +373,10 @@ const MentorPortal = () => {
                       src={selected.entrepreneur_profile_image}
                       alt={selected.entrepreneur_name}
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = "/assets/images/default-avatar.svg";
+                      }}
                     />
                   ) : (
                     selected.entrepreneur_name?.charAt(0)?.toUpperCase() || "E"
@@ -691,6 +743,69 @@ const MentorPortal = () => {
         ) : (
           /* -------- Assigned entrepreneurs list -------- */
           <div className="space-y-6">
+            {invitations.length > 0 && (
+              <div className="bg-[#FFF1E3]/80 border border-[#E38524]/40 rounded-2xl p-6 shadow-xs space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Rocket className="text-[#E38524]" size={20} />
+                    <h3 className="text-base font-bold text-[#111827] font-['Space_Grotesk']">
+                      Pending Project Mentorship Invitations ({invitations.length})
+                    </h3>
+                  </div>
+                  <span className="text-xs font-extrabold px-3 py-1 bg-[#E38524] text-white rounded-full">
+                    Action Required
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {invitations.map((inv) => (
+                    <div key={inv.id} className="bg-white border border-[#D6E4EA] rounded-xl p-4 shadow-xs space-y-3">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h4 className="font-extrabold text-sm text-[#111827]">{inv.project_name}</h4>
+                          <p className="text-xs text-[#526274] mt-0.5">
+                            Domain: <strong className="text-[#111827]">{inv.project_domain || "General"}</strong> • Stage: <strong className="text-[#006F9E]">{inv.project_stage || "Idea"}</strong>
+                          </p>
+                        </div>
+                      </div>
+
+                      {inv.founder_name && (
+                        <p className="text-xs text-[#526274]">
+                          Lead Founder: <strong className="text-[#111827]">{inv.founder_name}</strong> ({inv.founder_email})
+                        </p>
+                      )}
+
+                      {inv.message && (
+                        <p className="text-xs text-slate-600 italic bg-[#F6FAFC] p-2.5 rounded-lg border border-[#D6E4EA]">
+                          "{inv.message}"
+                        </p>
+                      )}
+
+                      <div className="flex items-center gap-2 pt-2">
+                        <button
+                          onClick={() => handleRespondInvitation(inv.id, "accept")}
+                          disabled={respondingInvId === inv.id}
+                          className="flex-1 py-2 px-3 bg-[#00ADEF] text-white text-xs font-extrabold rounded-xl hover:bg-[#006F9E] disabled:opacity-50 transition shadow-2xs"
+                        >
+                          {respondingInvId === inv.id ? "Processing..." : "Accept & Mentor Project"}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setDeclineTarget(inv);
+                            setDeclineReason("");
+                          }}
+                          disabled={respondingInvId === inv.id}
+                          className="py-2 px-3 bg-rose-50 text-rose-700 border border-rose-200 text-xs font-bold rounded-xl hover:bg-rose-100 disabled:opacity-50 transition"
+                        >
+                          Decline
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="bg-white rounded-2xl border border-[#D6E4EA] p-5 shadow-xs">
                 <div className="flex items-center justify-between mb-4">
@@ -760,6 +875,10 @@ const MentorPortal = () => {
                             src={a.entrepreneur_profile_image}
                             alt={a.entrepreneur_name}
                             className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.onerror = null;
+                              e.currentTarget.src = "/assets/images/default-avatar.svg";
+                            }}
                           />
                         ) : (
                           a.entrepreneur_name?.charAt(0)?.toUpperCase() || "E"
@@ -795,6 +914,62 @@ const MentorPortal = () => {
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {/* -------- Decline Reason Modal -------- */}
+        {declineTarget && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+            <div className="bg-white rounded-2xl border border-[#D6E4EA] shadow-xl w-full max-w-md p-6 space-y-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#006F9E] block mb-1">
+                    Decline Invitation
+                  </span>
+                  <h3 className="text-lg font-bold text-[#111827] font-['Space_Grotesk']">
+                    Why are you declining "{declineTarget.project_name}"?
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setDeclineTarget(null)}
+                  disabled={declineSending}
+                  className="text-[#526274] hover:text-[#111827] transition disabled:opacity-40"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <p className="text-xs text-[#526274] leading-relaxed">
+                Your reason helps the program coordinator invite another suitable
+                mentor and lets the founders know why.
+              </p>
+
+              <textarea
+                rows={4}
+                autoFocus
+                value={declineReason}
+                onChange={(e) => setDeclineReason(e.target.value)}
+                placeholder="e.g. My schedule is full this cohort, the domain is outside my expertise, etc."
+                className="w-full px-4 py-3 bg-[#F6FAFC] border border-[#D6E4EA] rounded-xl text-sm font-medium outline-none transition focus:border-[#00ADEF] focus:bg-white focus:ring-2 focus:ring-[#00ADEF]/20 resize-none"
+              />
+
+              <div className="flex items-center justify-end gap-2 pt-1">
+                <button
+                  onClick={() => setDeclineTarget(null)}
+                  disabled={declineSending}
+                  className="px-5 py-3 rounded-xl border border-[#D6E4EA] bg-white text-xs font-bold text-[#526274] hover:bg-[#F6FAFC] disabled:opacity-40 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmDecline}
+                  disabled={!declineReason.trim() || declineSending}
+                  className="inline-flex items-center gap-1.5 px-5 py-3 rounded-xl bg-rose-600 text-white font-extrabold text-xs uppercase tracking-wider hover:bg-rose-700 disabled:opacity-40 transition"
+                >
+                  {declineSending ? "Declining..." : "Confirm Decline"}
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>
