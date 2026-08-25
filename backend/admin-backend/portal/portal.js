@@ -249,7 +249,7 @@ export const getEntrepreneurDashboard = async (userId, email) => {
 };
 
 export const getMentorDashboard = async (mentorId) => {
-  const [assignmentsRes, notificationsRes, activityLogsRes] = await Promise.all([
+  const [assignmentsRes, notificationsRes, activityLogsRes, invitationsRes] = await Promise.all([
     safeQuery("mentor-assignments", () =>
       pool.query(
         `SELECT * FROM (
@@ -344,13 +344,121 @@ export const getMentorDashboard = async (mentorId) => {
         [mentorId],
       ),
     ),
+    safeQuery("invitations", async () => {
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS mentor_invitations (
+          id SERIAL PRIMARY KEY,
+          project_id INT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+          mentor_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          invited_by INT REFERENCES users(id) ON DELETE SET NULL,
+          status VARCHAR(50) NOT NULL DEFAULT 'pending',
+          message TEXT,
+          invited_at TIMESTAMP DEFAULT NOW(),
+          responded_at TIMESTAMP,
+          decline_reason TEXT,
+          UNIQUE(project_id, mentor_id)
+        )
+      `).catch(() => {});
+      await pool.query("ALTER TABLE mentor_invitations ADD COLUMN IF NOT EXISTS decline_reason TEXT").catch(() => {});
+
+      return pool.query(
+        `SELECT mi.*, p.name AS project_name, p.domain AS project_domain, p.stage AS project_stage,
+                string_agg(DISTINCT u.name, ', ') AS founder_name,
+                string_agg(DISTINCT u.email, ', ') AS founder_email
+         FROM mentor_invitations mi
+         JOIN projects p ON p.id = mi.project_id
+         LEFT JOIN project_entrepreneurs pe ON pe.project_id = p.id AND (pe.role_in_project IS NULL OR LOWER(pe.role_in_project) != 'mentor')
+         LEFT JOIN users u ON u.id = pe.user_id
+         WHERE mi.mentor_id = $1 AND mi.status = 'pending'
+         GROUP BY mi.id, p.id
+         ORDER BY mi.invited_at DESC`,
+        [mentorId]
+      );
+    }),
   ]);
 
   return {
     assignments: assignmentsRes.ok ? assignmentsRes.data : [],
+    invitations: invitationsRes && invitationsRes.ok ? invitationsRes.data : [],
     notifications: notificationsRes.ok ? notificationsRes.data : [],
     activityLogs: activityLogsRes.ok ? activityLogsRes.data : [],
   };
+};
+
+export const respondToMentorInvitation = async (mentorId, invitationId, action, reason = "") => {
+  const status = action === "accept" ? "accepted" : "declined";
+  const trimmedReason = (reason || "").trim();
+
+  // A reason is mandatory when declining so admins know why and can pick another mentor.
+  if (action === "decline" && !trimmedReason) {
+    throw new Error("Please provide a reason for declining the invitation.");
+  }
+
+  // Guard `status = 'pending'` ensures each invitation is processed exactly once,
+  // one by one — stale screens or duplicate clicks are rejected instead of
+  // re-accepting a declined invitation or re-triggering the assignment.
+  const invRes = await pool.query(
+    `UPDATE mentor_invitations
+     SET status = $1, responded_at = NOW(), decline_reason = $4
+     WHERE id = $2 AND mentor_id = $3 AND status = 'pending'
+     RETURNING *`,
+    [status, invitationId, mentorId, action === "decline" ? trimmedReason : null]
+  );
+
+  if (invRes.rows.length === 0) {
+    const exists = await pool.query(
+      "SELECT status FROM mentor_invitations WHERE id = $1 AND mentor_id = $2",
+      [invitationId, mentorId]
+    );
+    if (exists.rows.length > 0) {
+      throw new Error(`This invitation was already ${exists.rows[0].status}. Please refresh your dashboard.`);
+    }
+    throw new Error("Invitation not found or unauthorized.");
+  }
+
+  const inv = invRes.rows[0];
+
+  const projRes = await pool.query("SELECT name FROM projects WHERE id = $1", [inv.project_id]);
+  const projectName = projRes.rows[0]?.name || "your project";
+
+  const mentorRes = await pool.query("SELECT name FROM users WHERE id = $1", [mentorId]);
+  const mentorName = mentorRes.rows[0]?.name || "A mentor";
+
+  if (action === "accept") {
+    const { assignMentor } = await import("../projects/projects.js");
+    await assignMentor(inv.project_id, mentorId);
+
+    const ownerRes = await pool.query(
+      "SELECT user_id FROM project_entrepreneurs WHERE project_id = $1 AND (role_in_project IS NULL OR role_in_project != 'Mentor') LIMIT 1",
+      [inv.project_id]
+    );
+    const founderId = ownerRes.rows[0]?.user_id;
+
+    if (founderId) {
+      await createNotification(
+        founderId,
+        "mentor_accepted",
+        `Great news! Mentor ${mentorName} has accepted your project invitation for "${projectName}"!`,
+        { projectId: inv.project_id, mentorId },
+        `/v1/auth/profile?tab=projects`
+      );
+    }
+  }
+
+  // Notify the Admin who invited the mentor (or system admins)
+  if (inv.invited_by) {
+    const reasonSuffix =
+      action === "decline" && trimmedReason ? ` Reason: "${trimmedReason}"` : "";
+    await createNotification(
+      inv.invited_by,
+      "mentor_invitation_response",
+      `Mentor ${mentorName} has ${status === "accepted" ? "accepted" : "declined"} the mentorship invitation for project "${projectName}".${reasonSuffix}`,
+      { projectId: inv.project_id, mentorId, status, reason: action === "decline" ? trimmedReason : undefined },
+      `/admin`
+    );
+  }
+
+  return { success: true, status, invitation: inv };
 };
 
 const getOwnedAssignment = async (mentorId, assignmentId) => {

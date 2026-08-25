@@ -164,6 +164,24 @@ router.get("/open-calls", async (req, res) => {
         res.status(500).json({ message: "Internal Server Error" });
     }
 });
+// GET: Apply Page (Dedicated landing page for an Open Call)
+router.get("/apply/:id", async (req, res) => {
+    try {
+        // 1. Fetch the specific announcement
+        const result = await pool.query("SELECT * FROM announcements WHERE id = $1 AND is_open_call = true", [req.params.id]);
+
+        // 2. If it doesn't exist, or isn't an open call, return 404
+        if (result.rows.length === 0) {
+            return res.status(404).send("Open call not found.");
+        }
+
+        // 3. Render the new apply.ejs page!
+        res.render("apply", { announcement: result.rows[0] });
+    } catch (error) {
+        console.error("Error fetching apply page:", error);
+        res.status(500).send("Server Error");
+    }
+});
 
 // GET: Fetch Custom Form Fields for an Announcement
 router.get("/form-fields/:announcementId", async (req, res) => {
@@ -175,6 +193,7 @@ router.get("/form-fields/:announcementId", async (req, res) => {
         res.status(500).json({ message: "Internal Server Error" });
     }
 });
+//
 
 
 export { router as publicRoutes };

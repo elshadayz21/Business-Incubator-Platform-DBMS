@@ -77,6 +77,9 @@ import {
   updateProjectApproval,
   getSuggestedMentors,
   assignMentor,
+  inviteMentorToProject,
+  getProjectInvitations,
+  removeProjectMentor,
 } from "../admin-backend/projects/projects.js";
 // for admin inbox
 import {
@@ -745,6 +748,24 @@ router.post(
   "/projects/:id/assign-mentor",
   asyncHandler(async (req, res) =>
     res.json(await assignMentor(req.params.id, req.body.mentorId)),
+  ),
+);
+router.post(
+  "/projects/:id/invite-mentor",
+  asyncHandler(async (req, res) =>
+    res.json(await inviteMentorToProject(req.params.id, req.body.mentorId, req.session.userId, req.body.message)),
+  ),
+);
+router.get(
+  "/projects/:id/invitations",
+  asyncHandler(async (req, res) =>
+    res.json(await getProjectInvitations(req.params.id)),
+  ),
+);
+router.post(
+  "/projects/:id/remove-mentor",
+  asyncHandler(async (req, res) =>
+    res.json(await removeProjectMentor(req.params.id)),
   ),
 );
 
