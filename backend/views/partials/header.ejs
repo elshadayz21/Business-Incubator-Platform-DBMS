@@ -1,0 +1,223 @@
+<% const signedIn = typeof user !== 'undefined' && user; %>
+<header class="sticky top-0 z-50 border-b border-line bg-white shadow-sm" data-site-header>
+  <div class="mx-auto max-w-7xl px-6 lg:px-10">
+    <div class="flex min-h-[88px] items-center justify-between gap-6 py-4">
+      <div class="flex min-w-0 items-center gap-4">
+        <a aria-label="DxValley home" class="shrink-0" href="/">
+          <img src="/brand/dxvalley-wordmark.jpeg" alt="DxValley Incubation Center" class="h-12 w-auto max-w-[210px] object-contain object-left mix-blend-multiply" loading="eager" decoding="async" />
+        </a>
+        <div class="hidden h-9 w-px bg-line sm:block" aria-hidden="true"></div>
+        <div class="hidden text-[10px] font-semibold uppercase leading-tight tracking-[.16em] text-muted sm:block">
+          Incubation arm of<br />
+          <span class="text-cyan-dark">Cooperative Bank of Oromia</span>
+        </div>
+      </div>
+
+      <div class="hidden items-center gap-6 lg:flex">
+        <nav aria-label="Main navigation" class="flex items-center gap-6 text-sm font-semibold text-ink">
+          <!-- Our Services Dropdown -->
+          <div class="relative" x-data="{ serviceOpen: false }" @mouseenter="serviceOpen = true" @mouseleave="serviceOpen = false">
+            <button class="flex items-center gap-1.5 transition hover:text-cyan-dark cursor-pointer">
+              Our Services
+              <i class="fa-solid fa-chevron-down text-[9px] transition" :class="serviceOpen ? 'rotate-180' : ''" aria-hidden="true"></i>
+            </button>
+            <div x-show="serviceOpen" x-transition class="absolute left-1/2 -translate-x-1/2 top-full mt-3 w-56 bg-white border border-[#D6E4EA] rounded-xl shadow-lg py-2 z-[60]" style="display: none;">
+              <a class="block px-4 py-2 text-sm hover:bg-[#EAF8FC] hover:text-cyan-dark transition" href="<%= routes.mentors %>">Mentors</a>
+              <a class="block px-4 py-2 text-sm hover:bg-[#EAF8FC] hover:text-cyan-dark transition" href="<%= routes.workshops %>">Workshops</a>
+              <a class="block px-4 py-2 text-sm hover:bg-[#EAF8FC] hover:text-cyan-dark transition" href="/#resources">Resources</a>
+            </div>
+          </div>
+
+          <a class="transition hover:text-cyan-dark" href="/v1/workshop">Events</a>
+          <a class="transition hover:text-cyan-dark" href="<%= routes.projects %>">Projects</a>
+          <a class="transition hover:text-cyan-dark" href="<%= routes.about %>">About</a>
+        </nav>
+
+        <div class="flex items-center gap-3 border-l border-line pl-6">
+          <% if (signedIn) { %>
+            <div class="relative" x-data="{ profileOpen: false }">
+              <button type="button" @click="profileOpen = !profileOpen" class="inline-flex items-center gap-2 rounded-full border border-line bg-white py-1.5 pl-1.5 pr-3 text-left transition hover:bg-cyan-soft" aria-haspopup="true" :aria-expanded="profileOpen">
+                <span class="grid h-8 w-8 place-items-center rounded-full bg-cyan text-xs font-bold text-white">
+                  <i class="fa-solid fa-user text-xs" aria-hidden="true"></i>
+                </span>
+                <span class="hidden text-xs font-bold text-ink sm:block"><%= user.role === 'admin' || user.role === 'superadmin' ? 'Admin' : user.role === 'mentor' ? 'Mentor' : 'Account' %></span>
+                <i class="fa-solid fa-chevron-down text-[9px] text-muted transition" :class="profileOpen ? 'rotate-180' : ''" aria-hidden="true"></i>
+              </button>
+
+              <div x-show="profileOpen" @click.away="profileOpen = false" x-transition class="absolute right-0 top-full z-[60] mt-2 w-52 overflow-hidden rounded-xl border border-line bg-white py-1 shadow-lg" style="display: none;">
+                <a href="/v1/auth/profile" class="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-ink transition hover:bg-cyan-soft hover:text-cyan-dark">
+                  <i class="fa-solid fa-user text-sm text-muted" aria-hidden="true"></i>
+                  Profile
+                </a>
+                <a href="/v1/auth/profile?tab=notifications" class="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-ink transition hover:bg-cyan-soft hover:text-cyan-dark">
+                  <i class="fa-solid fa-bell text-sm text-muted" aria-hidden="true"></i>
+                  Notifications
+                </a>
+                <div class="my-1 border-t border-line"></div>
+                <button type="button" onclick="handleLogout()" class="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-xs font-bold text-red-600 transition hover:bg-red-50">
+                  <i class="fa-solid fa-right-from-bracket text-sm" aria-hidden="true"></i>
+                  Sign out
+                </button>
+              </div>
+            </div>
+          <% } %>
+        </div>
+      </div>
+
+      <button id="menu-toggle" aria-controls="mobile-navigation" aria-expanded="false" aria-label="Open navigation menu" class="grid h-10 w-10 place-items-center rounded-full border border-line text-cyan-dark transition hover:bg-cyan-soft lg:hidden" title="Open navigation menu" type="button">
+        <i class="fa-solid fa-bars" aria-hidden="true"></i>
+      </button>
+    </div>
+
+    <div id="mobile-navigation" class="hidden border-t border-line py-4 lg:hidden">
+      <nav aria-label="Mobile navigation" class="flex flex-col gap-1 text-sm font-semibold text-ink">
+        <a class="rounded-md px-3 py-3 transition hover:bg-cyan-soft hover:text-cyan-dark" href="/">Home</a>
+
+        <!-- Mobile Our Services Dropdown -->
+        <details class="group">
+          <summary class="rounded-md px-3 py-3 transition hover:bg-cyan-soft hover:text-cyan-dark cursor-pointer list-none flex justify-between items-center">
+            <span>Our Services</span>
+            <i class="fa-solid fa-chevron-down text-[10px] group-open:rotate-180 transition"></i>
+          </summary>
+          <div class="pl-4 mt-1 flex flex-col gap-1">
+            <a class="rounded-md px-3 py-2 text-sm transition hover:bg-cyan-soft hover:text-cyan-dark" href="<%= routes.mentors %>">Mentors</a>
+            <a class="rounded-md px-3 py-2 text-sm transition hover:bg-cyan-soft hover:text-cyan-dark" href="<%= routes.workshops %>">Workshops</a>
+            <a class="rounded-md px-3 py-2 text-sm transition hover:bg-cyan-soft hover:text-cyan-dark" href="/#resources">Resources</a>
+          </div>
+        </details>
+
+        <a class="rounded-md px-3 py-3 transition hover:bg-cyan-soft hover:text-cyan-dark" href="/v1/workshop">Events</a>
+        <a class="rounded-md px-3 py-3 transition hover:bg-cyan-soft hover:text-cyan-dark" href="<%= routes.projects %>">Projects</a>
+        <a class="rounded-md px-3 py-3 transition hover:bg-cyan-soft hover:text-cyan-dark" href="<%= routes.about %>">About</a>
+      </nav>
+      <div class="mt-4 flex flex-col gap-2 border-t border-line pt-4">
+        <% if (signedIn) { %>
+          <a href="/v1/auth/profile" class="flex items-center gap-2.5 rounded-md px-3 py-3 text-sm font-semibold text-cyan-dark transition hover:bg-cyan-soft">
+            <i class="fa-solid fa-user text-xs" aria-hidden="true"></i> Profile
+          </a>
+          <a href="/v1/auth/profile?tab=notifications" class="flex items-center gap-2.5 rounded-md px-3 py-3 text-sm font-semibold text-ink transition hover:bg-cyan-soft hover:text-cyan-dark">
+            <i class="fa-solid fa-bell text-xs" aria-hidden="true"></i> Notifications
+          </a>
+          <button type="button" onclick="handleLogout()" class="flex items-center gap-2.5 rounded-md px-3 py-3 text-sm font-semibold text-red-600 transition hover:bg-red-50">
+            <i class="fa-solid fa-right-from-bracket text-xs" aria-hidden="true"></i> Sign out
+          </button>
+        <% } %>
+      </div>
+    </div>
+
+    <% if (!signedIn) { %>
+    <div id="header-apply-bar" class="hidden border-t border-line bg-[#F6FAFC]">
+      <div class="mx-auto flex max-w-7xl justify-end px-6 py-2.5 lg:px-10">
+        <button type="button" onclick="handleGlobalApply()" class="inline-flex items-center gap-2 rounded-full bg-orange px-5 py-2 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-orange-dark focus:outline-none focus:ring-2 focus:ring-orange focus:ring-offset-2">
+          Apply now
+          <i class="fa-solid fa-arrow-up-right-from-square text-xs" aria-hidden="true"></i>
+        </button>
+      </div>
+    </div>
+    <% } %>
+  </div>
+</header>
+
+<script>
+  (() => {
+    const toggle = document.getElementById('menu-toggle');
+    const navigation = document.getElementById('mobile-navigation');
+    if (!toggle || !navigation) return;
+
+    toggle.addEventListener('click', () => {
+      const isOpen = toggle.getAttribute('aria-expanded') === 'true';
+      toggle.setAttribute('aria-expanded', String(!isOpen));
+      toggle.setAttribute('aria-label', isOpen ? 'Open navigation menu' : 'Close navigation menu');
+      navigation.classList.toggle('hidden', isOpen);
+      toggle.innerHTML = isOpen
+        ? '<i class="fa-solid fa-bars" aria-hidden="true"></i>'
+        : '<i class="fa-solid fa-xmark" aria-hidden="true"></i>';
+    });
+
+    navigation.querySelectorAll('a').forEach((link) => {
+      link.addEventListener('click', () => {
+        toggle.setAttribute('aria-expanded', 'false');
+        toggle.setAttribute('aria-label', 'Open navigation menu');
+        navigation.classList.add('hidden');
+        toggle.innerHTML = '<i class="fa-solid fa-bars" aria-hidden="true"></i>';
+      });
+    });
+  })();
+
+  async function handleLogout() {
+    try {
+      const response = await fetch('/v1/auth/logout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        window.location.href = '<%= routes.loginRoute %>';
+      } else {
+        window.alert('Failed to logout. Please try again.');
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+      window.alert('An error occurred during logout.');
+    }
+  }
+
+  window.isActiveOpenCall = (ann) => {
+    if (!ann?.is_open_call) return false;
+    if (ann.deadline && new Date(ann.deadline).getTime() < Date.now()) return false;
+    if (ann.capacity && parseInt(ann.application_count || 0, 10) >= parseInt(ann.capacity, 10)) return false;
+    return true;
+  };
+
+  window.updateHeaderApplyBar = async (announcements) => {
+    const bar = document.getElementById('header-apply-bar');
+    if (!bar) return;
+
+    try {
+      let data = announcements;
+      if (!data) {
+        const response = await fetch('/api/public/announcements');
+        if (!response.ok) {
+          bar.classList.add('hidden');
+          return;
+        }
+        data = await response.json();
+      }
+
+      window.announcementData = data;
+
+      const hasActiveOpenCall = data.some(window.isActiveOpenCall);
+      bar.classList.toggle('hidden', !hasActiveOpenCall);
+    } catch (error) {
+      console.error('Error updating header apply bar:', error);
+      bar.classList.add('hidden');
+    }
+  };
+
+  if (!window.handleGlobalApply) {
+    window.handleGlobalApply = async () => {
+      if (!window.announcementData?.length) {
+        await window.updateHeaderApplyBar();
+      }
+
+      const openCalls = (window.announcementData || []).filter(window.isActiveOpenCall);
+
+      if (openCalls.length === 1 && typeof window.openApplicationModal === 'function') {
+        const openCallIndex = window.announcementData.findIndex((ann) => ann.id === openCalls[0].id);
+        window.openApplicationModal(openCallIndex);
+        return;
+      }
+
+      const updatesSection = document.getElementById('announcements');
+      if (updatesSection) {
+        updatesSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else {
+        window.location.href = '/#announcements';
+      }
+    };
+  }
+
+  window.updateHeaderApplyBar();
+  setInterval(window.updateHeaderApplyBar, 30000);
+</script>
