@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { Megaphone, Trash2, Loader2, Send, PlusCircle, FileUp, X, Pencil, Copy, Users, AlertTriangle, Check, Eye } from "lucide-react";
 
-
-
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 
 // Helper: Format content to professional HTML with proper spacing
 const formatAnnouncementContent = (text) => {
     if (!text) return '';
-    
+
     // Extract plain text from HTML
     let plainText = text;
     if (/<[a-z][\s\S]*>/i.test(text)) {
@@ -17,20 +15,22 @@ const formatAnnouncementContent = (text) => {
         temp.innerHTML = text;
         plainText = temp.textContent || temp.innerText || '';
     }
-    
+
     // Split by sentence endings followed by space
     const sentences = plainText
         .split(/(?<=[.!?])\s+/)
         .filter(s => s.trim());
-    
+
     if (sentences.length > 1) {
         return sentences
-            .map(s => `<p style="margin: 0 0 12px 0; line-height: 1.7;">${s.trim()}</p>`)
+            .map(s => `<p style="margin: 0 0 12px 0; line-height: 1.7; word-break: break-word; overflow-wrap: break-word;">${s.trim()}</p>`)
             .join('');
     }
-    
+
     // Single sentence or no split - just wrap in paragraph
-    return `<p style="margin: 0 0 12px 0; line-height: 1.7;">${plainText.trim()}</p>`;
+    return sentences
+        .map(s => `<p style="margin: 0 0 12px 0; line-height: 1.7; word-break: break-word; overflow-wrap: break-word;">${s.trim()}</p>`)
+        .join('');
 };
 
 export default function Announcements() {
@@ -66,7 +66,6 @@ export default function Announcements() {
     const [appCounts, setAppCounts] = useState({});
     const [showingAppsFor, setShowingAppsFor] = useState(null);
 
-
     const fetchAnnouncements = async () => {
         try {
             const response = await fetch('/api/admin/announcements', {
@@ -92,19 +91,14 @@ export default function Announcements() {
 
         setSubmitting(true);
         try {
-            // 1. Create the FormData object first!
             const formData = new FormData();
             formData.append('title', title);
             formData.append('content', content);
-
-            // 2. ADD THE NEW LINES HERE!
             formData.append('is_open_call', isOpenCall);
             if (capacity) formData.append('capacity', capacity);
-
             if (deadline) formData.append('deadline', deadline);
             if (document) formData.append('document', document);
 
-            // 3. Send the request
             const response = await fetch('/api/admin/announcements', {
                 method: 'POST',
                 credentials: 'include',
@@ -120,13 +114,12 @@ export default function Announcements() {
                 throw new Error(message);
             }
 
-            // 4. Reset form
             setTitle("");
             setContent("");
             setDeadline("");
             setDocument(null);
-            setIsOpenCall(false); // Reset checkbox
-            setCapacity("");     // Reset capacity
+            setIsOpenCall(false);
+            setCapacity("");
             fetchAnnouncements();
         } catch (error) {
             console.error("Error creating announcement:", error);
@@ -229,7 +222,6 @@ export default function Announcements() {
         }
     };
 
-
     const handleBuildForm = async (ann) => {
         if (editingFormId === ann.id) {
             setEditingFormId(null);
@@ -239,7 +231,24 @@ export default function Announcements() {
         try {
             const response = await fetch(`/api/admin/announcements/${ann.id}/form-fields`, { credentials: 'include' });
             const data = await response.json();
-            setFormFields(Array.isArray(data) && data.length > 0 ? data : [{ label: '', field_type: 'text', options: '', required: false }]);
+
+            // Ensure options are always a comma-separated string
+            const parsedFields = (Array.isArray(data) && data.length > 0 ? data : [{ label: '', field_type: 'text', options: '', required: false }]).map(f => {
+                let opts = f.options || '';
+                // If it's an array, join it
+                if (Array.isArray(opts)) {
+                    opts = opts.join(', ');
+                }
+                // If it's a JSON string like '["Yes", "No"]', parse it
+                else if (typeof opts === 'string' && opts.startsWith('[')) {
+                    try {
+                        opts = JSON.parse(opts).join(', ');
+                    } catch (e) { /* keep original */ }
+                }
+                return { ...f, options: opts };
+            });
+
+            setFormFields(parsedFields);
         } catch (error) {
             console.error("Error fetching form fields:", error);
             setFormFields([{ label: '', field_type: 'text', options: '', required: false }]);
@@ -330,8 +339,6 @@ export default function Announcements() {
                                     className="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF] focus:border-transparent font-medium text-[#111827]"
                                 />
                             </div>
-
-
 
                             {/* Open Call Checkbox */}
                             <div className="flex items-center gap-3 py-2">
@@ -441,7 +448,7 @@ export default function Announcements() {
                                     </div>
 
                                     <div
-                                        className="text-[#526274] text-sm bg-[#F6FAFC] p-4 rounded-xl border border-[#D6E4EA] flex-grow"
+                                        className="text-[#526274] text-sm bg-[#F6FAFC] p-4 rounded-xl border border-[#D6E4EA] flex-grow break-words whitespace-normal overflow-hidden"
                                         dangerouslySetInnerHTML={{ __html: formatAnnouncementContent(ann.content) }}
                                     ></div>
 
@@ -493,20 +500,28 @@ export default function Announcements() {
                                                             className="px-3 py-2 border border-[#D6E4EA] rounded-md text-sm focus:ring-1 focus:ring-[#00ADEF]"
                                                         >
                                                             <option value="text">Short Text</option>
+                                                            <option value="email">Email </option>
+                                                            <option value="name">Full Name</option>
+                                                            <option value="idea">Startup Idea</option>
                                                             <option value="textarea">Long Text</option>
+                                                            <option value="Phone number">Phone Number</option>
+                                                            <option value="Background">Background</option>
+                                                            <option value="number">Number</option>
+                                                            <option value="radio">Radio (Single Choice)</option>
                                                             <option value="select">Dropdown</option>
-                                                            <option value="checkbox">Checkbox</option>
+                                                            <option value="checkbox">Checkbox (Multiple)</option>
                                                         </select>
                                                         <button onClick={() => removeField(index)} className="text-red-500 hover:bg-red-50 p-2 rounded-md">
                                                             <X size={16} />
                                                         </button>
                                                     </div>
 
-                                                    {field.field_type === 'select' && (
+                                                    {/* Options input shows for Dropdown, Radio, and Checkbox */}
+                                                    {(field.field_type === 'select' || field.field_type === 'radio' || field.field_type === 'checkbox') && (
                                                         <input
                                                             type="text"
                                                             placeholder="Options (comma-separated: Yes, No, Maybe)"
-                                                            value={field.options}
+                                                            value={field.options || ''}
                                                             onChange={(e) => handleFieldChange(index, 'options', e.target.value)}
                                                             className="w-full px-3 py-2 border border-[#D6E4EA] rounded-md text-sm focus:ring-1 focus:ring-[#00ADEF]"
                                                         />
@@ -745,7 +760,7 @@ export default function Announcements() {
                                 <p className="text-sm text-[#526274]">This action cannot be undone.</p>
                             </div>
                         </div>
-                        
+
                         <p className="text-sm text-[#526274] mb-6">
                             Are you sure you want to delete "<span className="font-bold text-[#111827]">{deleteConfirm.title}</span>"?
                         </p>

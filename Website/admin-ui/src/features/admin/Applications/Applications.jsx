@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { CheckCircle, XCircle, Loader2, Inbox } from "lucide-react";
+import { Eye, X, Loader2, Inbox, CheckCircle2 } from "lucide-react";
 
 export default function Applications() {
     const [applications, setApplications] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [selectedApp, setSelectedApp] = useState(null);
+    const [newStatus, setNewStatus] = useState("");
 
     const fetchApplications = async () => {
         try {
@@ -22,18 +24,26 @@ export default function Applications() {
         fetchApplications();
     }, []);
 
-    const handleUpdateStatus = async (id, newStatus) => {
+    const handleUpdateStatus = async (id, status) => {
         try {
             await fetch(`/api/admin/applications/${id}/status`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
-                body: JSON.stringify({ status: newStatus })
+                body: JSON.stringify({ status: status })
             });
-            fetchApplications();
+
+            // Update local state instantly
+            setApplications(prev => prev.map(app => app.id === id ? { ...app, status: status } : app));
+            setSelectedApp(null); // Close modal
         } catch (error) {
             console.error("Error updating status:", error);
         }
+    };
+
+    const openModal = (app) => {
+        setSelectedApp(app);
+        setNewStatus(app.status || 'Pending');
     };
 
     return (
@@ -52,86 +62,184 @@ export default function Applications() {
                     </div>
                 ) : applications.length > 0 ? (
 
-
                     <div className="bg-white border border-[#D6E4EA] rounded-2xl shadow-xs overflow-hidden">
-                        <table className="w-full text-left border-collapse">
+                        {/* Added table-fixed and min-w to force equal spacing */}
+                        <table className="w-full text-left border-collapse table-fixed min-w-[900px]">
                             <thead>
                             <tr className="bg-[#F6FAFC] text-[#526274] uppercase tracking-wider text-xs font-extrabold border-b border-[#D6E4EA]">
-                                <th className="p-4">Applicant</th>
-                                <th className="p-4 hidden lg:table-cell">Startup Idea</th>
-                                <th className="p-4 hidden md:table-cell">Applied For</th>
-                                <th className="p-4">Status</th>
-                                <th className="p-4 text-right">Actions</th>
+                                <th className="p-4 w-1/5">Applicant</th>
+                                <th className="p-4 w-1/5 hidden md:table-cell">Applied For</th>
+                                <th className="p-4 w-1/5 hidden lg:table-cell">Startup Idea</th>
+                                <th className="p-4 w-1/5">Status</th>
+                                <th className="p-4 w-1/5 text-right">View Detail</th>
                             </tr>
                             </thead>
                             <tbody className="divide-y divide-[#D6E4EA]">
                             {applications.map((app) => (
                                 <tr key={app.id} className="hover:bg-[#F6FAFC] transition align-top">
-
-                                    <td className="p-4 max-w-[200px]">
-                                        <div className="font-bold text-sm text-[#111827]">{app.full_name}</div>
-                                        <a href={`mailto:${app.email}`} className="text-xs text-[#006F9E] hover:underline block mt-1">{app.email}</a>
+                                    <td className="p-4 align-top">
+                                        <div className="font-bold text-sm text-[#111827]">{app.full_name || 'Unknown'}</div>
+                                        <a href={`mailto:${app.email}`} className="text-xs text-[#006F9E] hover:underline block mt-1">{app.email || 'No Email'}</a>
                                         {app.phone && <div className="text-xs text-[#526274] mt-1">{app.phone}</div>}
                                     </td>
 
-                                    <td className="p-4 hidden lg:table-cell max-w-[350px]">
-                                        <div className="text-xs font-bold text-[#526274] uppercase mb-1">Idea</div>
-                                        <p className="text-sm text-[#111827] line-clamp-2 italic">"{app.startup_idea}"</p>
-                                        {app.background && (
-                                            <div className="text-xs text-[#526274] mt-2">Background: {app.background}</div>
-                                        )}
-                                    </td>
 
-                                    <td className="p-4 hidden md:table-cell text-sm text-[#526274] font-medium">
+                                    <td className="p-4 hidden md:table-cell text-sm text-[#526274] font-medium align-top">
                                         {app.announcement_title || 'N/A'}
                                     </td>
-
-                                    <td className="p-4">
-                      <span className={`px-2 py-1 rounded-full text-[10px] font-bold border ${
-                          app.status === 'Accepted' ? 'bg-green-50 text-green-700 border-green-200' :
-                              app.status === 'Rejected' ? 'bg-red-50 text-red-700 border-red-200' :
-                                  'bg-yellow-50 text-yellow-700 border-yellow-200'
-                      }`}>
-                        {app.status || 'Pending'}
-                      </span>
+                                    {/* Removed line-clamp so it wraps naturally in its 20% box */}
+                                    <td className="p-4 hidden lg:table-cell align-top">
+                                        <p className="text-sm text-[#111827] italic">
+                                            "{app.startup_idea || 'Not provided'}"
+                                        </p>
                                     </td>
 
-                                    <td className="p-4 text-right whitespace-nowrap">
-                                        <div className="flex gap-2 justify-end">
-                                            {app.status !== 'Accepted' && (
-                                                <button
-                                                    onClick={() => handleUpdateStatus(app.id, 'Accepted')}
-                                                    className="p-2 bg-green-50 text-green-700 border border-green-200 rounded-lg hover:bg-green-100 transition"
-                                                    title="Accept"
-                                                >
-                                                    <CheckCircle size={16} />
-                                                </button>
-                                            )}
-                                            {app.status !== 'Rejected' && (
-                                                <button
-                                                    onClick={() => handleUpdateStatus(app.id, 'Rejected')}
-                                                    className="p-2 bg-red-50 text-red-700 border border-red-200 rounded-lg hover:bg-red-100 transition"
-                                                    title="Reject"
-                                                >
-                                                    <XCircle size={16} />
-                                                </button>
-                                            )}
-                                        </div>
+                                    <td className="p-4 align-top">
+                                        <span className={`inline-block px-2 py-1 rounded-full text-[10px] font-bold border ${
+                                            app.status === 'Accepted' ? 'bg-green-50 text-green-700 border-green-200' :
+                                                app.status === 'Rejected' ? 'bg-red-50 text-red-700 border-red-200' :
+                                                    'bg-yellow-50 text-yellow-700 border-yellow-200'
+                                        }`}>
+                                            {app.status || 'Pending'}
+                                        </span>
+                                    </td>
+
+                                    <td className="p-4 text-right align-top">
+                                        <button
+                                            onClick={() => openModal(app)}
+                                            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-[#EAF8FC] text-[#006F9E] border border-[#00ADEF]/20 rounded-lg text-xs font-bold hover:bg-[#D6E4EA] transition"
+                                        >
+                                            <Eye size={14} /> View Details
+                                        </button>
                                     </td>
                                 </tr>
                             ))}
                             </tbody>
                         </table>
                     </div>
-                    ) : (
+                ) : (
                     <div className="flex flex-col items-center justify-center py-24 bg-white border border-[#D6E4EA] rounded-2xl text-center">
-                    <div className="p-4 rounded-2xl bg-[#EAF8FC] mb-6">
-                    <Inbox className="text-[#00ADEF]" size={32} />
+                        <div className="p-4 rounded-2xl bg-[#EAF8FC] mb-6">
+                            <Inbox className="text-[#00ADEF]" size={32} />
+                        </div>
+                        <h2 className="text-xl font-extrabold text-[#111827] mb-2">No applications yet</h2>
+                    </div>
+                )}
+            </div>
+
+            {/* View Details Modal */}
+            {selectedApp && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+                    <div className="bg-white w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-xl">
+
+                        {/* Modal Header */}
+                        <div className="sticky top-0 bg-white border-b border-[#D6E4EA] p-6 flex justify-between items-center z-10">
+                            <div>
+                                <h2 className="text-xl font-extrabold text-[#111827]">{selectedApp.full_name || 'Unknown Applicant'}</h2>
+                                <a href={`mailto:${selectedApp.email}`} className="text-xs text-[#006F9E] hover:underline">{selectedApp.email}</a>
+                            </div>
+                            <button
+                                onClick={() => setSelectedApp(null)}
+                                className="p-2 rounded-lg text-[#526274] hover:bg-gray-100 transition"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        {/* Modal Body */}
+                        <div className="p-6 space-y-6">
+
+                            {/* Main Info Grid */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                {selectedApp.phone && (
+                                    <div className="bg-[#F6FAFC] p-3 rounded-lg border border-[#D6E4EA]">
+                                        <p className="text-[10px] font-bold uppercase text-[#526274] mb-1">Phone</p>
+                                        <p className="text-sm font-medium text-[#111827]">{selectedApp.phone}</p>
+                                    </div>
+                                )}
+                                {selectedApp.background && (
+                                    <div className="bg-[#F6FAFC] p-3 rounded-lg border border-[#D6E4EA]">
+                                        <p className="text-[10px] font-bold uppercase text-[#526274] mb-1">Background</p>
+                                        <p className="text-sm font-medium text-[#111827]">{selectedApp.background}</p>
+                                    </div>
+                                )}
+                                <div className="bg-[#F6FAFC] p-3 rounded-lg border border-[#D6E4EA]">
+                                    <p className="text-[10px] font-bold uppercase text-[#526274] mb-1">Applied For</p>
+                                    <p className="text-sm font-medium text-[#111827]">{selectedApp.announcement_title || 'N/A'}</p>
+                                </div>
+                            </div>
+
+                            {/* Startup Idea (If exists) */}
+                            {selectedApp.startup_idea && (
+                                <div>
+                                    <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#006F9E] mb-2">Startup Idea</h3>
+                                    <div className="p-4 bg-[#F6FAFC] rounded-xl border border-[#D6E4EA] text-sm text-[#111827] italic">
+                                        "{selectedApp.startup_idea}"
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Dynamic Answers */}
+                            {(() => {
+                                let answersObj = selectedApp.answers;
+                                if (typeof answersObj === 'string') {
+                                    try { answersObj = JSON.parse(answersObj); } catch (e) { answersObj = null; }
+                                }
+
+                                if (answersObj && Object.keys(answersObj).length > 0) {
+                                    return (
+                                        <div>
+                                            <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#006F9E] mb-2">Custom Questions & Answers</h3>
+                                            <div className="space-y-3">
+                                                {Object.entries(answersObj).map(([key, value]) => {
+                                                    let displayValue = value;
+                                                    if (Array.isArray(displayValue)) {
+                                                        displayValue = displayValue.join(', ');
+                                                    } else if (typeof displayValue === 'boolean') {
+                                                        displayValue = displayValue ? 'Yes' : 'No';
+                                                    }
+
+                                                    return (
+                                                        <div key={key} className="text-sm border-b border-[#D6E4EA] pb-2">
+                                                            <p className="font-bold text-[#526274] capitalize">{key.replace('custom_', '').replace(/_/g, ' ')}</p>
+                                                            <p className="text-[#111827] mt-1">{String(displayValue)}</p>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    );
+                                }
+                                return null;
+                            })()}
+
+                        </div>
+
+                        {/* Modal Footer (Actions) */}
+                        <div className="sticky bottom-0 bg-white border-t border-[#D6E4EA] p-6 flex items-center gap-4">
+                            <div className="flex-1">
+                                <label className="block text-[10px] font-bold uppercase text-[#526274] mb-1">Update Status</label>
+                                <select
+                                    value={newStatus}
+                                    onChange={(e) => setNewStatus(e.target.value)}
+                                    className="w-full px-3 py-2 border border-[#D6E4EA] rounded-lg text-sm font-bold text-[#111827] focus:ring-1 focus:ring-[#00ADEF]"
+                                >
+                                    <option value="Pending">Pending</option>
+                                    <option value="Accepted">Accepted</option>
+                                    <option value="Rejected">Rejected</option>
+                                </select>
+                            </div>
+                            <button
+                                onClick={() => handleUpdateStatus(selectedApp.id, newStatus)}
+                                className="mt-5 px-6 py-2 bg-[#00ADEF] text-white rounded-lg text-sm font-bold hover:bg-[#006F9E] transition flex items-center gap-2"
+                            >
+                                <CheckCircle2 size={16} />
+                                Save Status
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
-    <h2 className="text-xl font-extrabold text-[#111827] mb-2">No applications yet</h2>
-</div>
-)}
-</div>
-</div>
     );
 }

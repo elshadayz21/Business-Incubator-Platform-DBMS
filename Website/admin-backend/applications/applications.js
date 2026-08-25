@@ -1,8 +1,10 @@
 import pool from "../../config/db.js";
 import crypto from "crypto";
 import eventBus from "../../utils/eventBus.js";
+import { sendInvitationEmail } from "../../utils/mailer.js";
 
-const generateInviteToken = () => crypto.randomBytes(32).toString("hex");
+// FIXED: Use randomUUID() so it perfectly matches the database UUID column type!
+const generateInviteToken = () => crypto.randomUUID();
 
 // Ensure form_fields table exists with correct schema
 let formFieldsTableReady = false;
@@ -49,26 +51,29 @@ export const getAllApplications = async () => {
   `);
     return result.rows;
 };
+
 // UPDATE APPLICATION STATUS (Accept/Reject)
 export const updateApplicationStatus = async (id, status) => {
     console.log("Updating application status:", id, status);
-    // Generate the invite token the moment an application is accepted, so
-    // the "Send Invites" email always carries a valid, usable signup link.
+
+    // Ensure the ID is an integer to prevent type errors
+    const numericId = parseInt(id, 10);
+
+    // Generate the invite token the moment an application is accepted
     const token = status === "Accepted" ? generateInviteToken() : null;
+
     const result = await pool.query(
         `UPDATE applications SET status = $1, invite_token = COALESCE(invite_token, $2) WHERE id = $3 RETURNING *`,
-        [status, token, id]
+        [status, token, numericId]
     );
 
     const app = result.rows[0];
     if (!app) return null;
 
     eventBus.emit("application.status_changed", {
-      application: app,
-      status,
+        application: app,
+        status,
     });
-
-    // REMOVED the auto-email logic from here!
 
     return app;
 };
@@ -112,9 +117,6 @@ export const saveFormFields = async (announcementId, fields) => {
     }
     return { success: true, message: "Form fields saved successfully" };
 };
-
-
-import { sendInvitationEmail } from "../../utils/mailer.js"; // Make sure this is at the very top of the file!
 
 // SEND INVITES TO ALL ACCEPTED APPLICANTS
 export const sendMassInvites = async (subject, body) => {

@@ -91,9 +91,9 @@ router.get("/gallery", async (req, res) => {
 // POST: Application Form
 router.post("/apply", async (req, res) => {
     try {
-        const { announcement_id, full_name, email, phone, background, startup_idea, answers } = req.body;
+        let { announcement_id, full_name, email, phone, background, startup_idea, answers } = req.body;
 
-        // 1. Check if capacity is reached (Same as before)
+        // 1. Check if capacity is reached
         const annRes = await pool.query("SELECT is_open_call, capacity, deadline FROM announcements WHERE id = $1", [announcement_id]);
         if (annRes.rows.length === 0) return res.status(404).json({ message: "Announcement not found." });
 
@@ -108,11 +108,42 @@ router.post("/apply", async (req, res) => {
             }
         }
 
-        // 2. Save the application WITH the JSON answers!
+        // 2. SCAN DYNAMIC ANSWERS FOR EMAIL AND NAME!
+        // We need to fetch the form fields to see which one is the email/name
+        const fieldsRes = await pool.query("SELECT id, field_type FROM form_fields WHERE announcement_id = $1", [announcement_id]);
+        const fields = fieldsRes.rows;
+
+        // Ensure answers is an object
+        let parsedAnswers = answers || {};
+
+        for (const field of fields) {
+            const answerKey = `custom_${field.id}`;
+            const userAnswer = parsedAnswers[answerKey];
+
+            if (userAnswer) {
+                if (field.field_type === 'email') {
+                    email = userAnswer; // Save it to the main email column!
+                } else if (field.field_type === 'name') {
+                    full_name = userAnswer; // Save it to the main name column!
+                }
+                else if (field.field_type === 'idea') {
+                    startup_idea = userAnswer;
+                }
+                else if (field.field_type === 'Phone number') {
+                    phone = userAnswer;
+                }
+                else if (field.field_type === 'Background') {
+                    background = userAnswer;
+                }
+
+            }
+        }
+
+        // 3. Save the application
         await pool.query(
             `INSERT INTO applications (announcement_id, full_name, email, phone, background, startup_idea, answers) 
        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-            [announcement_id, full_name, email, phone, background, startup_idea, JSON.stringify(answers || {})]
+            [announcement_id, full_name || null, email || null, phone || null, background || null, startup_idea || null, JSON.stringify(parsedAnswers)]
         );
 
         res.status(201).json({ success: true, message: "Application submitted successfully!" });
@@ -121,6 +152,8 @@ router.post("/apply", async (req, res) => {
         res.status(500).json({ success: false, message: "Internal Server Error" });
     }
 });
+
+
 // Entrepreneur Accept/Reject Funding Route
 router.put("/funding/:id/respond", async (req, res) => {
     try {
