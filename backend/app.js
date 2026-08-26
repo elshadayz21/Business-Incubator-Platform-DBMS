@@ -95,6 +95,7 @@ app.use((req, res, next) => {
         projects: "/v1/projects",
         funding: "/v1/funding",
     };
+
     res.locals.user = req.session?.userId ? { role: req.session.userRole } : null;
     res.locals.signedIn = Boolean(req.session?.userId);
     next();
@@ -152,6 +153,10 @@ app.get("/apply/:id", async (req, res) => {
         console.error("Error fetching apply page:", error);
         res.status(500).send("Server Error");
     }
+});
+// Partners Page
+app.get("/partners", (req, res) => {
+    res.render("partners");
 });
 
 app.use("/v1", GlobalRouter);

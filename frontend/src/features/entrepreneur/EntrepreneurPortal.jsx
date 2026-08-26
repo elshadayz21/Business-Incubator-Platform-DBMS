@@ -692,23 +692,19 @@ const EntrepreneurPortal = () => {
                               {f.notes ? `"${f.notes}"` : "No notes provided."}
                             </td>
 
-                            {/* Action Buttons */}
                             <td className="py-3">
                               {f.status === 'Offer Under Review' && (f.founder_action === 'Pending' || !f.founder_action) ? (
-                                  <div className="flex gap-2">
-                                    <button
-                                        onClick={() => handleFounderFundingResponse(f.id, 'Founder Accepted')}
-                                        className="inline-flex items-center gap-1 rounded-lg bg-green-500 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white hover:bg-green-600 transition-all"
-                                    >
-                                      Accept
-                                    </button>
-                                    <button
-                                        onClick={() => handleFounderFundingResponse(f.id, 'Founder Declined')}
-                                        className="inline-flex items-center gap-1 rounded-lg bg-rose-500 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white hover:bg-rose-600 transition-all"
-                                    >
-                                      Decline
-                                    </button>
-                                  </div>
+                                  <select
+                                      defaultValue=""
+                                      onChange={(e) => {
+                                        if(e.target.value) handleFounderFundingResponse(f.id, e.target.value);
+                                      }}
+                                      className="w-full px-2 py-1.5 border border-[#D6E4EA] rounded-lg text-xs font-bold text-[#111827] focus:ring-1 focus:ring-[#00ADEF] bg-white"
+                                  >
+                                    <option value="" disabled>Select Action...</option>
+                                    <option value="Founder Accepted">Accept Offer</option>
+                                    <option value="Founder Declined">Decline Offer</option>
+                                  </select>
                               ) : f.status === 'Offer Under Review' && f.founder_action === 'Founder Accepted' ? (
                                   <span className="text-[10px] font-bold text-green-700 uppercase">Accepted</span>
                               ) : f.status === 'Offer Under Review' && f.founder_action === 'Founder Declined' ? (

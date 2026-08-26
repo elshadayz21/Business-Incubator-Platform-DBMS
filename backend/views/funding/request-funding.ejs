@@ -3,27 +3,11 @@
 <%- include('../partials/head', { title: 'Request Funding - DxValley Incubation Center' }) %>
 
 <body class="flex min-h-screen flex-col bg-white font-sans text-ink">
-    <%- include('../partials/header') %>
+
 
     <main class="flex-grow">
         <!-- Hero -->
-        <section class="relative overflow-hidden bg-gradient-to-br from-cyan via-cyan-mid to-cyan-deep text-white">
-            <div class="pointer-events-none absolute -left-28 -top-32 h-[520px] w-[700px] rounded-[48%] border-[76px] border-white/10" aria-hidden="true"></div>
-            <div class="pointer-events-none absolute -right-44 bottom-[-260px] h-[620px] w-[760px] rounded-[50%] border-[88px] border-white/10" aria-hidden="true"></div>
-            <div class="relative mx-auto max-w-7xl px-6 py-20 lg:px-10 lg:py-24">
-                <p class="mb-5 inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[.24em] text-white/80">
-                    <span class="h-2 w-2 rounded-full bg-orange" aria-hidden="true"></span>
-                    Funding
-                </p>
-                <h1 class="max-w-[760px] text-5xl font-extrabold leading-[1.02] tracking-[-.055em] sm:text-6xl lg:text-7xl">
-                    Request<br />
-                    <span class="text-white/75">Funding.</span>
-                </h1>
-                <p class="mt-7 max-w-[650px] text-lg leading-8 text-white/85 sm:text-xl">
-                    Tell us how much funding you need and what stage your project is in. Our review team will evaluate your request.
-                </p>
-            </div>
-        </section>
+
 
         <!-- Flash Messages -->
         <% if (error) { %>
@@ -157,6 +141,6 @@
         </section>
     </main>
 
-    <%- include('../partials/footer') %>
+
 </body>
 </html>

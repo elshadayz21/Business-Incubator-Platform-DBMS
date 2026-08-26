@@ -2,20 +2,23 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="901bcf82-3eb7-452d-8742-e0e378cb8b0d" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/backend/views/partners.ejs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/database/migrations/024_add_project_history.sql" beforeDir="false" afterPath="$PROJECT_DIR$/database/migrations/024_add_project_history.sql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/components/UserMenu.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/components/UserMenu.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/features/admin/Announcements/Announcements.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/admin/Announcements/Announcements.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/features/admin/Cohorts/Cohorts.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/admin/Cohorts/Cohorts.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/features/admin/Dashboard/Dashboard.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/admin/Dashboard/Dashboard.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/features/admin/Funding/Funding.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/admin/Funding/Funding.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/features/admin/MassEmail/MassEmail.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/admin/MassEmail/MassEmail.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/features/admin/Mentors/Mentors.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/admin/Mentors/Mentors.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/admin-backend/resources/resources.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/admin-backend/resources/resources.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/app.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/app.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/routes/public.routes.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/routes/public.routes.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/views/funding/request-funding.ejs" beforeDir="false" afterPath="$PROJECT_DIR$/backend/views/funding/request-funding.ejs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/views/partials/footer.ejs" beforeDir="false" afterPath="$PROJECT_DIR$/backend/views/partials/footer.ejs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/views/partials/header.ejs" beforeDir="false" afterPath="$PROJECT_DIR$/backend/views/partials/header.ejs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/views/projects/add-project.ejs" beforeDir="false" afterPath="$PROJECT_DIR$/backend/views/projects/add-project.ejs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/features/admin/Gallery/Gallery.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/admin/Gallery/Gallery.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/features/admin/Reports/Reports.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/admin/Reports/Reports.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/features/admin/Resources/AddResourceForm.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/admin/Resources/AddResourceForm.jsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/src/features/admin/Resources/Resources.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/admin/Resources/Resources.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/features/admin/Workshops/WorkshopTable.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/admin/Workshops/WorkshopTable.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/features/admin/Workshops/Workshops.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/admin/Workshops/Workshops.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/features/admin/projects/project-detailes.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/admin/projects/project-detailes.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/features/admin/StaticPages/StaticPages.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/admin/StaticPages/StaticPages.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/features/admin/Users/Users.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/admin/Users/Users.jsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/src/features/admin/projects/projects.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/admin/projects/projects.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/features/entrepreneur/EntrepreneurPortal.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/entrepreneur/EntrepreneurPortal.jsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -46,22 +49,22 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
-    "codeWithMe.voiceChat.enabledByDefault": "false",
-    "git-widget-placeholder": "feature-ui-polish",
-    "kotlin-language-version-configured": "true",
-    "node.js.detected.package.eslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "ts.external.directory.path": "C:\\Users\\pc\\AppData\\Local\\Programs\\IntelliJ IDEA\\plugins\\javascript-plugin\\jsLanguageServicesImpl\\external"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;feature-dropdowns-and-resource-fix&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;ts.external.directory.path&quot;: &quot;C:\\Users\\pc\\AppData\\Local\\Programs\\IntelliJ IDEA\\plugins\\javascript-plugin\\jsLanguageServicesImpl\\external&quot;
   }
-}]]></component>
+}</component>
   <component name="RunManager">
     <configuration default="true" type="JetRunConfigurationType">
       <method v="2">

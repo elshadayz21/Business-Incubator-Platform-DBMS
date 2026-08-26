@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<%- include('./partials/head', { title: 'Our Partners - DxValley' }) %>
+<body class="bg-surface text-ink min-h-screen flex flex-col font-sans">
+    <%- include('./partials/header') %>
+
+    <main class="flex-1 px-6 py-12 lg:px-10">
+        <div class="max-w-5xl mx-auto">
+
+            <!-- Header Section -->
+            <div class="text-center mb-12">
+                <span class="bg-[#EAF8FC] text-[#006F9E] px-3 py-1 font-bold text-xs uppercase tracking-wider mb-3 inline-block rounded-full border border-[#00ADEF]/20">
+                    Ecosystem
+                </span>
+                <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight text-cyan-dark">Our Partners</h1>
+                <p class="mt-4 text-lg text-muted max-w-2xl mx-auto">DxValley is proud to collaborate with leading institutions to empower the next generation of Ethiopian founders.</p>
+            </div>
+
+            <!-- Primary Partner Card (Coop Bank) -->
+            <div class="bg-white rounded-2xl border border-[#D6E4EA] shadow-sm p-8 md:p-12 mb-10 flex flex-col md:flex-row items-center gap-8">
+                <div class="shrink-0 bg-[#F6FAFC] p-6 rounded-xl border border-[#D6E4EA]">
+                    <img src="/brand/coopbank-wordmark.jpeg" alt="Cooperative Bank of Oromia" class="h-20 w-auto object-contain mix-blend-multiply" />
+                </div>
+                <div class="text-center md:text-left">
+                    <h2 class="text-2xl font-extrabold text-ink mb-2">Cooperative Bank of Oromia</h2>
+                    <p class="text-muted leading-relaxed text-sm">
+                        As our primary incubation arm partner, Cooperative Bank of Oromia provides the foundational support, resources, and vision that make DxValley's mission possible. Together, we are building a robust ecosystem for startups and MSMEs to thrive.
+                    </p>
+                    <a href="https://www.coopbankoromia.com.et/" target="_blank" rel="noopener noreferrer" class="mt-4 inline-flex items-center gap-2 text-sm font-bold text-[#00ADEF] hover:text-[#006F9E]">
+                        Visit Website <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Future Partners Placeholders -->
+            <h3 class="text-xl font-bold text-ink mb-6 text-center md:text-left">Become a Partner</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white border-dashed border-2 border-[#D6E4EA] rounded-2xl p-8 flex flex-col items-center justify-center text-muted text-center">
+                    <i class="fa-solid fa-handshake text-3xl mb-3 text-[#00ADEF]/50"></i>
+                    <h4 class="font-bold text-ink mb-1">Strategic Partner</h4>
+                    <p class="text-xs">Support our incubation programs.</p>
+                </div>
+                <div class="bg-white border-dashed border-2 border-[#D6E4EA] rounded-2xl p-8 flex flex-col items-center justify-center text-muted text-center">
+                    <i class="fa-solid fa-seedling text-3xl mb-3 text-[#E38524]/50"></i>
+                    <h4 class="font-bold text-ink mb-1">Resource Partner</h4>
+                    <p class="text-xs">Provide tools & infrastructure.</p>
+                </div>
+                <div class="bg-white border-dashed border-2 border-[#D6E4EA] rounded-2xl p-8 flex flex-col items-center justify-center text-muted text-center">
+                    <i class="fa-solid fa-rocket text-3xl mb-3 text-[#0d9488]/50"></i>
+                    <h4 class="font-bold text-ink mb-1">Investment Partner</h4>
+                    <p class="text-xs">Fund high-growth startups.</p>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <%- include('./partials/footer') %>
+</body>
+</html>
