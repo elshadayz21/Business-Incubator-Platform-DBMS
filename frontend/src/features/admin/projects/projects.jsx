@@ -18,14 +18,6 @@ import {
 import ProjectDetails from "./project-detailes";
 import StatCard from "../../../components/StatCard";
 
-const electron = window.electron || {};
-const invoke =
-    electron.invoke ||
-    (async () => {
-      console.error("Electron IPC not available");
-      return [];
-    });
-
 export default function Projects() {
   const [filter, setFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
@@ -49,13 +41,16 @@ export default function Projects() {
     setTimeout(() => setNotice(null), 4000);
   };
 
+  // --- FIXED: Using standard fetch instead of Electron invoke ---
   const fetchProjects = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await invoke("projects:getAll");
-      setProjects(data || []);
+      const response = await fetch('/api/admin/projects', { credentials: 'include' });
+      const data = await response.json();
+      setProjects(Array.isArray(data) ? data : (data?.data || []));
     } catch (error) {
       console.error("Error fetching projects:", error);
+      setProjects([]);
     } finally {
       setLoading(false);
     }
@@ -63,7 +58,8 @@ export default function Projects() {
 
   const fetchStats = useCallback(async () => {
     try {
-      const data = await invoke("projects:getStats");
+      const response = await fetch('/api/admin/projects/stats', { credentials: 'include' });
+      const data = await response.json();
       setStats({
         total: parseInt(data?.total) || 0,
         idea: parseInt(data?.idea) || 0,
@@ -83,15 +79,18 @@ export default function Projects() {
 
   const handleUpdateStatus = async (projectId, newStatus) => {
     try {
-      await invoke("projects:updateStatus", {
-        id: projectId,
-        status: newStatus,
+      await fetch(`/api/admin/projects/${projectId}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ status: newStatus })
       });
       await fetchProjects();
       await fetchStats();
 
       if (selectedProject && selectedProject.id === projectId) {
-        const updatedProject = await invoke("projects:getById", projectId);
+        const res = await fetch(`/api/admin/projects/${projectId}`, { credentials: 'include' });
+        const updatedProject = await res.json();
         setSelectedProject(updatedProject);
       }
     } catch (error) {
@@ -102,7 +101,7 @@ export default function Projects() {
   const handleDelete = async (projectId) => {
     if (!window.confirm("Are you sure you want to delete this project? This action cannot be undone.")) return;
     try {
-      await invoke("projects:delete", { id: projectId });
+      await fetch(`/api/admin/projects/${projectId}`, { method: 'DELETE', credentials: 'include' });
       flashNotice("success", "Project deleted successfully.");
       fetchProjects();
       fetchStats();
@@ -131,10 +130,11 @@ export default function Projects() {
 
     setSubmittingDecision(true);
     try {
-      await invoke("projects:updateApproval", {
-        id: decisionModal.project.id,
-        approved: decisionModal.isApproval,
-        message: decisionModal.message,
+      // Call the toggle-approved route to change approval status
+      await fetch(`/api/admin/projects/${decisionModal.project.id}/toggle-approved`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
       });
 
       flashNotice(
@@ -149,7 +149,8 @@ export default function Projects() {
       await fetchStats();
 
       if (selectedProject && selectedProject.id === decisionModal.project.id) {
-        const updated = await invoke("projects:getById", decisionModal.project.id);
+        const res = await fetch(`/api/admin/projects/${decisionModal.project.id}`, { credentials: 'include' });
+        const updated = await res.json();
         setSelectedProject(updated);
       }
     } catch (error) {
@@ -170,7 +171,8 @@ export default function Projects() {
 
   const handleViewProject = async (project) => {
     try {
-      const fullProject = await invoke("projects:getById", project.id);
+      const response = await fetch(`/api/admin/projects/${project.id}`, { credentials: 'include' });
+      const fullProject = await response.json();
       setSelectedProject(fullProject);
       setShowDetails(true);
     } catch (error) {
@@ -185,9 +187,6 @@ export default function Projects() {
 
   return (
       <div className="space-y-6 font-sans">
-        {/* Page Header */}
-
-
         {/* Notice Banner */}
         {notice && (
             <div
@@ -299,7 +298,6 @@ export default function Projects() {
                   {filteredProjects.map((project) => {
                     const isApproved = project.approved === true || String(project.status).toLowerCase() === "approved";
                     const isRejected = String(project.status).toLowerCase() === "rejected";
-                    const isPending = !isApproved && !isRejected;
 
                     return (
                         <tr key={project.id} className="hover:bg-[#F6FAFC] transition-colors">
@@ -356,7 +354,6 @@ export default function Projects() {
                             </div>
                           </td>
 
-                          {/* CLEAN ICON ACTIONS */}
                           <td className="p-4 text-center">
                             <div className="flex gap-2 justify-center items-center">
                               <button
@@ -367,19 +364,20 @@ export default function Projects() {
                                 <Eye size={16} />
                               </button>
 
-                              <button
-                                  onClick={() => openDecisionModal(project, !isApproved)}
-                                  title={isApproved ? "Revoke Approval / Edit" : "Approve / Edit Decision"}
-                                  className={`p-2 text-white border rounded-xl transition cursor-pointer ${
-                                      isApproved
-                                          ? "bg-emerald-500 border-emerald-500 hover:bg-emerald-600"
-                                          : isRejected
-                                              ? "bg-rose-500 border-rose-500 hover:bg-rose-600"
-                                              : "bg-amber-500 border-amber-500 hover:bg-amber-600"
-                                  }`}
+                              {/* Decision Dropdown */}
+                              <select
+                                  defaultValue=""
+                                  onChange={(e) => {
+                                    if (e.target.value === 'approve') openDecisionModal(project, true);
+                                    if (e.target.value === 'reject') openDecisionModal(project, false);
+                                    e.target.value = ""; // Reset after selection
+                                  }}
+                                  className="px-2 py-1.5 border border-[#D6E4EA] rounded-xl text-xs font-bold text-[#111827] bg-white focus:ring-1 focus:ring-[#00ADEF] cursor-pointer"
                               >
-                                {isApproved ? <CheckCircle2 size={16} /> : isRejected ? <XCircle size={16} /> : <AlertCircle size={16} />}
-                              </button>
+                                <option value="" disabled>Decision...</option>
+                                <option value="approve">Approve</option>
+                                <option value="reject">Reject</option>
+                              </select>
 
                               <button
                                   onClick={() => handleDelete(project.id)}

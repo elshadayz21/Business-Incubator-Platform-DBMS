@@ -23,13 +23,16 @@ const Resources = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("all");
 
+  // REPLACED ELECTRON WITH STANDARD FETCH!
   const fetchResources = async () => {
     setLoading(true);
     try {
-      const data = await window.electron.invoke("resources:get-all");
-      setResources(data || []);
+      const response = await fetch('/api/admin/resources', { credentials: 'include' });
+      const data = await response.json();
+      setResources(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Failed to fetch resources:", error);
+      setResources([]);
     } finally {
       setLoading(false);
     }
@@ -50,10 +53,11 @@ const Resources = () => {
     setShowAddForm(true);
   };
 
+  // REPLACED ELECTRON WITH STANDARD FETCH!
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this resource? This cannot be undone.")) return;
     try {
-      await window.electron.invoke("resources:delete", id);
+      await fetch(`/api/admin/resources/${id}`, { method: 'DELETE', credentials: 'include' });
       fetchResources();
     } catch (err) {
       console.error("Failed to delete resource:", err);

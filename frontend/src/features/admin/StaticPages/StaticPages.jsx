@@ -91,30 +91,13 @@ const StaticPages = () => {
   return (
     <div className="space-y-6 font-sans">
       {/* Header Banner */}
-      <div className="bg-gradient-to-r from-[#00ADEF] via-[#078CC8] to-[#0878B4] rounded-2xl p-6 sm:p-8 text-white shadow-sm relative overflow-hidden">
-        <div className="pointer-events-none absolute -right-16 -top-16 w-64 h-64 rounded-full border-30 border-white/10" />
-        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
-          <div className="space-y-3">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 text-xs font-bold uppercase tracking-wider text-white">
-              <FileText size={12} className="text-[#E38524]" />
-              Content Hub
-            </div>
-            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight font-['Space_Grotesk']">
-              Static Pages &amp; Public Content
-            </h1>
-            <p className="text-sm text-white/85 max-w-2xl leading-relaxed">
-              Superadmin CMS for managing all public site pages (About, Terms, FAQ, Privacy Policy, etc.). Add new pages, edit content, or remove pages dynamically.
-            </p>
-          </div>
-          <button
-            onClick={() => setShowForm(true)}
-            className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#E38524] text-white font-extrabold text-xs uppercase tracking-wider shadow-xs hover:bg-[#C97019] transition-all shrink-0"
-          >
-            <Plus size={18} />
-            <span>New Page</span>
-          </button>
-        </div>
-      </div>
+      <button
+          onClick={() => setShowForm(true)}
+          className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#E38524] text-white font-extrabold text-xs uppercase tracking-wider shadow-xs hover:bg-[#C97019] transition-all shrink-0"
+      >
+        <Plus size={18} />
+        <span>New Page</span>
+      </button>
 
       {/* Notice Banner */}
       {notice && (
