@@ -121,20 +121,7 @@ export default function Funding() {
                 />
             ) : (
                 <>
-                    {/* Header */}
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-[#D6E4EA] shadow-xs">
-                        <div>
-                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#006F9E] block mb-1">
-                    Startup Financial Support
-                  </span>
-                            <h1 className="text-2xl sm:text-3xl font-bold text-[#111827] font-['Space_Grotesk']">
-                                Funding Applications &amp; Capital Allocation
-                            </h1>
-                            <p className="text-xs text-[#526274] mt-1">
-                                Evaluate incubator funding grants under Cooperative Bank of Oromia programs.
-                            </p>
-                        </div>
-                    </div>
+
 
                     {/* Stats Grid */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">

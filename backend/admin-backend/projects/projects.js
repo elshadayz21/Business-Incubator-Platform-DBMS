@@ -162,11 +162,52 @@ export const updateProjectApproval = async (id, approved, message) => {
 };
 
 // Toggle Project Approved Status
+// Toggle Project Approved Status (Admin Approves/Rejects)
 export const toggleProjectApproved = async (id) => {
-  const check = await pool.query("SELECT approved FROM projects WHERE id = $1", [id]);
-  if (check.rows.length === 0) return null;
-  const nextState = !check.rows[0].approved;
-  return await updateProjectApproval(id, nextState, null);
+  const res = await pool.query(
+      `UPDATE projects
+    SET approved = NOT approved,
+        updated_at = CURRENT_TIMESTAMP
+    WHERE id = $1
+    RETURNING *;`,
+      [id],
+  );
+
+  const project = res.rows[0];
+  if (!project) return null;
+
+  // --- LOG THE ADMIN'S ACTION (Audit Trail) ---
+  // We assume Admin ID 1 for now, or you can pass req.session.userId from the controller later
+  await pool.query(
+      `INSERT INTO project_status_history (project_id, acted_by_user_id, actor_role, status, notes) 
+     VALUES ($1, $2, 'Admin', $3, $4)`,
+      [project.id, 1, project.approved ? 'Approved' : 'Rejected', 'Status toggled by Admin']
+  );
+  // ---------------------------------------------
+
+  // Find the project owner to notify them!
+  const ownerRes = await pool.query(
+      "SELECT user_id FROM project_entrepreneurs WHERE project_id = $1 AND (role_in_project IS NULL OR role_in_project != 'Mentor') LIMIT 1",
+      [project.id]
+  );
+
+  const userId = ownerRes.rows[0]?.user_id;
+
+  if (userId) {
+    const message = project.approved
+        ? `Great news! Your project "${project.name}" has been approved.`
+        : `Update: Your project "${project.name}" was not approved.`;
+
+    await createNotification(
+        userId,
+        'project_status',
+        message,
+        { projectId: project.id },
+        `/v1/auth/profile?tab=projects`
+    );
+  }
+
+  return project;
 };
 
 // Get Projects Statistics
@@ -532,6 +573,42 @@ export const removeProjectMentor = async (projectId) => {
   } catch (error) {
     console.error("Error in removeProjectMentor:", error);
     return { success: false, message: "Server error removing mentor." };
+  }
+};
+// GET PROJECT HISTORY FOR ADMIN AUDIT TRAIL
+export const getProjectHistory = async (projectId) => {
+  try {
+    const res = await pool.query(
+        `SELECT 
+         psh.*, 
+         u.name as actor_name 
+       FROM project_status_history psh
+       LEFT JOIN users u ON psh.acted_by_user_id = u.id
+       WHERE psh.project_id = $1 
+       ORDER BY psh.created_at ASC`,
+        [projectId]
+    );
+    return res.rows;
+  } catch (error) {
+    console.error("Error fetching project history:", error);
+    throw error;
+  }
+};
+
+// GET ASSIGNED MENTORS FOR A PROJECT
+export const getAssignedMentors = async (projectId) => {
+  try {
+    const res = await pool.query(
+        `SELECT u.id, u.name, u.email, u.expertise 
+       FROM project_entrepreneurs pe
+       JOIN users u ON pe.user_id = u.id
+       WHERE pe.project_id = $1 AND pe.role_in_project = 'Mentor'`,
+        [projectId]
+    );
+    return res.rows;
+  } catch (error) {
+    console.error("Error fetching assigned mentors:", error);
+    throw error;
   }
 };
 

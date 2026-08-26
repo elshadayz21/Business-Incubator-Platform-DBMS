@@ -269,22 +269,7 @@ export default function MassEmail() {
   return (
     <div className="space-y-6">
       {/* Header Banner */}
-      <div className="bg-gradient-to-r from-[#00ADEF] via-[#078CC8] to-[#0878B4] rounded-2xl p-6 sm:p-8 text-white shadow-sm relative overflow-hidden">
-        <div className="pointer-events-none absolute -right-16 -top-16 w-64 h-64 rounded-full border-30 border-white/10" />
-        <div className="relative z-10 space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 text-xs font-bold uppercase tracking-wider text-white">
-            <Sparkles size={12} className="text-[#E38524]" />
-            DxValley Incubation Center • Mass Email
-          </div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight font-['Space_Grotesk']">
-            Email Campaigns
-          </h1>
-          <p className="text-sm text-white/85 max-w-2xl leading-relaxed">
-            Send templated bulk emails to accepted applicants, declined
-            applicants, subscribers and contacts pulled from the inbox.
-          </p>
-        </div>
-      </div>
+
 
       {loading ? (
         <div className="flex flex-col items-center justify-center py-24 bg-white border border-[#D6E4EA] rounded-2xl shadow-xs">

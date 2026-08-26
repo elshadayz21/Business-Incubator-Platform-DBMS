@@ -145,6 +145,7 @@
   })();
 
   async function handleLogout() {
+  if (!confirm('Are you sure you want to log out?')) return;
     try {
       const response = await fetch('/v1/auth/logout', {
         method: 'POST',
