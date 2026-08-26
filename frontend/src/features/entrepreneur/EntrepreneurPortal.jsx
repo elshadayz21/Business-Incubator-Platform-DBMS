@@ -68,6 +68,7 @@ const EntrepreneurPortal = () => {
       return next;
     });
   };
+  const [replyInputs, setReplyInputs] = useState({});
   const [replySending, setReplySending] = useState({});
   const [editingReply, setEditingReply] = useState({});
 
