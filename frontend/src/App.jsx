@@ -85,6 +85,9 @@ function App() {
           storedUser.name = serverUser.name ?? storedUser.name;
           storedUser.email = serverUser.email ?? storedUser.email;
           storedUser.role = serverUser.role ?? storedUser.role;
+          storedUser.bio = serverUser.bio ?? storedUser.bio ?? null;
+          storedUser.company = serverUser.company ?? storedUser.company ?? null;
+          storedUser.expertise = serverUser.expertise ?? storedUser.expertise ?? null;
           sessionStorage.setItem("user", JSON.stringify(storedUser));
           setUserVersion((v) => v + 1);
         } catch (error) {
