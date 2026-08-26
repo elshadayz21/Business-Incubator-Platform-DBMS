@@ -1,6 +1,6 @@
 import multer from "multer";
 import path from "path";
-
+import { getFundingHistory } from "../admin-backend/funding/funding.js";
 
 // Configure Multer for file uploads
 const storage = multer.diskStorage({
@@ -450,6 +450,18 @@ router.get(
     res.json(await getFundingRequestById(req.params.id)),
   ),
 );
+// Get Funding History Route
+router.get(
+    "/funding/:id/history",
+    asyncHandler(async (req, res) => {
+      try {
+        const history = await getFundingHistory(req.params.id);
+        res.json(history);
+      } catch (error) {
+        res.status(500).json({ message: "Failed to load history." });
+      }
+    })
+)
 router.put(
     "/funding/:id/status",
     asyncHandler(async (req, res) => {

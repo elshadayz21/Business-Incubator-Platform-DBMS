@@ -13,7 +13,6 @@ import adminApiRoutes from "./routes/admin-api.js";
 import portalApiRoutes from "./routes/portal-api.js";
 import path from "path";
 import { publicRoutes } from "./routes/public.routes.js";
-// import { getSuggestedMentorsController, assignMentorController } from "./controllers/project/project.controller.js";
 import {
     get404,
     get500,
@@ -84,6 +83,7 @@ app.use(
 
 app.use(flash());
 
+// CRITICAL: This middleware MUST be before the routes. It provides the 'routes' variable to header.ejs
 app.use((req, res, next) => {
     res.locals.routes = {
         signupRoute: "/v1/auth/signup",
@@ -100,40 +100,17 @@ app.use((req, res, next) => {
     next();
 });
 
-// Prevent logged-in users from accessing public website pages without logging out first
-app.use((req, res, next) => {
-    if (req.method === 'GET' && req.session?.userId) {
-        const url = req.path;
-        const isAllowedForLoggedIn = 
-            url.startsWith('/admin') ||
-            url.startsWith('/api/') ||
-            url.startsWith('/v1/auth/profile') ||
-            url === '/v1/auth/logout' ||
-            url === '/v1/auth/me' ||
-            url.startsWith('/uploads') ||
-            url.startsWith('/brand') ||
-            url.startsWith('/public') ||
-            url.endsWith('.css') ||
-            url.endsWith('.js') ||
-            url.endsWith('.png') ||
-            url.endsWith('.jpeg') ||
-            url.endsWith('.jpg') ||
-            url.endsWith('.gif') ||
-            url.endsWith('.svg') ||
-            url.endsWith('.ico') ||
-            url.endsWith('.woff') ||
-            url.endsWith('.woff2');
 
-        if (!isAllowedForLoggedIn) {
-            return res.redirect('/admin');
-        }
+// Restrict logged-in users ONLY from accessing the home page ("/")
+app.use((req, res, next) => {
+    if (req.method === 'GET' && req.session?.userId && req.path === '/') {
+        return res.redirect('/admin');
     }
     next();
 });
 
 app.get("/", async (req, res) => {
     try {
-        // Fetch a small set of published gallery items for the homepage preview
         const limit = 3;
         const galleryRes = await pool.query(
             `SELECT id, title, description, image_url, video_url, category, display_order, created_at
@@ -186,14 +163,10 @@ app.get(/^\/admin(\/.*)?$/, (req, res) => {
     res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     res.sendFile(path.resolve("public/admin/index.html"));
 });
-//for contact us
+
 app.get("/contact", (req, res) => {
     res.render("contact");
 });
-
-// Attach the ML routes directly!
-// app.get("/api/admin/projects/:id/suggested-mentors", getSuggestedMentorsController);
-// app.post("/api/admin/projects/:id/assign-mentor", assignMentorController);
 
 app.use(get404);
 app.use(get500);

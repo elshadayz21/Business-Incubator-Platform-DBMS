@@ -3,7 +3,11 @@
   <component name="ChangeListManager">
     <list default="true" id="901bcf82-3eb7-452d-8742-e0e378cb8b0d" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Website/views/partials/open-call.ejs" beforeDir="false" afterPath="$PROJECT_DIR$/Website/views/partials/open-call.ejs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/public/admin/assets/index-CBgD5xN2.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/public/admin/assets/index-CbFyveYh.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/public/admin/assets/index-CyLNxo_d.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/public/admin/assets/index-LyXQLrtp.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/public/admin/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/backend/public/admin/index.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -42,7 +46,7 @@
     "RunOnceActivity.git.unshallow": "true",
     "RunOnceActivity.typescript.service.memoryLimit.init": "true",
     "codeWithMe.voiceChat.enabledByDefault": "false",
-    "git-widget-placeholder": "feature-apply-page",
+    "git-widget-placeholder": "fix-restore-funding",
     "kotlin-language-version-configured": "true",
     "node.js.detected.package.eslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",

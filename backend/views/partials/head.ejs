@@ -14,14 +14,5 @@
     <link href="/css/style.css" rel="stylesheet" />
 
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <script>
-      (function() {
-        if (sessionStorage.getItem('isLoggedIn') === 'true' || localStorage.getItem('isLoggedIn') === 'true') {
-          var path = window.location.pathname;
-          if (!path.startsWith('/admin') && !path.startsWith('/v1/auth/profile')) {
-            window.location.replace('/admin');
-          }
-        }
-      })();
-    </script>
+
 </head>

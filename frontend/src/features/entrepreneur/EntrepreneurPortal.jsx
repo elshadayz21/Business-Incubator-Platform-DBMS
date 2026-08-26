@@ -179,6 +179,30 @@ const EntrepreneurPortal = () => {
     }
   };
 
+  const handleFounderFundingResponse = async (requestId, action) => {
+    if (!window.confirm(`Are you sure you want to ${action === 'Founder Accepted' ? 'accept' : 'decline'} this funding offer?`)) return;
+    try {
+      const response = await fetch(`/api/public/funding/${requestId}/respond`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ action }),
+      });
+
+      if (response.ok) {
+        window.alert('Your response has been recorded!');
+        fetchData();
+      } else {
+        const data = await response.json();
+        window.alert(data.message || 'Failed to update status.');
+      }
+    } catch (err) {
+      console.error('Error responding to funding:', err);
+      window.alert('An error occurred.');
+    }
+  };
+
+
   const handleUpdateFundingStatus = async (requestId, newStatus) => {
     if (!window.confirm(`Are you sure you want to set this funding request to '${newStatus}'?`)) return;
     try {
@@ -606,78 +630,101 @@ const EntrepreneurPortal = () => {
 
     if (activeTab === "Funding") {
       return (
-        <div className="space-y-6">
-          <div className="bg-white rounded-2xl border border-[#D6E4EA] p-6 shadow-xs">
-            <div className="flex items-center justify-between">
-              <div>
+          <div className="space-y-6">
+            <div className="bg-white rounded-2xl border border-[#D6E4EA] p-6 shadow-xs">
+              <div className="flex items-center justify-between">
+                <div>
                 <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#006F9E] block mb-1">
                   Funding Status
                 </span>
-                <h3 className="text-lg font-bold text-[#111827]">
-                  Funding Requests
-                </h3>
+                  <h3 className="text-lg font-bold text-[#111827]">
+                    Funding Requests
+                  </h3>
+                </div>
+                <a
+                    href="/v1/funding/new"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#E38524] px-3.5 py-2 text-[11px] font-bold uppercase tracking-wider text-white shadow-xs hover:-translate-y-0.5 transition-all"
+                >
+                  <span className="text-sm leading-none">+</span>
+                  Request Funding
+                </a>
               </div>
-              <a
-                href="/v1/funding/new"
-                className="inline-flex items-center gap-1.5 rounded-lg bg-[#E38524] px-3.5 py-2 text-[11px] font-bold uppercase tracking-wider text-white shadow-xs hover:-translate-y-0.5 transition-all"
-              >
-                <span className="text-sm leading-none">+</span>
-                Request Funding
-              </a>
-            </div>
-            {funding.length === 0 ? (
-              <p className="text-sm text-[#526274] mt-4 font-semibold">
-                No funding requests yet.
-              </p>
-            ) : (
-              <div className="mt-4 overflow-x-auto">
-                <table className="w-full text-left text-sm min-w-[700px]">
-                  <thead>
-                    <tr className="text-[11px] font-extrabold uppercase tracking-wider text-[#526274] border-b border-[#D6E4EA]">
-                      <th className="py-3 pr-4">Project</th>
-                      <th className="py-3 pr-4">Requested</th>
-                      <th className="py-3 pr-4">Approved</th>
-                      <th className="py-3 pr-4">Stage</th>
-                      <th className="py-3 pr-4">Date</th>
-                      <th className="py-3 pr-4">Admin Notes</th>
-                      <th className="py-3">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {funding.map((f) => (
-                      <tr
-                        key={f.id}
-                        className="border-b border-[#D6E4EA] last:border-0"
-                      >
-                        <td className="py-3 pr-4 font-bold text-[#111827]">
-                          {f.project_name}
-                        </td>
-                        <td className="py-3 pr-4 font-semibold text-[#111827]">
-                          {Number(f.amount).toLocaleString()} ETB
-                        </td>
-                        <td className="py-3 pr-4 font-bold text-emerald-700">
-                          {f.approved_amount ? `${Number(f.approved_amount).toLocaleString()} ETB` : "—"}
-                        </td>
-                        <td className="py-3 pr-4 capitalize text-[#526274] font-semibold">
-                          {f.funding_stage || "—"}
-                        </td>
-                        <td className="py-3 pr-4 text-[#526274] font-semibold">
-                          {new Date(f.requested_at).toLocaleDateString()}
-                        </td>
-                        <td className="py-3 pr-4 text-[#526274] text-xs font-medium max-w-[200px] truncate" title={f.notes || ""}>
-                          {f.notes || "—"}
-                        </td>
-                        <td className="py-3">
-                          <StageBadge status={f.status} />
-                        </td>
+              {funding.length === 0 ? (
+                  <p className="text-sm text-[#526274] mt-4 font-semibold">
+                    No funding requests yet.
+                  </p>
+              ) : (
+                  <div className="mt-4 overflow-x-auto">
+                    <table className="w-full text-left text-sm min-w-[800px]">
+                      <thead>
+                      <tr className="text-[11px] font-extrabold uppercase tracking-wider text-[#526274] border-b border-[#D6E4EA]">
+                        <th className="py-3 pr-4">Project</th>
+                        <th className="py-3 pr-4">Requested</th>
+                        <th className="py-3 pr-4">Offered</th>
+                        <th className="py-3 pr-4">Reason / Notes</th>
+                        <th className="py-3">Action</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                      </thead>
+                      <tbody>
+                      {funding.map((f) => (
+                          <tr key={f.id} className="border-b border-[#D6E4EA] last:border-0 align-top">
+
+                            {/* Project + Status Badge */}
+                            <td className="py-3 pr-4 font-bold text-[#111827]">
+                              {f.project_name}
+                              <div className="mt-1 block">
+                                <StageBadge status={f.status} />
+                              </div>
+                            </td>
+
+                            {/* Requested Amount */}
+                            <td className="py-3 pr-4 font-semibold text-[#526274]">
+                              {Number(f.amount).toLocaleString()} ETB
+                            </td>
+
+                            {/* Offered Amount */}
+                            <td className="py-3 pr-4 font-bold text-green-600">
+                              {f.approved_amount ? `${Number(f.approved_amount).toLocaleString()} ETB` : "—"}
+                            </td>
+
+                            {/* Reason */}
+                            <td className="py-3 pr-4 text-[#526274] italic max-w-[250px]">
+                              {f.notes ? `"${f.notes}"` : "No notes provided."}
+                            </td>
+
+                            {/* Action Buttons */}
+                            <td className="py-3">
+                              {f.status === 'Offer Under Review' && (f.founder_action === 'Pending' || !f.founder_action) ? (
+                                  <div className="flex gap-2">
+                                    <button
+                                        onClick={() => handleFounderFundingResponse(f.id, 'Founder Accepted')}
+                                        className="inline-flex items-center gap-1 rounded-lg bg-green-500 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white hover:bg-green-600 transition-all"
+                                    >
+                                      Accept
+                                    </button>
+                                    <button
+                                        onClick={() => handleFounderFundingResponse(f.id, 'Founder Declined')}
+                                        className="inline-flex items-center gap-1 rounded-lg bg-rose-500 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white hover:bg-rose-600 transition-all"
+                                    >
+                                      Decline
+                                    </button>
+                                  </div>
+                              ) : f.status === 'Offer Under Review' && f.founder_action === 'Founder Accepted' ? (
+                                  <span className="text-[10px] font-bold text-green-700 uppercase">Accepted</span>
+                              ) : f.status === 'Offer Under Review' && f.founder_action === 'Founder Declined' ? (
+                                  <span className="text-[10px] font-bold text-rose-700 uppercase">Declined</span>
+                              ) : (
+                                  <span className="text-[10px] font-bold text-[#526274]">—</span>
+                              )}
+                            </td>
+                          </tr>
+                      ))}
+                      </tbody>
+                    </table>
+                  </div>
+              )}
+            </div>
           </div>
-        </div>
       );
     }
 
@@ -743,7 +790,8 @@ const EntrepreneurPortal = () => {
                       </a>
                       {w.status !== "completed" && (
                         <button
-                          onClick={() => handleCancelEnrollment(w.id)}
+                          onClick={() => handleCancelEnrollment(w.id)
+                        }
                           className="inline-flex items-center gap-1 rounded-lg bg-rose-500 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white hover:bg-rose-600 transition-all"
                         >
                           Cancel
@@ -1243,19 +1291,7 @@ const EntrepreneurPortal = () => {
         </header>
 
         <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
-        <div className="bg-gradient-to-br from-[#00ADEF] via-[#078CC8] to-[#0878B4] rounded-2xl p-6 md:p-8 text-white shadow-sm">
-          <p className="mb-2 inline-flex items-center gap-2 rounded-full bg-white/15 px-3.5 py-1 text-[11px] font-bold uppercase tracking-[.18em] text-white">
-            <span className="h-2 w-2 rounded-full bg-[#E38524]" aria-hidden="true" />
-            Entrepreneur Portal
-          </p>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-            Welcome back, {user?.name?.split(" ")[0] || "Founder"}!
-          </h1>
-          <p className="mt-2 text-sm text-white/85 max-w-2xl leading-relaxed">
-            Track your application, connect with your assigned mentor, follow
-            your milestones, and monitor your funding status.
-          </p>
-        </div>
+
 
         {renderContent()}
         </div>
