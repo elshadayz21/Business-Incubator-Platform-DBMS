@@ -74,7 +74,11 @@ export default function SuggestedMentorsPanel({ projectId, onAssignSuccess }) {
 
       if (response.ok && data.success) {
         alert("📩 " + (data.message || "Interest invitation sent to mentor successfully!"));
-        setInvitations((prev) => ({ ...prev, [mentorId]: "pending" }));
+        setInvitations((prev) => ({
+          ...prev,
+          [mentorId]: { status: "pending", reason: null },
+        }));
+        await fetchInvitations();
       } else {
         alert("❌ " + (data.message || "Failed to send invitation."));
       }
@@ -101,6 +105,11 @@ export default function SuggestedMentorsPanel({ projectId, onAssignSuccess }) {
       const data = await response.json();
 
       if (response.ok && data.success) {
+        setInvitations((prev) => ({
+          ...prev,
+          [mentorId]: { status: "accepted", reason: null },
+        }));
+        await fetchInvitations();
         if (onAssignSuccess) onAssignSuccess(mentorId);
         setMentors((prev) => prev.filter((m) => m.id !== mentorId));
       } else {
