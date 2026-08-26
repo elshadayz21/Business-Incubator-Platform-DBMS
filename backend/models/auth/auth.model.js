@@ -94,7 +94,7 @@ export const updateUserProfileImage = async (userId, imagePath) => {
 export const getUserBasicInfo = async (userId) => {
   try {
     const result = await pool.query(
-      `SELECT id, name, email, user_code, profile_image, role, created_at, updated_at 
+      `SELECT id, name, email, user_code, profile_image, role, bio, company, expertise, created_at, updated_at 
        FROM users WHERE id = $1`,
       [userId],
     );
@@ -106,6 +106,31 @@ export const getUserBasicInfo = async (userId) => {
     return result.rows[0];
   } catch (err) {
     console.error("Error fetching user basic info:", err);
+    throw err;
+  }
+};
+
+export const updateUserProfile = async (userId, { name, bio, company, expertise }) => {
+  try {
+    const result = await pool.query(
+      `UPDATE users 
+       SET name = COALESCE($1, name),
+           bio = $2,
+           company = $3,
+           expertise = $4,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = $5
+       RETURNING id, name, email, user_code, profile_image, role, bio, company, expertise, created_at, updated_at`,
+      [name, bio || null, company || null, expertise || null, userId],
+    );
+
+    if (result.rows.length === 0) {
+      throw new Error("User not found");
+    }
+
+    return result.rows[0];
+  } catch (err) {
+    console.error("Error updating user profile:", err);
     throw err;
   }
 };

@@ -9,6 +9,7 @@ import {
   getBasicUserData,
   updateProfileImage,
   changePassword,
+  updateProfile,
 } from "../../controllers/auth/auth.controller.js";
 import { setupPage, createSetupAdmin } from "../../controllers/auth/setup.controller.js";
 import upload from "../../config/multer.js";
@@ -55,6 +56,12 @@ router.post(
   "/profile/update-password",
   isAuth,
   changePassword
+);
+
+router.post(
+  "/profile/update",
+  isAuth,
+  updateProfile
 );
 
 router.get("/me", isAuth, getBasicUserData);

@@ -7,6 +7,7 @@ import {
   updateUserProfileImage,
   getUserBasicInfo,
   updateUserPassword,
+  updateUserProfile,
   getUserNotifications,
   markNotificationsAsRead,
 } from "../../models/auth/auth.model.js";
@@ -448,6 +449,34 @@ export const changePassword = async (req, res, next) => {
   }
 };
 
+export const updateProfile = async (req, res, next) => {
+  try {
+    const { name, bio, company, expertise } = req.body;
+
+    if (!name || !name.trim()) {
+      req.flash("error", "Name is required.");
+      return res.redirect("/v1/auth/profile");
+    }
+
+    await updateUserProfile(req.session.userId, {
+      name: name.trim(),
+      bio: bio || "",
+      company: company || "",
+      expertise: expertise || "",
+    });
+
+    // Update session name so the header reflects the change
+    req.session.userName = name.trim();
+
+    req.flash("success", "Profile updated successfully!");
+    res.redirect("/v1/auth/profile");
+  } catch (err) {
+    console.error("Error updating profile:", err);
+    req.flash("error", "Failed to update profile. Please try again.");
+    res.redirect("/v1/auth/profile");
+  }
+};
+
 export const getBasicUserData = async (req, res, next) => {
   try {
     const user = await getUserBasicInfo(req.session.userId);
@@ -466,6 +495,9 @@ export const getBasicUserData = async (req, res, next) => {
         email: user.email,
         profile_image: user.profile_image,
         role: user.role,
+        bio: user.bio || null,
+        company: user.company || null,
+        expertise: user.expertise || null,
         created_at: user.created_at,
         updated_at: user.updated_at,
       },
