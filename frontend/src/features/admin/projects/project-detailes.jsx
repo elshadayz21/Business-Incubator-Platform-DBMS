@@ -12,59 +12,14 @@ import {
   CheckCircle2,
   XCircle,
 } from "lucide-react";
+import SuggestedMentorsPanel from "../../../components/SuggestedMentorsPanel";
 
 const ProjectDetails = ({ project, onClose, onOpenDecisionModal }) => {
-  const [mentors, setMentors] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [assigningId, setAssigningId] = useState(null);
-
   if (!project) return null;
 
   const isApproved = project.approved === true || String(project.status).toLowerCase() === "approved";
   const isRejected = String(project.status).toLowerCase() === "rejected";
   const isPending = !isApproved && !isRejected;
-
-  // --- AI MENTOR LOGIC ---
-  const fetchMentors = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch(`/api/admin/projects/${project.id}/suggested-mentors`, {
-        credentials: "include",
-      });
-      const data = await response.json();
-      setMentors(data.mentors || []);
-    } catch (error) {
-      console.error("Error fetching mentors:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAssign = async (mentorId) => {
-    setAssigningId(mentorId);
-    try {
-      const response = await fetch(`/api/admin/projects/${project.id}/assign-mentor`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ mentorId }),
-      });
-
-      const result = await response.json();
-
-      if (response.ok && result.success) {
-        setMentors((prev) => prev.filter((m) => m.id !== mentorId));
-        alert("✅ Mentor assigned successfully!");
-      } else {
-        alert("❌ " + result.message);
-      }
-    } catch (error) {
-      console.error("Error assigning mentor:", error);
-      alert("Error assigning mentor.");
-    } finally {
-      setAssigningId(null);
-    }
-  };
 
   return (
     <div className="w-full bg-[#F6FAFC] font-sans pb-10">
@@ -157,78 +112,7 @@ const ProjectDetails = ({ project, onClose, onOpenDecisionModal }) => {
         </div>
 
         {/* AI Suggested Mentors Panel */}
-        <div className="bg-white border border-[#D6E4EA] rounded-2xl p-6 shadow-xs space-y-4">
-          <div className="flex items-center justify-between border-b border-[#D6E4EA] pb-4">
-            <div className="flex items-center gap-2">
-              <div className="p-2 rounded-xl bg-[#EAF8FC] text-[#00ADEF]">
-                <Sparkles size={18} />
-              </div>
-              <div>
-                <h4 className="text-base font-bold text-[#111827] font-['Space_Grotesk']">
-                  AI Suggested Mentors
-                </h4>
-                <p className="text-xs text-[#526274]">
-                  Match mentor expertise to startup domain via TF-IDF algorithm
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={fetchMentors}
-              disabled={loading}
-              className="px-4 py-2 rounded-xl bg-[#00ADEF] text-white text-xs font-bold shadow-xs hover:bg-[#006F9E] disabled:opacity-50 transition shrink-0 cursor-pointer"
-            >
-              {loading ? "Analyzing..." : "Find Mentors"}
-            </button>
-          </div>
-
-          <div className="pt-2">
-            {loading ? (
-              <div className="flex justify-center py-4">
-                <Loader2 className="animate-spin text-[#00ADEF]" size={24} />
-              </div>
-            ) : mentors.length > 0 ? (
-              <div className="space-y-3">
-                {mentors.map((mentor) => {
-                  const score = Math.round((mentor.matchScore || 0) * 100);
-                  return (
-                    <div
-                      key={mentor.id}
-                      className="flex items-center justify-between p-4 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] hover:border-[#00ADEF]/30 transition"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-[#00ADEF] text-white flex items-center justify-center font-bold text-sm">
-                          {mentor.name?.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <p className="text-sm font-bold text-[#111827]">{mentor.name}</p>
-                          <p className="text-xs text-[#526274] capitalize">
-                            {mentor.expertise || "General Expertise"}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <span className="text-sm font-extrabold text-[#006F9E] bg-[#EAF8FC] px-2.5 py-1 rounded-full border border-[#00ADEF]/20">
-                          {score}% Match
-                        </span>
-                        <button
-                          onClick={() => handleAssign(mentor.id)}
-                          disabled={assigningId === mentor.id}
-                          className="px-3 py-1.5 rounded-lg bg-[#E38524] text-white text-xs font-bold border border-[#E38524]/20 hover:bg-[#E38524]/80 disabled:opacity-50 transition cursor-pointer"
-                        >
-                          {assigningId === mentor.id ? "Assigning..." : "Assign"}
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <p className="text-center text-xs text-[#526274] py-4">
-                Click "Find Mentors" to see AI matches based on project domain.
-              </p>
-            )}
-          </div>
-        </div>
+        <SuggestedMentorsPanel projectId={project.id} />
 
         {/* Problem Statement */}
         {project.problem && (
