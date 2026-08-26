@@ -3,11 +3,11 @@
   <component name="ChangeListManager">
     <list default="true" id="901bcf82-3eb7-452d-8742-e0e378cb8b0d" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/database/migrations/023_add_funding_history.sql" beforeDir="false" afterPath="$PROJECT_DIR$/database/migrations/023_add_funding_history.sql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/features/admin/Announcements/Announcements.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/admin/Announcements/Announcements.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/features/admin/Applications/Applications.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/admin/Applications/Applications.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/features/admin/Funding/FundingDetails.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/admin/Funding/FundingDetails.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/features/entrepreneur/EntrepreneurPortal.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/entrepreneur/EntrepreneurPortal.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/public/admin/assets/index-CBgD5xN2.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/public/admin/assets/index-CbFyveYh.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/public/admin/assets/index-CyLNxo_d.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/public/admin/assets/index-LyXQLrtp.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/public/admin/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/backend/public/admin/index.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
