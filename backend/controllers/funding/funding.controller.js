@@ -1,3 +1,4 @@
+import pool from "../../config/db.js";
 import {
   createFundingRequest,
   getAllFundingRequests,
@@ -14,13 +15,11 @@ import { getProjectEntrepreneurs, getProjectById } from "../../models/project/pr
 import { createNotification } from "../../models/auth/auth.model.js";
 import eventBus from "../../utils/eventBus.js";
 
-// Create a new funding request
+// Create a new funding request (API)
 export const createFundingRequestController = async (req, res, next) => {
   try {
-    const { project_id, investor_id, amount, funding_stage, description } =
-      req.body;
+    const { project_id, investor_id, amount, funding_stage, description } = req.body;
 
-    // Validation
     if (!project_id || !amount) {
       throw new BadRequestError("Project ID and Amount are required", 400);
     }
@@ -41,8 +40,7 @@ export const createFundingRequestController = async (req, res, next) => {
       description: description || null,
     });
 
-    // Emit event for subscribers
-    eventBus.emit("funding.requested", { request: fundingRequest, userId: req.session.userId });
+    eventBus.emit("funding.requested", { request: fundingRequest, userId: req.session?.userId });
 
     res.status(201).json({
       success: true,
@@ -122,31 +120,29 @@ export const updateFundingRequestStatusController = async (req, res, next) => {
     const validStatuses = ["Pending", "Approved", "Rejected", "Under Review"];
     if (!validStatuses.includes(status)) {
       throw new BadRequestError(
-        `Invalid status. Must be one of: ${validStatuses.join(", ")}`,
-        400,
+          `Invalid status. Must be one of: ${validStatuses.join(", ")}`,
+          400
       );
     }
 
-    // Get user ID from session (assuming reviewed by admin)
     const reviewedBy = req.session?.userId || null;
     const isInvestor = req.session?.userRole === "investor";
 
     const updatedRequest = await updateFundingRequestStatus(
-      parseInt(id),
-      status,
-      reviewedBy,
-      notes || null,
-      isInvestor,
+        parseInt(id),
+        status,
+        reviewedBy,
+        notes || null,
+        isInvestor
     );
 
     if (!updatedRequest) {
       throw new BadRequestError("Funding request not found", 404);
     }
 
-    // Emit event for subscribers (logging, metrics, decoupled notifications)
     eventBus.emit("funding.reviewed", {
       request: updatedRequest,
-      reviewer: { id: reviewedBy, name: req.session.userName || "investor" }
+      reviewer: { id: reviewedBy, name: req.session?.userName || "investor" },
     });
 
     res.status(200).json({
@@ -186,7 +182,7 @@ export const deleteFundingRequestController = async (req, res, next) => {
   }
 };
 
-// Get funding dashboard (status per project/stage)
+// Get funding dashboard
 export const getFundingDashboardController = async (req, res, next) => {
   try {
     const dashboard = await getFundingDashboard();
@@ -207,7 +203,6 @@ export const getFundingByStageController = async (req, res, next) => {
   try {
     const fundingByStage = await getFundingByStage();
 
-    // Transform data for better visualization
     const grouped = {};
     fundingByStage.forEach((item) => {
       if (!grouped[item.stage]) {
@@ -225,7 +220,7 @@ export const getFundingByStageController = async (req, res, next) => {
       };
       grouped[item.stage].total_count += item.count;
       grouped[item.stage].total_amount =
-        (grouped[item.stage].total_amount || 0) + (item.total_amount || 0);
+          (grouped[item.stage].total_amount || 0) + (item.total_amount || 0);
     });
 
     res.status(200).json({
@@ -239,26 +234,32 @@ export const getFundingByStageController = async (req, res, next) => {
   }
 };
 
-// Show funding request form page
+// Show funding request form page (CLEAN VERSION)
 export const newFundingRequestPage = async (req, res, next) => {
   try {
     const userId = req.session?.userId;
 
     if (!userId) {
-      req.flash("error", "Please log in to request funding");
       return res.redirect("/admin");
     }
 
-    const userProjects = await getUserProjects(userId);
+    const projectsRes = await pool.query(
+        `SELECT p.id, p.name, p.domain 
+       FROM projects p
+       JOIN project_entrepreneurs pe ON p.id = pe.project_id
+       WHERE pe.user_id = $1
+       ORDER BY p.name ASC`,
+        [userId]
+    );
 
     res.render("funding/request-funding", {
-      projects: userProjects,
-      error: req.flash("error")[0],
-      success: req.flash("success")[0],
+      projects: projectsRes.rows,
+      error: req.flash("error")[0] || null,
+      success: req.flash("success")[0] || null
     });
   } catch (error) {
-    console.error("Error in newFundingRequestPage:", error);
-    next(error);
+    console.error("Error loading funding form:", error);
+    res.status(500).send("Server Error: " + error.message);
   }
 };
 
@@ -266,16 +267,14 @@ export const newFundingRequestPage = async (req, res, next) => {
 export const createFundingRequestFormController = async (req, res, next) => {
   try {
     const { project_id, amount, funding_stage, description } = req.body;
-    const userId = req.session?.userId;
 
-    // Validation
     if (!project_id || !amount || !funding_stage) {
-      req.flash("error", "All required fields must be filled");
+      if (req.flash) req.flash("error", "All required fields must be filled");
       return res.redirect("/v1/funding/new");
     }
 
     if (isNaN(amount) || parseFloat(amount) <= 0) {
-      req.flash("error", "Amount must be a positive number");
+      if (req.flash) req.flash("error", "Amount must be a positive number");
       return res.redirect("/v1/funding/new");
     }
 
@@ -287,14 +286,16 @@ export const createFundingRequestFormController = async (req, res, next) => {
       description: description || null,
     });
 
-    req.flash(
-      "success",
-      `Funding request of $${parseFloat(amount).toLocaleString()} created successfully! Our team will review it shortly.`,
-    );
-    res.redirect('/v1/auth/profile?tab=funding');
+    if (req.flash) {
+      req.flash(
+          "success",
+          `Funding request of $${parseFloat(amount).toLocaleString()} created successfully! Our team will review it shortly.`
+      );
+    }
+    res.redirect("/v1/auth/profile?tab=funding");
   } catch (error) {
     console.error("Error in createFundingRequestFormController:", error);
-    req.flash("error", "An error occurred while creating your funding request");
+    if (req.flash) req.flash("error", "An error occurred while creating your funding request");
     res.redirect("/v1/funding/new");
   }
 };
