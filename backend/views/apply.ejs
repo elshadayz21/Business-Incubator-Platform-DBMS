@@ -6,45 +6,39 @@
 
     <main class="flex-1 px-6 py-12 lg:px-10">
         <div class="max-w-4xl mx-auto">
-
-            <!-- Back to Home -->
             <a href="/" class="inline-flex items-center gap-2 text-sm font-bold text-cyan-dark hover:text-orange transition mb-8">
                 <i class="fa-solid fa-arrow-left text-xs"></i> Back to Home
             </a>
 
-                                    <!-- Announcement Details (Will hide when form opens) -->
-                                    <div id="announcement-details-box">
-                                        <!-- Announcement Header -->
-                                        <div class="bg-gradient-to-br from-cyan to-cyan-dark rounded-2xl p-8 text-white shadow-lg mb-8">
+            <div id="announcement-details-box">
+                <!-- Top Row: Solid Cyan Box for Badge + Countdown -->
+                <div class="bg-cyan rounded-2xl p-6 text-white shadow-lg mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <span class="inline-block bg-white/20 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Open Call</span>
 
-                                            <!-- TOP ROW: Open Call Badge + Countdown Timer -->
-                                            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-                                                <span class="inline-block bg-white/20 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Open Call</span>
+                    <div class="bg-white/10 p-3 rounded-xl w-full sm:w-auto">
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-white/70 mb-1 text-center">Applications close in:</p>
+                        <div id="countdown" class="flex gap-4 text-white text-xl font-extrabold justify-center"></div>
+                    </div>
+                </div>
 
-                                                <!-- Countdown Timer (Now on the top right!) -->
-                                                <div class="bg-white/10 p-3 rounded-xl w-full sm:w-auto">
-                                                    <p class="text-[10px] font-bold uppercase tracking-wider text-white/70 mb-1 text-center">Applications close in:</p>
-                                                    <div id="countdown" class="flex gap-4 text-white text-xl font-extrabold justify-center"></div>
-                                                </div>
-                                            </div>
+                <!-- White Box for Title and Content (Easier to read) -->
+                <div class="bg-white border border-[#D6E4EA] rounded-2xl p-8 shadow-sm mb-8 break-words whitespace-normal overflow-hidden">
+                    <h1 class="text-3xl sm:text-4xl font-extrabold mb-4 text-cyan-dark"><%= announcement.title %></h1>
+                    <div class="text-[#526274] prose prose-sm max-w-none mt-4">
+                        <%- announcement.content %>
+                    </div>
+                </div>
 
-                                            <!-- Title and Content (Below the top row) -->
-                                            <h1 class="text-3xl sm:text-4xl font-extrabold mb-3"><%= announcement.title %></h1>
-                                            <div class="text-white/90 prose prose-sm max-w-none mt-4">
-                                                <%- announcement.content %>
-                                            </div>
-                                        </div>
-
-                                        <!-- Document Link (If any) -->
-                                        <% if (announcement.document_url) { %>
-                                        <div class="bg-white border border-[#D6E4EA] rounded-xl p-4 mb-8 flex items-center justify-between">
-                                            <p class="text-sm font-bold text-ink">Please review the attached document before applying.</p>
-                                            <a href="<%= announcement.document_url %>" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 bg-[#EAF8FC] text-[#006F9E] rounded-lg text-xs font-bold border border-[#00ADEF]/20 hover:bg-[#D6E4EA] transition">
-                                                <i class="fa-solid fa-file-pdf"></i> View Document
-                                            </a>
-                                        </div>
-                                        <% } %>
-                                    </div>
+                <!-- Document Link (If any) -->
+                <% if (announcement.document_url) { %>
+                <div class="bg-white border border-[#D6E4EA] rounded-xl p-4 mb-8 flex items-center justify-between">
+                    <p class="text-sm font-bold text-ink">Please review the attached document before applying.</p>
+                    <a href="<%= announcement.document_url %>" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 bg-[#EAF8FC] text-[#006F9E] rounded-lg text-xs font-bold border border-[#00ADEF]/20 hover:bg-[#D6E4EA] transition">
+                        <i class="fa-solid fa-file-pdf"></i> View Document
+                    </a>
+                </div>
+                <% } %>
+            </div>
 
             <!-- Start Application Button -->
             <div id="start-application-box" class="text-center bg-white border border-[#D6E4EA] rounded-2xl p-8 shadow-sm">
@@ -58,56 +52,21 @@
             <!-- Application Form (Hidden until clicked) -->
             <div id="application-form-container" class="hidden bg-white border border-[#D6E4EA] rounded-2xl p-8 shadow-sm mt-8">
                 <h2 class="text-xl font-bold text-ink border-b border-[#D6E4EA] pb-4 mb-6">Application Form</h2>
-
                 <form id="application-form" class="space-y-5">
                     <input type="hidden" id="modal-announcement-id" value="<%= announcement.id %>">
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <div>
-                            <label class="block text-xs font-bold text-[#526274] mb-2 uppercase">Full Name</label>
-                            <input type="text" id="full_name" required class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-[#526274] mb-2 uppercase">Email Address</label>
-                            <input type="email" id="email" required class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]">
-                        </div>
+                    <div id="custom-form-fields" class="space-y-5">
+                        <p class="text-sm text-[#526274] font-bold">Loading questions...</p>
                     </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <div>
-                            <label class="block text-xs font-bold text-[#526274] mb-2 uppercase">Phone Number</label>
-                            <input type="text" id="phone" class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-[#526274] mb-2 uppercase">Background</label>
-                            <input type="text" id="background" class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]">
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold text-[#526274] mb-2 uppercase">Startup Idea</label>
-                        <textarea id="startup_idea" rows="4" required class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]"></textarea>
-                    </div>
-
                     <div>
                         <label class="block text-xs font-bold text-[#526274] mb-2 uppercase">Attach Document (PDF, DOC, PNG, JPG - Max 5MB)</label>
                         <input type="file" id="document_upload" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" class="w-full text-sm text-[#526274] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[#EAF8FC] file:text-[#006F9E] file:font-bold hover:file:bg-[#D6E4EA]">
                     </div>
-
-                    <!-- Custom Form Fields Container -->
-                    <div id="custom-form-fields" class="space-y-5"></div>
-
                     <div id="form-message" class="hidden p-4 rounded-xl text-sm font-bold text-center"></div>
-
-                    <button type="submit" class="w-full py-4 bg-[#00ADEF] text-white rounded-xl font-bold hover:bg-[#006F9E] transition">
-                        Submit Application
-                    </button>
+                    <button type="submit" class="w-full py-4 bg-[#00ADEF] text-white rounded-xl font-bold hover:bg-[#006F9E] transition">Submit Application</button>
                 </form>
             </div>
-
         </div>
     </main>
-
     <%- include('./partials/footer') %>
 
     <script>
@@ -116,18 +75,15 @@
         const interval = setInterval(() => {
             const now = new Date().getTime();
             const distance = deadline - now;
-
             if (distance < 0) {
                 clearInterval(interval);
                 document.getElementById("countdown").innerHTML = "<span class='text-red-400'>APPLICATION CLOSED</span>";
                 document.getElementById("start-application-box").innerHTML = "<p class='text-red-500 font-bold'>This application is now closed.</p>";
                 return;
             }
-
             const days = Math.floor(distance / (1000 * 60 * 60 * 24));
             const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
             const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-
             document.getElementById("countdown").innerHTML = `
                 <div class="text-center"><div>${days}</div><div class="text-xs text-white/70 uppercase">Days</div></div>
                 <div class="text-center"><div>${hours}</div><div class="text-xs text-white/70 uppercase">Hours</div></div>
@@ -135,85 +91,155 @@
             `;
         }, 1000);
 
+        // --- FORM STATE PERSISTENCE (Auto-Save) ---
+        const formStorageKey = `dx_apply_form_<%= announcement.id %>`;
 
-                // --- Show Form Logic ---
-                window.showApplicationForm = () => {
-                    // Hide the details and the start button!
-                    document.getElementById("announcement-details-box").classList.add("hidden");
-                    document.getElementById("start-application-box").classList.add("hidden");
+        function saveFormData() {
+            const form = document.getElementById('application-form');
+            if (!form) return;
+            const inputs = form.querySelectorAll('input, textarea, select');
+            const dataObj = {};
+            inputs.forEach(input => {
+                if (!input.name) return;
+                if (input.type === 'checkbox') {
+                    if (input.name.endsWith('[]')) {
+                        if (!dataObj[input.name]) dataObj[input.name] = [];
+                        if (input.checked) dataObj[input.name].push(input.value);
+                    } else { dataObj[input.name] = input.checked; }
+                } else if (input.type === 'radio') {
+                    if (input.checked) dataObj[input.name] = input.value;
+                } else { dataObj[input.name] = input.value; }
+            });
+            localStorage.setItem(formStorageKey, JSON.stringify(dataObj));
+        }
 
-                    // Show the form
-                    const formContainer = document.getElementById("application-form-container");
-                    formContainer.classList.remove("hidden");
+        function loadFormData() {
+            const savedData = localStorage.getItem(formStorageKey);
+            if (!savedData) return;
+            try {
+                const dataObj = JSON.parse(savedData);
+                const form = document.getElementById('application-form');
+                if (!form) return;
+                const inputs = form.querySelectorAll('input, textarea, select');
+                inputs.forEach(input => {
+                    if (!input.name || dataObj[input.name] === undefined) return;
+                    if (input.type === 'checkbox') {
+                        if (input.name.endsWith('[]')) {
+                            input.checked = Array.isArray(dataObj[input.name]) && dataObj[input.name].includes(input.value);
+                        } else { input.checked = Boolean(dataObj[input.name]); }
+                    } else if (input.type === 'radio') {
+                        input.checked = (dataObj[input.name] === input.value);
+                    } else { input.value = dataObj[input.name]; }
+                });
+            } catch (e) { console.error("Error loading saved form data:", e); }
+        }
 
-                    // Scroll to the top of the page so they see the form cleanly
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
+        // --- Show Form Logic ---
+        window.showApplicationForm = () => {
+            document.getElementById("announcement-details-box").classList.add("hidden");
+            document.getElementById("start-application-box").classList.add("hidden");
+            const formContainer = document.getElementById("application-form-container");
+            formContainer.classList.remove("hidden");
+            window.scrollTo({ top: 0, behavior: 'smooth' });
 
-                    // Fetch Custom Form Fields
-                    const customFieldsDiv = document.getElementById("custom-form-fields");
-                    customFieldsDiv.innerHTML = '<p class="text-sm text-[#526274] font-bold">Loading questions...</p>';
+            const customFieldsDiv = document.getElementById("custom-form-fields");
+            customFieldsDiv.innerHTML = '<p class="text-sm text-[#526274] font-bold">Loading questions...</p>';
 
-                    fetch(`/api/public/form-fields/<%= announcement.id %>`)
-                        .then(res => res.json())
-                        .then(fields => {
-                            if (fields.length === 0) {
-                                customFieldsDiv.innerHTML = '';
-                                return;
+            fetch(`/api/public/form-fields/<%= announcement.id %>`)
+                .then(res => res.json())
+                .then(fields => {
+                    if (!fields || fields.length === 0) { customFieldsDiv.innerHTML = ''; return; }
+                    let optsStr = '';
+                    customFieldsDiv.innerHTML = fields.map(field => {
+                        const isRequired = field.required ? 'required' : '';
+                        const reqMark = field.required ? '<span class="text-red-500">*</span>' : '';
+
+                        optsStr = field.options || '';
+                        if (Array.isArray(optsStr)) { optsStr = optsStr.join(', '); }
+                        else if (typeof optsStr === 'string' && optsStr.startsWith('[')) {
+                            try { optsStr = JSON.parse(optsStr).join(', '); } catch (e) {}
+                        }
+
+                        if (field.field_type === 'textarea' || field.field_type === 'idea') {
+                            return `<div><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><textarea name="custom_${field.id}" ${isRequired} class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]"></textarea></div>`;
+                        }
+                        if (field.field_type === 'select') {
+                            const opts = optsStr.split(',').map(opt => `<option value="${opt.trim()}">${opt.trim()}</option>`).join('');
+                            return `<div><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><select name="custom_${field.id}" ${isRequired} class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]"><option value="">Select...</option>${opts}</select></div>`;
+                        }
+                        if (field.field_type === 'radio') {
+                            const opts = optsStr.split(',').map(opt => opt.trim()).filter(Boolean);
+                            const radioInputs = opts.map(opt => `<label class="flex items-center gap-2 py-1.5 cursor-pointer"><input type="radio" name="custom_${field.id}" value="${opt}" ${isRequired} class="h-4 w-4 border-gray-300 text-[#00ADEF] focus:ring-[#00ADEF]"><span class="text-sm font-medium text-[#111827]">${opt}</span></label>`).join('');
+                            return `<div><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><div class="flex flex-col gap-1 mt-1 p-3 bg-[#F6FAFC] border border-[#D6E4EA] rounded-xl">${radioInputs}</div></div>`;
+                        }
+                        if (field.field_type === 'checkbox') {
+                            const opts = optsStr.split(',').map(opt => opt.trim()).filter(Boolean);
+                            if (opts.length > 0) {
+                                const checkboxInputs = opts.map(opt => `<label class="flex items-center gap-2 py-1.5 cursor-pointer"><input type="checkbox" name="custom_${field.id}[]" value="${opt}" class="h-4 w-4 border-gray-300 text-[#00ADEF] focus:ring-[#00ADEF]"><span class="text-sm font-medium text-[#111827]">${opt}</span></label>`).join('');
+                                return `<div><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><div class="flex flex-col gap-1 mt-1 p-3 bg-[#F6FAFC] border border-[#D6E4EA] rounded-xl">${checkboxInputs}</div></div>`;
+                            } else {
+                                return `<div class="flex items-center gap-3 py-2"><input type="checkbox" name="custom_${field.id}" ${isRequired} class="h-4 w-4 rounded border-gray-300 text-[#00ADEF] focus:ring-[#00ADEF]"><label class="text-sm font-bold text-[#526274]">${field.label} ${reqMark}</label></div>`;
                             }
-
-                            customFieldsDiv.innerHTML = fields.map(field => {
-                                const isRequired = field.required ? 'required' : '';
-                                const reqMark = field.required ? '<span class="text-red-500">*</span>' : '';
-
-                                if (field.field_type === 'textarea') {
-                                    return `<div><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><textarea name="custom_${field.id}" ${isRequired} class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]"></textarea></div>`;
-                                } else if (field.field_type === 'select') {
-                                    const opts = field.options.split(',').map(opt => `<option value="${opt.trim()}">${opt.trim()}</option>`).join('');
-                                    return `<div><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><select name="custom_${field.id}" ${isRequired} class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]"><option value="">Select...</option>${opts}</select></div>`;
-                                } else {
-                                    return `<div><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><input type="text" name="custom_${field.id}" ${isRequired} class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]"></div>`;
-                                }
-                            }).join('');
-                        }).catch(err => {
-                            console.error("Error loading custom fields:", err);
-                            customFieldsDiv.innerHTML = '';
-                        });
-                };
+                        }
+                        if (field.field_type === 'number' || field.field_type === 'Phone number') {
+                            return `<div><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><input type="text" name="custom_${field.id}" ${isRequired} oninput="this.value = this.value.replace(/[^0-9+]/g, '')" class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]"></div>`;
+                        }
+                        if (field.field_type === 'email') {
+                            return `<div><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><input type="email" name="custom_${field.id}" ${isRequired} class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]"></div>`;
+                        }
+                        return `<div><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><input type="text" name="custom_${field.id}" ${isRequired} class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]"></div>`;
+                    }).join('');
+                    loadFormData();
+                }).catch(err => {
+                    console.error("Error loading custom fields:", err);
+                    customFieldsDiv.innerHTML = '<p class="text-red-500 text-sm">Failed to load form questions.</p>';
+                });
+        };
 
         // --- Form Submission Logic ---
         document.getElementById('application-form')?.addEventListener('submit', async (e) => {
             e.preventDefault();
             const msgBox = document.getElementById('form-message');
             const button = e.target.querySelector('button[type="submit"]');
-
             button.disabled = true;
             button.textContent = 'Submitting...';
             msgBox.className = 'hidden';
 
             const data = {
                 announcement_id: document.getElementById('modal-announcement-id').value,
-                full_name: document.getElementById('full_name').value,
-                email: document.getElementById('email').value,
-                phone: document.getElementById('phone').value,
-                background: document.getElementById('background').value,
-                startup_idea: document.getElementById('startup_idea').value,
+                full_name: '', email: '', phone: '', background: '', startup_idea: '',
                 answers: {}
             };
 
             const customInputs = document.querySelectorAll('[name^="custom_"]');
+            const handledNames = new Set();
             customInputs.forEach(input => {
-                data.answers[input.name] = input.value;
+                if (input.type === 'radio') {
+                    if (!handledNames.has(input.name)) {
+                        const checkedRadio = document.querySelector(`input[name="${input.name}"]:checked`);
+                        data.answers[input.name] = checkedRadio ? checkedRadio.value : '';
+                        handledNames.add(input.name);
+                    }
+                } else if (input.type === 'checkbox' && input.name.endsWith('[]')) {
+                    if (!handledNames.has(input.name)) {
+                        const checkedBoxes = document.querySelectorAll(`input[name="${input.name}"]:checked`);
+                        data.answers[input.name] = Array.from(checkedBoxes).map(cb => cb.value);
+                        handledNames.add(input.name);
+                    }
+                } else if (input.type === 'checkbox') {
+                    data.answers[input.name] = input.checked;
+                } else {
+                    data.answers[input.name] = input.value;
+                }
             });
 
             try {
                 const response = await fetch('/api/public/apply', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
                 });
                 const result = await response.json();
-
                 if (response.ok) {
+                    localStorage.removeItem(formStorageKey);
                     msgBox.className = 'p-4 rounded-xl text-sm font-bold text-center bg-green-100 text-green-800';
                     msgBox.textContent = '✅ ' + result.message;
                     msgBox.classList.remove('hidden');
@@ -231,6 +257,13 @@
                 button.textContent = 'Submit Application';
             }
         });
+
+        // --- ATTACH EVENT LISTENERS FOR AUTO-SAVE ---
+        const appForm = document.getElementById('application-form');
+        if (appForm) {
+            appForm.addEventListener('input', saveFormData);
+            appForm.addEventListener('change', saveFormData);
+        }
     </script>
 </body>
 </html>

@@ -49,26 +49,25 @@ export const getAllApplications = async () => {
   `);
     return result.rows;
 };
+
 // UPDATE APPLICATION STATUS (Accept/Reject)
 export const updateApplicationStatus = async (id, status) => {
     console.log("Updating application status:", id, status);
-    // Generate the invite token the moment an application is accepted, so
-    // the "Send Invites" email always carries a valid, usable signup link.
-    const token = status === "Accepted" ? generateInviteToken() : null;
+    const numericId = parseInt(id, 10);
+    const token = status === "Accepted" ? crypto.randomUUID() : null;
+
     const result = await pool.query(
         `UPDATE applications SET status = $1, invite_token = COALESCE(invite_token, $2) WHERE id = $3 RETURNING *`,
-        [status, token, id]
+        [status, token, numericId]
     );
 
     const app = result.rows[0];
     if (!app) return null;
 
     eventBus.emit("application.status_changed", {
-      application: app,
-      status,
+        application: app,
+        status,
     });
-
-    // REMOVED the auto-email logic from here!
 
     return app;
 };
