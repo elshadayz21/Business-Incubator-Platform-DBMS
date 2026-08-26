@@ -52,13 +52,21 @@ const WorkshopTable = ({ workshops, onView, onDelete }) => {
     );
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return "-";
-    return new Date(dateString).toLocaleDateString("en-GB", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
+  const formatDateRange = (startStr, endStr) => {
+    if (!startStr) return "-";
+
+    const startDate = new Date(startStr);
+    const endDate = endStr ? new Date(endStr) : null;
+
+    const formatOpts = { month: "short", day: "numeric", year: "numeric" };
+
+    // If there is no end date, OR the start and end are the exact same day
+    if (!endDate || startDate.toDateString() === endDate.toDateString()) {
+      return startDate.toLocaleDateString("en-GB", formatOpts);
+    }
+
+    // If it's a multi-day workshop, show the range
+    return `${startDate.toLocaleDateString("en-GB", formatOpts)} - ${endDate.toLocaleDateString("en-GB", formatOpts)}`;
   };
 
   return (
@@ -133,10 +141,7 @@ const WorkshopTable = ({ workshops, onView, onDelete }) => {
                   <td className="p-4 text-xs font-medium text-[#526274]">
                     <div className="flex items-center gap-1.5 text-[#111827] font-bold">
                       <Calendar size={13} className="text-[#00ADEF]" />
-                      {formatDate(workshop.startDate || workshop.start_date)}
-                    </div>
-                    <div className="text-[11px] text-[#526274] pl-5">
-                      to {formatDate(workshop.endDate || workshop.end_date)}
+                      {formatDateRange(workshop.startDate || workshop.start_date, workshop.endDate || workshop.end_date)}
                     </div>
                   </td>
 

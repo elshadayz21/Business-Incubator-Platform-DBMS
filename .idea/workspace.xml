@@ -3,11 +3,19 @@
   <component name="ChangeListManager">
     <list default="true" id="901bcf82-3eb7-452d-8742-e0e378cb8b0d" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/public/admin/assets/index-CBgD5xN2.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/public/admin/assets/index-CbFyveYh.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/public/admin/assets/index-CyLNxo_d.css" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/public/admin/assets/index-LyXQLrtp.css" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/public/admin/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/backend/public/admin/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/database/migrations/024_add_project_history.sql" beforeDir="false" afterPath="$PROJECT_DIR$/database/migrations/024_add_project_history.sql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/components/UserMenu.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/components/UserMenu.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/features/admin/Announcements/Announcements.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/admin/Announcements/Announcements.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/features/admin/Cohorts/Cohorts.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/admin/Cohorts/Cohorts.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/features/admin/Dashboard/Dashboard.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/admin/Dashboard/Dashboard.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/features/admin/Funding/Funding.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/admin/Funding/Funding.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/features/admin/MassEmail/MassEmail.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/admin/MassEmail/MassEmail.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/features/admin/Mentors/Mentors.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/admin/Mentors/Mentors.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/features/admin/Resources/Resources.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/admin/Resources/Resources.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/features/admin/Workshops/WorkshopTable.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/admin/Workshops/WorkshopTable.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/features/admin/Workshops/Workshops.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/admin/Workshops/Workshops.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/features/admin/projects/project-detailes.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/admin/projects/project-detailes.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/features/admin/projects/projects.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/admin/projects/projects.jsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -46,7 +54,7 @@
     "RunOnceActivity.git.unshallow": "true",
     "RunOnceActivity.typescript.service.memoryLimit.init": "true",
     "codeWithMe.voiceChat.enabledByDefault": "false",
-    "git-widget-placeholder": "fix-restore-funding",
+    "git-widget-placeholder": "feature-ui-polish",
     "kotlin-language-version-configured": "true",
     "node.js.detected.package.eslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
