@@ -149,13 +149,44 @@
     outline-offset: 2px;
   }
 
+  #dv-chatbot .dv-bot-messages-wrapper {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
   #dv-chatbot .dv-bot-messages {
+    flex: 1;
     display: flex;
     flex-direction: column;
     gap: 10px;
     overflow-y: auto;
     padding: 16px;
     background: var(--dv-bot-surface);
+  }
+
+  #dv-chatbot .dv-bot-scroll-btn {
+    display: grid;
+    height: 32px;
+    width: 32px;
+    place-items: center;
+    border: 1px solid var(--dv-bot-line);
+    border-radius: 9999px;
+    background: #fff;
+    color: var(--dv-bot-cyan-dark);
+    font-size: 13px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(17, 24, 39, 0.15);
+    transition: background 0.2s ease, transform 0.2s ease, opacity 0.2s, visibility 0.2s;
+    opacity: 0.8;
+  }
+
+  #dv-chatbot .dv-bot-scroll-btn:hover {
+    background: var(--dv-bot-surface);
+    transform: scale(1.05);
+    opacity: 1;
   }
 
   #dv-chatbot .dv-bot-msg {
@@ -314,7 +345,17 @@
       </button>
     </div>
 
-    <div class="dv-bot-messages" id="dv-bot-messages" aria-live="polite"></div>
+    <div class="dv-bot-messages-wrapper">
+      <div class="dv-bot-messages" id="dv-bot-messages" aria-live="polite"></div>
+      <div id="dv-bot-scroll-controls" style="position: absolute; right: 12px; bottom: 12px; display: none; flex-direction: column; gap: 6px; z-index: 10;">
+        <button id="dv-bot-scroll-top" class="dv-bot-scroll-btn" type="button" aria-label="Scroll to top">
+          <i class="fa-solid fa-arrow-up"></i>
+        </button>
+        <button id="dv-bot-scroll-bottom" class="dv-bot-scroll-btn" type="button" aria-label="Scroll to bottom">
+          <i class="fa-solid fa-arrow-down"></i>
+        </button>
+      </div>
+    </div>
 
     <div class="dv-bot-chips" id="dv-bot-chips">
       <button class="dv-bot-chip" type="button" data-question="How do I apply?">How do I apply?</button>
@@ -343,7 +384,10 @@
     const sendBtn = document.getElementById('dv-bot-send');
     const closeBtn = document.getElementById('dv-bot-close');
     const chips = document.getElementById('dv-bot-chips');
-    if (!launcher || !panel || !messages || !input || !sendBtn || !closeBtn || !chips) return;
+    const scrollControls = document.getElementById('dv-bot-scroll-controls');
+    const scrollTopBtn = document.getElementById('dv-bot-scroll-top');
+    const scrollBottomBtn = document.getElementById('dv-bot-scroll-bottom');
+    if (!launcher || !panel || !messages || !input || !sendBtn || !closeBtn || !chips || !scrollControls || !scrollTopBtn || !scrollBottomBtn) return;
 
     const R = <%- JSON.stringify(chatRoutes) %>;
 
@@ -434,6 +478,24 @@
     const normalize = (text) => text.toLowerCase().replace(/[^a-z0-9\s']/g, ' ').replace(/\s+/g, ' ').trim();
     const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+    const updateScrollButtons = () => {
+      const isScrollable = messages.scrollHeight > messages.clientHeight;
+      if (!isScrollable) {
+        scrollControls.style.display = 'none';
+        return;
+      }
+      scrollControls.style.display = 'flex';
+      
+      const isAtTop = messages.scrollTop <= 5;
+      const isAtBottom = messages.scrollTop + messages.clientHeight >= messages.scrollHeight - 5;
+
+      scrollTopBtn.style.visibility = isAtTop ? 'hidden' : 'visible';
+      scrollTopBtn.style.opacity = isAtTop ? '0' : '0.8';
+      
+      scrollBottomBtn.style.visibility = isAtBottom ? 'hidden' : 'visible';
+      scrollBottomBtn.style.opacity = isAtBottom ? '0' : '0.8';
+    };
+
     const addMessage = (text, who, isHtml) => {
       const bubble = document.createElement('div');
       bubble.className = `dv-bot-msg dv-bot-${who}`;
@@ -441,6 +503,7 @@
       else bubble.textContent = text;
       messages.appendChild(bubble);
       messages.scrollTop = messages.scrollHeight;
+      updateScrollButtons();
       return bubble;
     };
 
@@ -509,6 +572,7 @@
         addMessage(GREETING, 'assistant');
       }
       input.focus();
+      updateScrollButtons();
     };
 
     const closePanel = () => {
@@ -535,6 +599,14 @@
         closePanel();
         launcher.focus();
       }
+    });
+
+    messages.addEventListener('scroll', updateScrollButtons);
+    scrollTopBtn.addEventListener('click', () => {
+      messages.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+    scrollBottomBtn.addEventListener('click', () => {
+      messages.scrollTo({ top: messages.scrollHeight, behavior: 'smooth' });
     });
   })();
 </script>

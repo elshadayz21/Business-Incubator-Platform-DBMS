@@ -39,6 +39,7 @@
                 <% } %>
 
                 <form action="/v1/auth/setup" method="POST" class="space-y-6">
+                    <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>" />
                     <div>
                         <label class="block text-xs font-black uppercase mb-2 font-display tracking-widest text-slate-500" for="name">Full name</label>
                         <input id="name" name="name" type="text" placeholder="SUPERADMIN NAME" required

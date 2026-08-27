@@ -45,6 +45,7 @@
             <% } %>
 
             <form action="/v1/projects/create" method="POST" class="space-y-10" id="projectForm">
+                <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>" />
 
                 <!-- Section 1: Basic Information -->
                 <div class="rounded-2xl border border-line bg-white p-8 shadow-sm md:p-10">

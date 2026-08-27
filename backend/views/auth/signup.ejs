@@ -85,6 +85,7 @@
                     <% } %>
 
                     <form id="signupForm" action="/v1/auth/register" method="POST" class="space-y-6">
+                        <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>" />
                         <input type="hidden" name="token" value="<%= typeof token !== 'undefined' ? token : '' %>" />
                         <div>
                             <label class="mb-2 block text-xs font-extrabold uppercase tracking-widest text-muted" for="name">Full name</label>
@@ -111,6 +112,19 @@
                                     <i class="fa-solid fa-lock pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm text-muted" aria-hidden="true"></i>
                                     <input id="password" name="password" type="password" autocomplete="new-password" placeholder="••••••••" required
                                         class="w-full rounded-lg border border-line bg-surface py-3 pl-11 pr-4 text-sm font-semibold outline-none transition placeholder:font-normal placeholder:text-slate-400 focus:border-cyan focus:bg-white focus:ring-2 focus:ring-cyan/20" />
+                                </div>
+                                <div id="password-strength-container" class="mt-2 space-y-1.5 hidden">
+                                    <div class="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
+                                        <div id="strength-bar" class="h-full w-0 transition-all duration-300"></div>
+                                    </div>
+                                    <p id="strength-text" class="text-[10px] font-extrabold text-muted uppercase tracking-wider">Strength: Weak</p>
+                                    <ul class="text-[11px] font-semibold space-y-0.5 text-muted">
+                                        <li id="rule-length" class="flex items-center gap-1.5"><span class="rule-icon text-red-500">✗</span> At least 8 characters</li>
+                                        <li id="rule-upper" class="flex items-center gap-1.5"><span class="rule-icon text-red-500">✗</span> At least 1 uppercase letter</li>
+                                        <li id="rule-lower" class="flex items-center gap-1.5"><span class="rule-icon text-red-500">✗</span> At least 1 lowercase letter</li>
+                                        <li id="rule-digit" class="flex items-center gap-1.5"><span class="rule-icon text-red-500">✗</span> At least 1 number</li>
+                                        <li id="rule-special" class="flex items-center gap-1.5"><span class="rule-icon text-red-500">✗</span> At least 1 special character</li>
+                                    </ul>
                                 </div>
                             </div>
 
