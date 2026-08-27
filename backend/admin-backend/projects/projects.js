@@ -2,6 +2,28 @@ import pool from "../../config/db.js";
 import eventBus from "../../utils/eventBus.js";
 import { createNotification } from "../../utils/notificationHelper.js";
 
+// Ensure the project_status_history table exists for audit trail
+let historyTableReady = false;
+const ensureProjectStatusHistoryTable = async () => {
+  if (historyTableReady) return;
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS project_status_history (
+        id SERIAL PRIMARY KEY,
+        project_id INT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+        acted_by_user_id INT REFERENCES users(id) ON DELETE SET NULL,
+        actor_role VARCHAR(50),
+        status VARCHAR(100),
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+    historyTableReady = true;
+  } catch (err) {
+    console.error("Failed to ensure project_status_history table:", err.message);
+  }
+};
+
 // Get All Projects
 export const getAllProjects = async () => {
   const res = await pool.query(`
@@ -167,6 +189,7 @@ export const toggleProjectApproved = async (id) => {
   const res = await pool.query(
       `UPDATE projects
     SET approved = NOT approved,
+        status = CASE WHEN NOT approved THEN 'approved' ELSE 'rejected' END,
         updated_at = CURRENT_TIMESTAMP
     WHERE id = $1
     RETURNING *;`,
@@ -177,7 +200,7 @@ export const toggleProjectApproved = async (id) => {
   if (!project) return null;
 
   // --- LOG THE ADMIN'S ACTION (Audit Trail) ---
-  // We assume Admin ID 1 for now, or you can pass req.session.userId from the controller later
+  await ensureProjectStatusHistoryTable();
   await pool.query(
       `INSERT INTO project_status_history (project_id, acted_by_user_id, actor_role, status, notes) 
      VALUES ($1, $2, 'Admin', $3, $4)`,
@@ -578,6 +601,7 @@ export const removeProjectMentor = async (projectId) => {
 // GET PROJECT HISTORY FOR ADMIN AUDIT TRAIL
 export const getProjectHistory = async (projectId) => {
   try {
+    await ensureProjectStatusHistoryTable();
     const res = await pool.query(
         `SELECT 
          psh.*, 

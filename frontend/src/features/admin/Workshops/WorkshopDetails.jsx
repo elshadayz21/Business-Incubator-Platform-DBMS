@@ -5,7 +5,6 @@ import {
   MapPin,
   User,
   BookOpen,
-  ClipboardList,
 } from "lucide-react";
 
 const WorkshopDetails = ({ workshop }) => {
@@ -18,8 +17,6 @@ const WorkshopDetails = ({ workshop }) => {
       day: "numeric",
     });
   };
-
-  const enrollments = workshop?.enrollments || [];
 
   return (
     <div className="space-y-6 font-sans">
@@ -106,69 +103,6 @@ const WorkshopDetails = ({ workshop }) => {
             <span className="text-[#526274]">{parseInt(workshop.capacity) || 0}</span>
           </p>
         </div>
-      </div>
-
-      {/* Enrollments Table */}
-      <div className="bg-white border border-[#D6E4EA] rounded-2xl shadow-xs overflow-hidden">
-        <div className="p-4 border-b border-[#D6E4EA] bg-[#F6FAFC] flex items-center gap-2">
-          <ClipboardList size={16} className="text-[#00ADEF]" />
-          <h3 className="font-bold text-xs text-[#111827] uppercase tracking-wider">
-            Enrolled Entrepreneurs &amp; Feedback
-          </h3>
-        </div>
-
-        {enrollments.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="bg-white border-b border-[#D6E4EA] text-[#526274] font-bold">
-                  <th className="p-3.5">Name</th>
-                  <th className="p-3.5">Email</th>
-                  <th className="p-3.5 text-center">Attendance</th>
-                  <th className="p-3.5 text-center">Rating</th>
-                  <th className="p-3.5">Comment</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#D6E4EA]">
-                {enrollments.map((attendee) => (
-                  <tr key={attendee.id} className="hover:bg-[#F6FAFC]">
-                    <td className="p-3.5 font-bold text-[#111827]">
-                      {attendee.entrepreneurName || attendee.name || "-"}
-                    </td>
-                    <td className="p-3.5 text-[#526274]">
-                      {attendee.entrepreneurEmail || attendee.email || "-"}
-                    </td>
-                    <td className="p-3.5 text-center">
-                      <span
-                        className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                          attendee.attended
-                            ? "bg-emerald-100 text-emerald-800"
-                            : "bg-slate-100 text-slate-600"
-                        }`}
-                      >
-                        {attendee.attended ? "Present" : "Absent"}
-                      </span>
-                    </td>
-                    <td className="p-3.5 text-center font-bold text-[#E38524]">
-                      {attendee.feedbackRating || attendee.feedback_rating ? (
-                        <span>★ {attendee.feedbackRating || attendee.feedback_rating}</span>
-                      ) : (
-                        <span className="text-[#526274] font-normal">-</span>
-                      )}
-                    </td>
-                    <td className="p-3.5 text-[#526274] italic truncate max-w-xs">
-                      {attendee.feedbackComment || attendee.feedback_comment || "No comment"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="p-8 text-center text-[#526274] text-xs italic">
-            No active enrollments for this session.
-          </div>
-        )}
       </div>
     </div>
   );

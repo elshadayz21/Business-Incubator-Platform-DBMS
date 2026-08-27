@@ -401,9 +401,11 @@ router.get(
 );
 router.get(
   "/projects/:id",
-  asyncHandler(async (req, res) =>
-    res.json(await getProjectById(req.params.id)),
-  ),
+  asyncHandler(async (req, res) => {
+    const project = await getProjectById(req.params.id);
+    if (!project) return res.status(404).json({ error: "Project not found" });
+    res.json(project);
+  }),
 );
 router.put(
   "/projects/:id/status",
@@ -467,7 +469,10 @@ router.put(
     "/funding/:id/status",
     asyncHandler(async (req, res) => {
       const { status, notes, approvedAmount } = req.body;
-      const result = await updateFundingRequestStatus(req.params.id, status, notes, approvedAmount);
+      if (!status || typeof status !== "string" || !status.trim()) {
+        return res.status(400).json({ error: "Status is required" });
+      }
+      const result = await updateFundingRequestStatus(req.params.id, status.trim(), notes, approvedAmount);
       res.json(result);
     })
 );

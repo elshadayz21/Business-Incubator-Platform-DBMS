@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import {
   Plus,
   Search,
-  Download,
   Calendar,
   Users,
   Zap,
@@ -76,20 +75,6 @@ const Workshops = () => {
       setShowDetailsModal(true);
     } catch (error) {
       console.error("Error fetching workshop details:", error);
-    }
-  };
-
-  const handleExportReport = async (type) => {
-    try {
-      let filePath;
-      if (type === "attendance") {
-        filePath = await window.electron.invoke("reports:export-attendance");
-      } else {
-        filePath = await window.electron.invoke("reports:export-feedback");
-      }
-      alert("Report exported to: " + filePath);
-    } catch (error) {
-      console.error("Error exporting report:", error);
     }
   };
 
@@ -178,20 +163,6 @@ const Workshops = () => {
             <option value="ongoing">Ongoing</option>
             <option value="completed">Completed</option>
           </select>
-
-          <button
-            onClick={() => handleExportReport("attendance")}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-[#D6E4EA] bg-[#F6FAFC] text-xs font-bold text-[#006F9E] hover:bg-[#EAF8FC] hover:border-[#00ADEF] transition"
-          >
-            <Download size={14} /> Attendance Excel
-          </button>
-
-          <button
-            onClick={() => handleExportReport("feedback")}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-[#D6E4EA] bg-[#F6FAFC] text-xs font-bold text-[#006F9E] hover:bg-[#EAF8FC] hover:border-[#00ADEF] transition"
-          >
-            <Download size={14} /> Feedback Excel
-          </button>
         </div>
       </div>
 

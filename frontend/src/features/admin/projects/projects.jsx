@@ -161,8 +161,16 @@ export default function Projects() {
     }
   };
 
+  const normalizeStage = (s) => {
+    const v = String(s || "").trim().toLowerCase().replace(/[\s_]+/g, "-");
+    if (["completed", "scale-up", "scaleup"].includes(v)) return "completed";
+    if (["in-progress", "inprogress", "mvp"].includes(v)) return "in-progress";
+    if (v === "idea") return "idea";
+    return v;
+  };
+
   const filteredProjects = projects.filter((project) => {
-    const matchesFilter = filter === "all" || project.stage === filter;
+    const matchesFilter = filter === "all" || normalizeStage(project.stage) === filter;
     const matchesSearch =
         project.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         project.domain?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -257,19 +265,22 @@ export default function Projects() {
           <span className="text-xs font-bold text-[#526274] flex items-center gap-1 mr-1">
             <Filter size={14} /> Stage:
           </span>
-            {["all", "idea", "in-progress", "completed"].map((status) => (
+            {["all", "idea", "in-progress", "completed"].map((status) => {
+                const labels = { "all": "All Stages", "idea": "Idea", "in-progress": "MVP", "completed": "Scale-Up" };
+                return (
                 <button
                     key={status}
                     onClick={() => setFilter(status)}
-                    className={`px-3.5 py-2 text-xs font-bold rounded-xl transition-all capitalize ${
+                    className={`px-3.5 py-2 text-xs font-bold rounded-xl transition-all ${
                         filter === status
                             ? "bg-[#00ADEF] text-white shadow-xs"
                             : "bg-[#F6FAFC] text-[#526274] border border-[#D6E4EA] hover:bg-[#EAF8FC] hover:text-[#006F9E]"
                     }`}
                 >
-                  {status === "all" ? "All Stages" : status.replace("-", " ")}
+                  {labels[status]}
                 </button>
-            ))}
+                );
+            })}
           </div>
         </div>
 
@@ -326,7 +337,7 @@ export default function Projects() {
                                         : "bg-[#FFF1E3] text-[#E38524] border border-[#E38524]/30"
                             }`}
                         >
-                          {project.stage === "in-progress" ? "MVP / Building" : project.stage}
+                          {project.stage === "in-progress" ? "MVP" : project.stage === "completed" ? "Scale-Up" : project.stage}
                         </span>
                           </td>
 

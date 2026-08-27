@@ -37,7 +37,7 @@ export const getEntrepreneurDashboard = async (userId, email) => {
       ),
       safeQuery("projects", () =>
         pool.query(
-          `SELECT p.id, p.name, p.domain, p.stage, p.status, p.created_at, pe.role_in_project
+          `SELECT p.id, p.name, p.domain, p.stage, p.status, p.approved, p.created_at, pe.role_in_project
            FROM project_entrepreneurs pe
            JOIN projects p ON p.id = pe.project_id
            WHERE pe.user_id = $1

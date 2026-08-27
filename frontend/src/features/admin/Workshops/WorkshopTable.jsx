@@ -52,6 +52,11 @@ const WorkshopTable = ({ workshops, onView, onDelete }) => {
     );
   };
 
+  const formatDate = (dateString) => {
+    if (!dateString) return "-";
+    return new Date(dateString).toLocaleDateString("en-GB", { month: "short", day: "numeric", year: "numeric" });
+  };
+
   const formatDateRange = (startStr, endStr) => {
     if (!startStr) return "-";
 

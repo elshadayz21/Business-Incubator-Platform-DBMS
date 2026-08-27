@@ -2,6 +2,28 @@ import pool from "../../config/db.js";
 //import eventBus from "../../utils/eventBus.js";
 import { createNotification } from "../../utils/notificationHelper.js";
 
+// Ensure the funding_status_history table exists for audit trail
+let fundingHistoryTableReady = false;
+const ensureFundingStatusHistoryTable = async () => {
+  if (fundingHistoryTableReady) return;
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS funding_status_history (
+        id SERIAL PRIMARY KEY,
+        funding_id INT NOT NULL REFERENCES funding_requests(id) ON DELETE CASCADE,
+        acted_by_user_id INT REFERENCES users(id) ON DELETE SET NULL,
+        actor_role VARCHAR(50),
+        status VARCHAR(100),
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+    fundingHistoryTableReady = true;
+  } catch (err) {
+    console.error("Failed to ensure funding_status_history table:", err.message);
+  }
+};
+
 // Get all funding requests
 export const getAllFundingRequests = async (query = "") => {
     try {
@@ -263,6 +285,7 @@ export const updateFundingRequestStatus = async (id, status, notes, approvedAmou
         const request = res.rows[0];
 
         // --- LOG THE ADMIN'S ACTION (Audit Trail) ---
+        await ensureFundingStatusHistoryTable();
         await pool.query(
             `INSERT INTO funding_status_history (funding_id, acted_by_user_id, actor_role, status, notes) 
        VALUES ($1, $2, 'Admin', $3, $4)`,
@@ -320,6 +343,7 @@ export const founderRespondToFunding = async (fundingId, userId, action) => {
         );
 
         // --- LOG THE FOUNDER'S ACTION (Audit Trail) ---
+        await ensureFundingStatusHistoryTable();
         await pool.query(
             `INSERT INTO funding_status_history (funding_id, acted_by_user_id, actor_role, status, notes) 
        VALUES ($1, $2, 'Founder', $3, $4)`,
@@ -350,6 +374,7 @@ export const founderRespondToFunding = async (fundingId, userId, action) => {
 // GET FUNDING HISTORY FOR ADMIN AUDIT TRAIL
 export const getFundingHistory = async (fundingId) => {
     try {
+        await ensureFundingStatusHistoryTable();
         const res = await pool.query(
             `SELECT 
          fsh.*, 

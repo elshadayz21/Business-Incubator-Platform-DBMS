@@ -611,7 +611,7 @@ const EntrepreneurPortal = () => {
                       </p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      <StageBadge status={p.status || p.stage} />
+                      <StageBadge status={p.approved ? "approved" : (p.status || p.stage)} />
                       <a
                         href={`/v1/projects/${p.id}`}
                         className="inline-flex items-center gap-1 rounded-lg border border-[#D6E4EA] bg-white px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[#006F9E] hover:bg-[#EAF8FC] hover:border-[#00ADEF] transition-all"
