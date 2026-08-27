@@ -59,7 +59,9 @@
     "postgres": "^3.4.9",
     "sequelize": "^6.37.7",
     "sharp": "^0.34.5",
-    "validator": "^13.15.23"
+    "validator": "^13.15.23",
+    "winston": "^3.19.0",
+    "xss": "^1.0.15"
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.1.18",
