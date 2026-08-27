@@ -68,6 +68,25 @@ export default function Announcements() {
 
     useEffect(() => { fetchAnnouncements(); }, []);
 
+    const handleFileChange = (file, isEdit = false) => {
+        if (!file) return;
+        const allowedExtensions = ["pdf", "doc", "docx", "png", "jpg", "jpeg"];
+        const extension = file.name.split(".").pop().toLowerCase();
+        if (!allowedExtensions.includes(extension)) {
+            window.alert("Invalid file type. Only PDF, DOC, DOCX, PNG, JPG, and JPEG files are allowed.");
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            window.alert("File size exceeds the 5MB limit.");
+            return;
+        }
+        if (isEdit) {
+            setEditDocument(file);
+        } else {
+            setDocument(file);
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!title || !content) return;
@@ -242,7 +261,7 @@ export default function Announcements() {
                                     <label className="flex-1 cursor-pointer flex items-center gap-2 px-4 py-3 border border-dashed border-[#00ADEF] rounded-xl bg-[#EAF8FC] hover:bg-[#D6E4EA] transition">
                                         <FileUp size={18} className="text-[#00ADEF]" />
                                         <span className="text-sm font-bold text-[#006F9E]">{document ? document.name : "Choose a file..."}</span>
-                                        <input type="file" className="hidden" onChange={(e) => setDocument(e.target.files[0])} accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" />
+                                        <input type="file" className="hidden" onChange={(e) => handleFileChange(e.target.files[0], false)} accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" />
                                     </label>
                                 </div>
                             </div>
@@ -394,7 +413,7 @@ export default function Announcements() {
                                     <label className="flex-1 cursor-pointer flex items-center gap-2 px-4 py-3 border border-dashed border-[#00ADEF] rounded-xl bg-[#EAF8FC] hover:bg-[#D6E4EA] transition">
                                         <FileUp size={18} className="text-[#00ADEF]" />
                                         <span className="text-sm font-bold text-[#006F9E]">{editDocument ? editDocument.name : "Choose a file..."}</span>
-                                        <input type="file" className="hidden" onChange={(e) => setEditDocument(e.target.files[0])} accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" />
+                                        <input type="file" className="hidden" onChange={(e) => handleFileChange(e.target.files[0], true)} accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" />
                                     </label>
                                 </div>
                             </div>
