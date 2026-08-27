@@ -32,6 +32,7 @@ export default function UserMenu({
   const handleLogout =
     onLogout ||
     (async () => {
+      if (!window.confirm('Are you sure you want to log out?')) return;
       try {
         await fetch("/v1/auth/logout", { method: "POST" });
       } catch (e) {

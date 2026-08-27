@@ -105,27 +105,16 @@ const Workshops = () => {
   return (
     <div className="space-y-6 font-sans">
       {/* Header Section */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-[#D6E4EA] shadow-xs">
-        <div>
-          <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#006F9E] block mb-1">
-            Capacity Building
-          </span>
-          <h1 className="text-2xl sm:text-3xl font-bold text-[#111827] font-['Space_Grotesk']">
-            Workshops &amp; Training Hub
-          </h1>
-          <p className="text-xs text-[#526274] mt-1">
-            Schedule educational cohorts, track entrepreneur attendance, and analyze training feedback.
-          </p>
-        </div>
 
-        <button
+
+      <button
           onClick={() => setShowAddForm(true)}
           className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#E38524] text-white font-extrabold text-xs uppercase tracking-wider shadow-xs hover:bg-[#C97019] transition-all shrink-0"
-        >
-          <Plus size={18} />
-          <span>New Workshop</span>
-        </button>
-      </div>
+      >
+        <Plus size={18} />
+        <span>New Workshop</span>
+      </button>
+
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">

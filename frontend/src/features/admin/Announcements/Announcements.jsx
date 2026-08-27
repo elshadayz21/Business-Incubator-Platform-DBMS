@@ -216,11 +216,7 @@ export default function Announcements() {
     return (
         <div className="flex-1 overflow-y-auto bg-[#F6FAFC] h-screen font-sans text-[#111827]">
             <div className="p-6 lg:p-10 max-w-[1920px] mx-auto">
-                <div className="mb-10">
-                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#006F9E] block mb-2">Content Management</span>
-                    <h1 className="text-4xl font-extrabold tracking-[-.04em] text-cyan-dark sm:text-5xl">Announcements CMS</h1>
-                    <p className="mt-3 text-base text-[#526274] font-medium">Publish news, set deadlines for open calls, and attach documents.</p>
-                </div>
+
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     <div className="bg-white border border-[#D6E4EA] rounded-2xl p-6 shadow-xs">

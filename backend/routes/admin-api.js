@@ -1,6 +1,7 @@
 import multer from "multer";
 import path from "path";
 import { getFundingHistory } from "../admin-backend/funding/funding.js";
+import { getProjectHistory, getAssignedMentors } from "../admin-backend/projects/projects.js"; // Add to imports
 
 // Configure Multer for file uploads
 const storage = multer.diskStorage({
@@ -1111,6 +1112,31 @@ router.use((err, req, res, next) => {
   const status = err && err.statusCode ? err.statusCode : 500;
   res.status(status).json({ error: message });
 });
+// Get Project History Route
+router.get(
+    "/projects/:id/history",
+    asyncHandler(async (req, res) => {
+      try {
+        const history = await getProjectHistory(req.params.id);
+        res.json(history);
+      } catch (error) {
+        res.status(500).json({ message: "Failed to load project history." });
+      }
+    })
+);
+
+// Get Assigned Mentors Route
+router.get(
+    "/projects/:id/mentors",
+    asyncHandler(async (req, res) => {
+      try {
+        const mentors = await getAssignedMentors(req.params.id);
+        res.json(mentors);
+      } catch (error) {
+        res.status(500).json({ message: "Failed to load assigned mentors." });
+      }
+    })
+);
 
 export default router;
 

@@ -132,21 +132,7 @@ const Dashboard = () => {
   return (
     <div className="space-y-6">
       {/* Header Banner */}
-      <div className="bg-gradient-to-r from-[#00ADEF] via-[#078CC8] to-[#0878B4] rounded-2xl p-6 sm:p-8 text-white shadow-sm relative overflow-hidden">
-        <div className="pointer-events-none absolute -right-16 -top-16 w-64 h-64 rounded-full border-30 border-white/10" />
-        <div className="relative z-10 space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 text-xs font-bold uppercase tracking-wider text-white">
-            <Sparkles size={12} className="text-[#E38524]" />
-            DxValley Incubation Center • Analytics Overview
-          </div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight font-['Space_Grotesk']">
-            Dashboard Overview
-          </h1>
-          <p className="text-sm text-white/85 max-w-2xl leading-relaxed">
-            Real-time tracking of cohort progress, mentorship assignments, workshop engagements, and startup milestones under Cooperative Bank of Oromia.
-          </p>
-        </div>
-      </div>
+
 
       {/* Stat Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
