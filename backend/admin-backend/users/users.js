@@ -1,6 +1,6 @@
 import pool from "../../config/db.js";
 import { hashPassword } from "../../utils/hash.js";
-import { generateUserCode } from "../../utils/helpers.js";
+import { generateUserCode, isPasswordStrong } from "../../utils/helpers.js";
 import { ROLES } from "../../utils/constants.js";
 
 export const getAllUsers = async () => {
@@ -13,6 +13,9 @@ export const getAllUsers = async () => {
 export const createAdminUser = async ({ name, email, password, role }) => {
   if (![ROLES.ADMIN, ROLES.SUPERADMIN].includes(role)) {
     throw new Error("Only admin or superadmin roles can be created here.");
+  }
+  if (!isPasswordStrong(password)) {
+    throw new Error("Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.");
   }
   const hashed = await hashPassword(password);
   const user_code = generateUserCode();
@@ -58,8 +61,8 @@ export const setUserStatus = async (id, status) => {
 };
 
 export const resetUserPassword = async (id, password) => {
-  if (!password || String(password).length < 8) {
-    throw new Error("Password must be at least 8 characters.");
+  if (!password || !isPasswordStrong(String(password))) {
+    throw new Error("Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.");
   }
   const hashed = await hashPassword(String(password));
   const res = await pool.query(

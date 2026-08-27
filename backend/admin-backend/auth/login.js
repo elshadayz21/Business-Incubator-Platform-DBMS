@@ -1,6 +1,7 @@
 import { findUserByEmail } from "../models/user.model.js";
 import bcrypt from "bcrypt";
 import { ROLES } from "../../utils/constants.js";
+import pool from "../../config/db.js";
 
 export default async function loginRequest(credentials) {
   try {
@@ -26,16 +27,16 @@ export default async function loginRequest(credentials) {
       };
     }
 
-    console.log("4. Stored Password (Hash) in DB:", user.password);
+    // Check brute-force lockout status
+    if (user.lockout_until && new Date() < new Date(user.lockout_until)) {
+      const minutesRemaining = Math.ceil((new Date(user.lockout_until) - new Date()) / 60000);
+      return {
+        success: false,
+        message: `Account is temporarily locked. Try again in ${minutesRemaining} minutes.`,
+      };
+    }
 
-    // 🔥 السطر ده هو الحل: هنخلي النظام يولد هاش جديد لنفس الباسورد عشان نشوف شكله إيه
-    const generatedHash = await bcrypt.hash(credentials.password, 10);
-    console.log(
-      "🔐 CORRECT HASH for your password should look like:",
-      generatedHash,
-    );
-
-    // المقارنة
+    // Comparison
     const passwordMatch = await bcrypt.compare(
       credentials.password,
       user.password,
@@ -44,8 +45,26 @@ export default async function loginRequest(credentials) {
 
     if (!passwordMatch) {
       console.log("❌ Passwords do not match!");
-      // نصيحة: انسخ الهاش اللي طلعلك في الخطوة اللي فوق وحطه في الداتا بيز
-      return { success: false, message: "Incorrect password" };
+      const failedAttempts = (user.failed_login_attempts || 0) + 1;
+      if (failedAttempts >= 5) {
+        const lockoutTime = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+        await pool.query("UPDATE users SET failed_login_attempts = $1, lockout_until = $2 WHERE id = $3", [failedAttempts, lockoutTime, user.id]);
+        return {
+          success: false,
+          message: "Too many failed attempts. Your account is temporarily locked for 15 minutes.",
+        };
+      } else {
+        await pool.query("UPDATE users SET failed_login_attempts = $1 WHERE id = $2", [failedAttempts, user.id]);
+        return {
+          success: false,
+          message: `Incorrect password. Attempts remaining: ${5 - failedAttempts}`,
+        };
+      }
+    }
+
+    // Reset attempts on successful login
+    if ((user.failed_login_attempts || 0) > 0 || user.lockout_until) {
+      await pool.query("UPDATE users SET failed_login_attempts = 0, lockout_until = NULL WHERE id = $1", [user.id]);
     }
 
     if (!Object.values(ROLES).includes(user.role)) {

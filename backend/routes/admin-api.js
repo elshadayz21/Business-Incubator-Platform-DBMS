@@ -14,6 +14,9 @@ const storage = multer.diskStorage({
 });
 const upload = multer({
   storage: storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB
+  },
   fileFilter: (req, file, cb) => {
     // Security: Only allow PDFs, Word docs and images.
     // Accept the file if the extension is allowed AND the mimetype is either a
@@ -171,6 +174,7 @@ import {
 } from "../admin-backend/emails/emails.js";
 import ExcelJS from "exceljs";
 import { authorizeRole } from "../middleware/check_roles.middleware.js";
+import { loginLimiter } from "../middleware/rate_limiter.middleware.js";
 import { ROLES } from "../utils/constants.js";
 
 
@@ -191,6 +195,7 @@ const asyncHandler = (fn) => (req, res, next) => {
 // Public Admin APIs
 router.post(
   "/auth/login",
+  loginLimiter,
   asyncHandler(async (req, res) => {
     const result = await loginRequest(req.body);
     if (result.success) {

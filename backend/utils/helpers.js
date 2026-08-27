@@ -6,3 +6,12 @@ export function generateUserCode() {
   const random = Math.floor(1000 + Math.random() * 9000); 
   return `USR-${y}${m}${d}-${random}`;
 }
+
+export function isPasswordStrong(password) {
+  if (!password || password.length < 8) return false;
+  const hasUppercase = /[A-Z]/.test(password);
+  const hasLowercase = /[a-z]/.test(password);
+  const hasDigit = /[0-9]/.test(password);
+  const hasSpecial = /[^A-Za-z0-9]/.test(password);
+  return hasUppercase && hasLowercase && hasDigit && hasSpecial;
+}
