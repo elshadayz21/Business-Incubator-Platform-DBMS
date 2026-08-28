@@ -16,9 +16,11 @@ import {
   Pencil,
   PanelLeftClose,
   PanelLeftOpen,
+  MessageCircle,
 } from "lucide-react";
 import { getEntrepreneurDashboard } from "../../services/portalService";
 import UserMenu from "../../components/UserMenu";
+import ChatPanel from "../../components/ChatPanel";
 
 const STAGES = ["idea", "mvp", "scale-up"];
 
@@ -245,6 +247,7 @@ const EntrepreneurPortal = () => {
     { id: 7, icon: Bell, label: "Notifications", badge: unreadNotifications || null },
     { id: 8, icon: Scroll, label: "Activity Timeline" },
     { id: 9, icon: BarChart3, label: "Platform Stats" },
+    { id: 10, icon: MessageCircle, label: "Chat" },
   ];
 
   const renderContent = () => {
@@ -977,6 +980,10 @@ const EntrepreneurPortal = () => {
           </div>
         </div>
       );
+    }
+
+    if (activeTab === "Chat") {
+      return <ChatPanel currentUser={currentUser} />;
     }
 
     // Default: Dashboard
