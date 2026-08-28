@@ -1,3 +1,5 @@
+import logger from "../../utils/logger.js";
+
 // 1. 404 Not Found
 
 const getCommonData = (req) => ({
@@ -69,7 +71,7 @@ export const get429 = (req, res) => {
 
 // 5. 500 Internal Server Error
 export const get500 = (err, req, res, next) => {
-  console.error("SERVER ERROR:", err);
+  logger.error("SERVER ERROR:", err);
   res.status(500).render("error/error", {
     ...getCommonData(req),
     title: "Server Error",

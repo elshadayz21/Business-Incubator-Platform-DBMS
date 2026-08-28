@@ -4,6 +4,8 @@
 --                stage/status: idea | in-progress | completed
 --              Safe to run multiple times.
 
+ALTER TABLE projects DROP CONSTRAINT IF EXISTS chk_stage;
+
 UPDATE projects SET
   stage = CASE LOWER(TRIM(stage))
     WHEN 'mvp' THEN 'in-progress'
@@ -38,3 +40,5 @@ SET status = stage,
     updated_at = CURRENT_TIMESTAMP
 WHERE stage IN ('idea', 'in-progress', 'completed')
   AND status IS DISTINCT FROM stage;
+
+ALTER TABLE projects ADD CONSTRAINT chk_stage CHECK (stage IN ('idea', 'in-progress', 'completed'));

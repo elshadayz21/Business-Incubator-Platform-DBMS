@@ -64,10 +64,16 @@ form.addEventListener('submit', function (e) {
         return;
     }
 
-    // Validate password length
-    if (passwordValue.length < 8) {
+    // Validate password complexity
+    const hasLength = passwordValue.length >= 8;
+    const hasUpper = /[A-Z]/.test(passwordValue);
+    const hasLower = /[a-z]/.test(passwordValue);
+    const hasDigit = /[0-9]/.test(passwordValue);
+    const hasSpecial = /[^A-Za-z0-9]/.test(passwordValue);
+
+    if (!hasLength || !hasUpper || !hasLower || !hasDigit || !hasSpecial) {
         e.preventDefault();
-        showError('Password must be at least 8 characters long.');
+        showError('Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.');
         return;
     }
 
@@ -87,8 +93,74 @@ form.addEventListener('submit', function (e) {
 
 });
 
+const passwordStrengthContainer = document.getElementById('password-strength-container');
+const strengthBar = document.getElementById('strength-bar');
+const strengthText = document.getElementById('strength-text');
+const ruleLength = document.getElementById('rule-length');
+const ruleUpper = document.getElementById('rule-upper');
+const ruleLower = document.getElementById('rule-lower');
+const ruleDigit = document.getElementById('rule-digit');
+const ruleSpecial = document.getElementById('rule-special');
+
+function updateRule(element, isValid) {
+    const icon = element.querySelector('.rule-icon');
+    if (isValid) {
+        icon.textContent = '✓';
+        icon.className = 'rule-icon text-green-500';
+        element.className = 'flex items-center gap-1.5 text-green-700';
+    } else {
+        icon.textContent = '✗';
+        icon.className = 'rule-icon text-red-500';
+        element.className = 'flex items-center gap-1.5 text-muted';
+    }
+}
+
 // Real-time password validation
 password.addEventListener('input', function () {
+    const value = password.value;
+    if (value === '') {
+        passwordStrengthContainer.classList.add('hidden');
+        return;
+    }
+
+    passwordStrengthContainer.classList.remove('hidden');
+
+    const hasLength = value.length >= 8;
+    const hasUpper = /[A-Z]/.test(value);
+    const hasLower = /[a-z]/.test(value);
+    const hasDigit = /[0-9]/.test(value);
+    const hasSpecial = /[^A-Za-z0-9]/.test(value);
+
+    updateRule(ruleLength, hasLength);
+    updateRule(ruleUpper, hasUpper);
+    updateRule(ruleLower, hasLower);
+    updateRule(ruleDigit, hasDigit);
+    updateRule(ruleSpecial, hasSpecial);
+
+    // Calculate score
+    let score = 0;
+    if (hasLength) score += 20;
+    if (hasUpper) score += 20;
+    if (hasLower) score += 20;
+    if (hasDigit) score += 20;
+    if (hasSpecial) score += 20;
+
+    strengthBar.style.width = `${score}%`;
+
+    if (score < 40) {
+        strengthBar.className = 'h-full bg-red-500 transition-all duration-300';
+        strengthText.textContent = 'Strength: Weak';
+        strengthText.className = 'text-[10px] font-extrabold text-red-600 uppercase tracking-wider';
+    } else if (score < 100) {
+        strengthBar.className = 'h-full bg-yellow-500 transition-all duration-300';
+        strengthText.textContent = 'Strength: Medium';
+        strengthText.className = 'text-[10px] font-extrabold text-yellow-600 uppercase tracking-wider';
+    } else {
+        strengthBar.className = 'h-full bg-green-500 transition-all duration-300';
+        strengthText.textContent = 'Strength: Strong';
+        strengthText.className = 'text-[10px] font-extrabold text-green-600 uppercase tracking-wider';
+    }
+
     if (confirmPassword.value !== '') {
         confirmPassword.dispatchEvent(new Event('input'));
     }

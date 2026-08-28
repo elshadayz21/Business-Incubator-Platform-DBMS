@@ -45,6 +45,7 @@
                 </a>
 
                 <form action="/v1/funding/create" method="POST" class="space-y-8" id="fundingForm">
+                    <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>" />
 
                     <!-- Section 1: Select Project -->
                     <div class="rounded-2xl border border-line bg-white p-6 shadow-[0_12px_30px_rgba(0,88,125,.08)] sm:p-8">

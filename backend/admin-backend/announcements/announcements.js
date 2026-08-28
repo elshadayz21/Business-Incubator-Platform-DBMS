@@ -1,4 +1,5 @@
 import pool from "../../config/db.js";
+import xss from "xss";
 
 // GET ALL ANNOUNCEMENTS
 export const getAllAnnouncements = async () => {
@@ -20,8 +21,8 @@ export const createAnnouncement = async (data) => {
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
      RETURNING *`,
         [
-            title,
-            content,
+            title ? xss(title) : null,
+            content ? xss(content) : null,
             deadline || null,
             document_url || null,
             is_open_call || false,
@@ -50,8 +51,8 @@ export const updateAnnouncement = async (id, data) => {
      WHERE id = $9 
      RETURNING *`,
         [
-            title,
-            content,
+            title ? xss(title) : null,
+            content ? xss(content) : null,
             deadline || null,
             document_url || null,
             is_open_call || false,

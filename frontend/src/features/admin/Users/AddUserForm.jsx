@@ -31,8 +31,16 @@ const AddUserForm = ({ onClose, onSuccess }) => {
       setError("Name, Email, and Password are required.");
       return;
     }
-    if (formData.password.length < 8) {
-      setError("Password must be at least 8 characters long.");
+    const isPasswordStrong = (pw) => {
+      if (!pw || pw.length < 8) return false;
+      const hasUpper = /[A-Z]/.test(pw);
+      const hasLower = /[a-z]/.test(pw);
+      const hasDigit = /[0-9]/.test(pw);
+      const hasSpecial = /[^A-Za-z0-9]/.test(pw);
+      return hasUpper && hasLower && hasDigit && hasSpecial;
+    };
+    if (!isPasswordStrong(formData.password)) {
+      setError("Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.");
       return;
     }
 
@@ -66,7 +74,7 @@ const AddUserForm = ({ onClose, onSuccess }) => {
           <input
             type="text"
             value={formData.name}
-            onChange={(e) => handleChange("name", e.target.value)}
+            onChange={(e) => handleChange("name", e.target.value.replace(/[<>;]/g, ""))}
             placeholder="Full Name"
             disabled={loading}
             className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#D6E4EA] rounded-xl text-xs font-medium text-[#111827] outline-none focus:border-[#00ADEF]"
@@ -81,7 +89,7 @@ const AddUserForm = ({ onClose, onSuccess }) => {
           <input
             type="email"
             value={formData.email}
-            onChange={(e) => handleChange("email", e.target.value)}
+            onChange={(e) => handleChange("email", e.target.value.replace(/[<>;]/g, ""))}
             placeholder="user@dxvalley.com"
             disabled={loading}
             className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#D6E4EA] rounded-xl text-xs font-medium text-[#111827] outline-none focus:border-[#00ADEF]"

@@ -705,9 +705,9 @@ const EntrepreneurPortal = () => {
                                     <option value="Founder Accepted">Accept Offer</option>
                                     <option value="Founder Declined">Decline Offer</option>
                                   </select>
-                              ) : f.status === 'Offer Under Review' && f.founder_action === 'Founder Accepted' ? (
+                              ) : f.founder_action === 'Founder Accepted' ? (
                                   <span className="text-[10px] font-bold text-green-700 uppercase">Accepted</span>
-                              ) : f.status === 'Offer Under Review' && f.founder_action === 'Founder Declined' ? (
+                              ) : f.founder_action === 'Founder Declined' ? (
                                   <span className="text-[10px] font-bold text-rose-700 uppercase">Declined</span>
                               ) : (
                                   <span className="text-[10px] font-bold text-[#526274]">—</span>

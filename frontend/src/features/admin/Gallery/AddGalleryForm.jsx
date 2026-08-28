@@ -220,7 +220,7 @@ const AddGalleryForm = ({ initialData = null, onClose, onSuccess, categories: pr
         <input
           type="text"
           value={title}
-          onChange={(e) => { setTitle(e.target.value); setErrors((p) => ({ ...p, title: undefined })); }}
+          onChange={(e) => { setTitle(e.target.value.replace(/[<>;]/g, "")); setErrors((p) => ({ ...p, title: undefined })); }}
           maxLength={MAX_TITLE_LENGTH}
           required
           className={`w-full px-4 py-2.5 rounded-xl border ${errors.title ? "border-rose-300" : "border-[#D6E4EA]"} bg-white text-sm`}
@@ -233,7 +233,7 @@ const AddGalleryForm = ({ initialData = null, onClose, onSuccess, categories: pr
         <label className="block text-xs font-bold text-[#526274] mb-2">Description</label>
         <textarea
           value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          onChange={(e) => setDescription(e.target.value.replace(/[<>;]/g, ""))}
           rows={3}
           className="w-full px-4 py-2.5 rounded-xl border border-[#D6E4EA] bg-white text-sm"
           placeholder="Optional description or caption"

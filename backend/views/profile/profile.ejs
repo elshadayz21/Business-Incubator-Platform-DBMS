@@ -21,6 +21,7 @@
                     <span>Back to Dashboard</span>
                 </a>
                 <form action="/v1/auth/logout" method="POST" class="inline">
+                    <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>" />
                     <button type="submit"
                         class="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-3.5 py-2 text-xs font-bold text-red-600 transition hover:bg-red-600 hover:text-white">
                         <i class="fa-solid fa-right-from-bracket text-[11px]" aria-hidden="true"></i>
@@ -173,6 +174,7 @@
                         </div>
 
                         <form action="/v1/auth/profile/update" method="POST" class="space-y-5">
+                            <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>" />
                             <% if (user && (user.role === 'mentor' || user.role === 'investor' || user.role === 'entrepreneur')) { %>
                             <!-- Expertise -->
                             <div class="space-y-1.5">
@@ -221,6 +223,7 @@
                         </div>
 
                         <form action="/v1/auth/profile/update-password" method="POST" class="space-y-5">
+                            <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>" />
                             <div class="space-y-1.5">
                                 <label class="block text-[10px] font-extrabold uppercase tracking-widest text-muted">Current Password</label>
                                 <div class="relative">
@@ -332,8 +335,9 @@
     </footer>
 
     <!-- Hidden Avatar Upload Form -->
-    <form id="avatar-form" action="/v1/auth/profile/upload-picture" method="POST" enctype="multipart/form-data" class="hidden">
+    <form id="avatar-form" action="/v1/auth/profile/upload-picture?_csrf=<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>" method="POST" enctype="multipart/form-data" class="hidden">
         <input id="avatar-input" name="profilePicture" type="file" accept="image/jpeg,image/png" onchange="document.getElementById('avatar-form').submit()" />
+        <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>" />
     </form>
 
 </body>

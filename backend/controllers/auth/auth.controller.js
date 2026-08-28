@@ -1,4 +1,6 @@
 
+import Joi from "joi";
+import xss from "xss";
 import pool from "../../config/db.js";
 import {
   findUserByEmail,
@@ -24,7 +26,7 @@ import {
   getMentorWorkshops,
 } from "../../models/workshop/Workshop.js";
 import { hashPassword, comparePassword } from "../../utils/hash.js";
-import { generateUserCode } from "../../utils/helpers.js";
+import { generateUserCode, isPasswordStrong } from "../../utils/helpers.js";
 import sharp from "sharp";
 import fs from "fs/promises";
 import path from "path";
@@ -130,6 +132,25 @@ export const profilePage = async (req, res, next) => {
 };
 
 
+const signupSchema = Joi.object({
+  name: Joi.string().trim().min(2).max(100).required(),
+  email: Joi.string().trim().email().required(),
+  password: Joi.string().required(),
+  token: Joi.string().required()
+});
+
+const loginSchema = Joi.object({
+  email: Joi.string().trim().email().required(),
+  password: Joi.string().required()
+});
+
+const profileSchema = Joi.object({
+  name: Joi.string().trim().min(2).max(100).required(),
+  bio: Joi.string().trim().allow("").max(1000).optional(),
+  company: Joi.string().trim().allow("").max(100).optional(),
+  expertise: Joi.string().trim().allow("").max(100).optional()
+});
+
 export const register = async (req, res, next) => {
   try {
     console.log("Backend received signup request:", req.body);
@@ -152,14 +173,15 @@ export const register = async (req, res, next) => {
       return res.redirect("/v1/auth/signup");
     }
 
-    // 3. Validate inputs
-    if (!name || !email || !password) {
-      req.flash("error", "All fields are required");
-      return res.redirect(`/v1/auth/signup?token=${token}`);
+    // Joi Whitelist Validation
+    const { error: validationError } = signupSchema.validate(req.body);
+    if (validationError) {
+      req.flash("error", validationError.details[0].message);
+      return res.redirect(`/v1/auth/signup?token=${token || ""}`);
     }
 
-    if (password.length < 8) {
-      req.flash("error", "Password must be at least 8 characters");
+    if (!isPasswordStrong(password)) {
+      req.flash("error", "Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.");
       return res.redirect(`/v1/auth/signup?token=${token}`);
     }
 
@@ -198,8 +220,9 @@ export const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
-    if (!email || !password) {
-      req.flash("error", "Email and password are required");
+    const { error: validationError } = loginSchema.validate(req.body);
+    if (validationError) {
+      req.flash("error", validationError.details[0].message);
       return res.redirect("/admin");
     }
 
@@ -214,10 +237,30 @@ export const login = async (req, res, next) => {
       return res.redirect("/admin");
     }
 
+    // Check brute-force lockout status
+    if (user.lockout_until && new Date() < new Date(user.lockout_until)) {
+      const minutesRemaining = Math.ceil((new Date(user.lockout_until) - new Date()) / 60000);
+      req.flash("error", `Account is temporarily locked due to consecutive failed login attempts. Try again in ${minutesRemaining} minutes.`);
+      return res.redirect("/admin");
+    }
+
     const isMatch = await comparePassword(password, user.password);
     if (!isMatch) {
-      req.flash("error", "Invalid email or password");
+      const failedAttempts = (user.failed_login_attempts || 0) + 1;
+      if (failedAttempts >= 5) {
+        const lockoutTime = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+        await pool.query("UPDATE users SET failed_login_attempts = $1, lockout_until = $2 WHERE id = $3", [failedAttempts, lockoutTime, user.id]);
+        req.flash("error", "Too many failed attempts. Your account has been temporarily locked for 15 minutes.");
+      } else {
+        await pool.query("UPDATE users SET failed_login_attempts = $1 WHERE id = $2", [failedAttempts, user.id]);
+        req.flash("error", `Invalid email or password. Attempts remaining: ${5 - failedAttempts}`);
+      }
       return res.redirect("/admin");
+    }
+
+    // Reset attempts on successful login
+    if ((user.failed_login_attempts || 0) > 0 || user.lockout_until) {
+      await pool.query("UPDATE users SET failed_login_attempts = 0, lockout_until = NULL WHERE id = $1", [user.id]);
     }
 
     req.session.userId = user.id;
@@ -407,8 +450,8 @@ export const changePassword = async (req, res, next) => {
       return res.redirect("/v1/auth/profile");
     }
 
-    if (newPassword.length < 8) {
-      req.flash("error", "New password must be at least 8 characters.");
+    if (!isPasswordStrong(newPassword)) {
+      req.flash("error", "New password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.");
       return res.redirect("/v1/auth/profile");
     }
 
@@ -453,16 +496,17 @@ export const updateProfile = async (req, res, next) => {
   try {
     const { name, bio, company, expertise } = req.body;
 
-    if (!name || !name.trim()) {
-      req.flash("error", "Name is required.");
+    const { error: validationError } = profileSchema.validate(req.body);
+    if (validationError) {
+      req.flash("error", validationError.details[0].message);
       return res.redirect("/v1/auth/profile");
     }
 
     await updateUserProfile(req.session.userId, {
-      name: name.trim(),
-      bio: bio || "",
-      company: company || "",
-      expertise: expertise || "",
+      name: xss(name.trim()),
+      bio: bio ? xss(bio.trim()) : "",
+      company: company ? xss(company.trim()) : "",
+      expertise: expertise ? xss(expertise.trim()) : "",
     });
 
     // Update session name so the header reflects the change

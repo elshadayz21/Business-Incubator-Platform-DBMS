@@ -9,6 +9,8 @@ import rateLimit from "express-rate-limit";
 import connectPgSimpleImport from "connect-pg-simple";
 import pool from "./config/db.js";
 import { GlobalRouter } from "./routes/index.js";
+import { csrfProtection } from "./middleware/csrf.middleware.js";
+import logger from "./utils/logger.js";
 import adminApiRoutes from "./routes/admin-api.js";
 import portalApiRoutes from "./routes/portal-api.js";
 import path from "path";
@@ -29,6 +31,19 @@ app.set("view engine", "ejs");
 app.use(helmet({ contentSecurityPolicy: false }));
 
 app.use(morgan("dev"));
+
+// Structured HTTP access logs via Winston (used in non-development environments).
+if (process.env.NODE_ENV !== "development") {
+  app.use(
+    morgan("combined", {
+      stream: {
+        write: (message) =>
+          logger.http(message.trim(), { route: "http-access" }),
+      },
+    }),
+  );
+}
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -74,7 +89,7 @@ app.use(
         cookie: {
             secure: process.env.NODE_ENV === "production",
             httpOnly: true,
-            maxAge: 60 * 60 * 1000,
+            maxAge: 30 * 60 * 1000,
             sameSite: "lax",
         },
         rolling: true,
@@ -83,8 +98,11 @@ app.use(
 
 app.use(flash());
 
+app.use(csrfProtection);
+
 // CRITICAL: This middleware MUST be before the routes. It provides the 'routes' variable to header.ejs
 app.use((req, res, next) => {
+    res.locals.csrfToken = req.session?.csrfToken || "";
     res.locals.routes = {
         signupRoute: "/v1/auth/signup",
         loginRoute: "/admin",
