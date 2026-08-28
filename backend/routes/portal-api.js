@@ -13,6 +13,12 @@ import {
   markNotificationsAsRead,
   respondToMentorInvitation,
 } from "../admin-backend/portal/portal.js";
+import {
+  getChatContacts,
+  getConversation,
+  sendChatMessage,
+  getUnreadMessageCount,
+} from "../admin-backend/chat/chat.js";
 
 const router = Router();
 
@@ -158,6 +164,69 @@ router.delete(
     const result = await deleteMentorSession(req.session.userId, req.params.id);
     if (!result) return res.status(403).json({ error: "Access denied" });
     res.json(result);
+  }),
+);
+
+// -------- Chat (available to every authenticated role) --------
+
+// Contact/thread list: everyone this user can message, with last message
+// preview and unread count, most recently active first.
+router.get(
+  "/chat/contacts",
+  isAuth,
+  asyncHandler(async (req, res) => {
+    const contacts = await getChatContacts(req.session.userId, req.session.userRole);
+    res.json({ contacts });
+  }),
+);
+
+// Total unread messages across all conversations (for a sidebar badge).
+router.get(
+  "/chat/unread-count",
+  isAuth,
+  asyncHandler(async (req, res) => {
+    const count = await getUnreadMessageCount(req.session.userId);
+    res.json({ count });
+  }),
+);
+
+// Full message history with one contact; marks their messages to us as read.
+router.get(
+  "/chat/messages/:userId",
+  isAuth,
+  asyncHandler(async (req, res) => {
+    const messages = await getConversation(
+      req.session.userId,
+      req.session.userRole,
+      req.params.userId,
+    );
+    if (messages === null) {
+      return res.status(403).json({ error: "You are not able to view this conversation." });
+    }
+    res.json({ messages });
+  }),
+);
+
+// Send a message to another user.
+router.post(
+  "/chat/messages",
+  isAuth,
+  asyncHandler(async (req, res) => {
+    const { receiverId, content } = req.body;
+    if (!receiverId) {
+      return res.status(400).json({ error: "receiverId is required." });
+    }
+    try {
+      const message = await sendChatMessage(
+        req.session.userId,
+        req.session.userRole,
+        receiverId,
+        content,
+      );
+      res.status(201).json({ message });
+    } catch (err) {
+      res.status(err.statusCode || 400).json({ error: err.message });
+    }
   }),
 );
 
