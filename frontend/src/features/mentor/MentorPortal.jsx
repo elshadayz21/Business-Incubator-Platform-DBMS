@@ -237,7 +237,7 @@ const MentorPortal = () => {
     }
     sessionStorage.clear();
     localStorage.clear();
-    window.location.href = "/admin";
+    window.location.href = "/admin/login";
   };
 
   const navItems = [
