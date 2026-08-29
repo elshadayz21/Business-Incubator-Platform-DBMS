@@ -1,0 +1,26 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "cleanUrls": true,
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://YOUR-BACKEND.onrender.com/api/:path*"
+    },
+    {
+      "source": "/v1/:path*",
+      "destination": "https://YOUR-BACKEND.onrender.com/v1/:path*"
+    },
+    {
+      "source": "/brand/:path*",
+      "destination": "https://YOUR-BACKEND.onrender.com/brand/:path*"
+    },
+    {
+      "source": "/uploads/:path*",
+      "destination": "https://YOUR-BACKEND.onrender.com/uploads/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
