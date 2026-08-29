@@ -4,6 +4,18 @@ import LoginPage from "./features/auth/login";
 import EntrepreneurPortal from "./features/entrepreneur/EntrepreneurPortal";
 import MentorPortal from "./features/mentor/MentorPortal";
 
+// Each role gets its own top-level URL under /admin so the browser address
+// bar (and refresh/bookmark/back-button behaviour) reflects who's signed in.
+// The backend's SPA fallback (app.get(/^\/admin(\/.*)?$/)) serves index.html
+// for all of these, so any of them can be loaded/refreshed directly.
+const ROLE_PATHS = {
+  admin: "/admin",
+  superadmin: "/admin/superadmin",
+  entrepreneur: "/admin/entrepreneur",
+  mentor: "/admin/mentor",
+};
+const LOGIN_PATH = "/admin/login";
+
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -130,6 +142,29 @@ function App() {
 
     return () => clearTimeout(syncTimer);
   }, [isAuthenticated, syncUserFromServer]);
+
+  // Keep the address bar in sync with who's signed in: each role has its
+  // own URL (/admin, /admin/superadmin, /admin/entrepreneur, /admin/mentor),
+  // and signed-out visitors always land on /admin/login. This runs after
+  // auth resolves so a direct visit/refresh/bookmark of any of these URLs
+  // ends up correct.
+  useEffect(() => {
+    if (isLoading) return;
+
+    const currentPath = window.location.pathname.replace(/\/+$/, "") || "/admin";
+
+    if (!isAuthenticated) {
+      if (currentPath !== LOGIN_PATH) {
+        window.history.replaceState(null, "", LOGIN_PATH);
+      }
+      return;
+    }
+
+    const expectedPath = ROLE_PATHS[userRole] || "/admin";
+    if (currentPath !== expectedPath) {
+      window.history.replaceState(null, "", expectedPath);
+    }
+  }, [isLoading, isAuthenticated, userRole]);
 
   if (isLoading) {
     return (

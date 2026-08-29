@@ -17,6 +17,7 @@ import Reports from "./Reports/Reports";
 import Applications from "./Applications/Applications";
 import SystemSettings from "./SystemSettings/SystemSettings";
 import UserMenu from "../../components/UserMenu";
+import ChatPanel from "../../components/ChatPanel";
 
 const Admin = () => {
   const [activeTab, setActiveTabState] = useState(() => {
@@ -101,6 +102,8 @@ const Admin = () => {
         return <Applications />;
       case "System Settings":
         return <SystemSettings />;
+      case "Chat":
+        return <ChatPanel currentUser={currentUser} />;
     }
   };
 

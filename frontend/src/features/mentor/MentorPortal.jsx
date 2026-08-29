@@ -18,6 +18,7 @@ import {
   Pencil,
   PanelLeftClose,
   PanelLeftOpen,
+  MessageCircle,
 } from "lucide-react";
 import {
   getMentorDashboard,
@@ -26,6 +27,7 @@ import {
   deleteMentorSession,
 } from "../../services/portalService";
 import UserMenu from "../../components/UserMenu";
+import ChatPanel from "../../components/ChatPanel";
 
 const MentorPortal = () => {
   const [assignments, setAssignments] = useState([]);
@@ -237,13 +239,14 @@ const MentorPortal = () => {
     }
     sessionStorage.clear();
     localStorage.clear();
-    window.location.href = "/admin";
+    window.location.href = "/admin/login";
   };
 
   const navItems = [
     { id: 1, icon: Users, label: "My Entrepreneurs" },
     { id: 2, icon: Bell, label: "Notifications", badge: unreadNotifications || null },
     { id: 3, icon: Scroll, label: "Activity Timeline" },
+    { id: 4, icon: MessageCircle, label: "Chat" },
   ];
 
   return (
@@ -765,6 +768,9 @@ const MentorPortal = () => {
               )}
             </div>
           </div>
+        ) : activeTab === "Chat" ? (
+          /* -------- Chat view -------- */
+          <ChatPanel currentUser={currentUser} />
         ) : (
           /* -------- Assigned entrepreneurs list -------- */
           <div className="space-y-6">
