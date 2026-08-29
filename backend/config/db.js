@@ -9,10 +9,10 @@ const config = process.env.DATABASE_URL
       ssl: process.env.DATABASE_URL.includes("localhost") ? false : { rejectUnauthorized: false },
     }
   : {
-      user: process.env.DB_USER || "postgres.mnysgjtrtlsafospupte",
-      host: process.env.DB_HOST || "aws-0-eu-central-1.pooler.supabase.com",
+      user: process.env.DB_USER,
+      host: process.env.DB_HOST,
       database: process.env.DB_NAME || "postgres",
-      password: process.env.DB_PASS || "TikiFant@hun92%99",
+      password: process.env.DB_PASS,
       port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 5432,
       ssl: isLocal ? false : { rejectUnauthorized: false },
     };

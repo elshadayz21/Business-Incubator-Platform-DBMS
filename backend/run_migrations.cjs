@@ -3,13 +3,26 @@ const fs = require("fs");
 const path = require("path");
 const { Pool } = require("pg");
 
-const pool = new Pool({
-  user: process.env.DB_USER,
-  host: process.env.DB_HOST,
-  database: process.env.DB_NAME,
-  password: process.env.DB_PASS,
-  port: process.env.DB_PORT,
-});
+const isLocalHost =
+  process.env.DB_HOST === "localhost" || process.env.DB_HOST === "127.0.0.1";
+
+const poolConfig = process.env.DATABASE_URL
+  ? {
+      connectionString: process.env.DATABASE_URL,
+      ssl: process.env.DATABASE_URL.includes("localhost")
+        ? false
+        : { rejectUnauthorized: false },
+    }
+  : {
+      user: process.env.DB_USER,
+      host: process.env.DB_HOST,
+      database: process.env.DB_NAME,
+      password: process.env.DB_PASS,
+      port: process.env.DB_PORT,
+      ssl: isLocalHost ? false : { rejectUnauthorized: false },
+    };
+
+const pool = new Pool(poolConfig);
 
 const SKIPPABLE_CODES = ["42701", "42P07", "42P06", "42P16", "42501"];
 

@@ -142,10 +142,18 @@
                     method: method,
                     headers: {
                         'Content-Type': 'application/json',
+                        'x-csrf-token': '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>',
                     }
                 };
 
                 const response = await fetch(`/v1/workshop/${workshopId}/attend`, options);
+
+                if (response.redirected) {
+                    alert('Please log in to enroll.');
+                    window.location.href = '<%= routes.loginRoute %>';
+                    return;
+                }
+
                 const data = await response.json();
 
                 if (response.ok) {
