@@ -233,13 +233,13 @@ export const assignMentor = async (projectId, mentorId) => {
       return { success: false, message: "This project already has a mentor assigned." };
     }
 
-    // 2. Assign the new mentor
+    // 2. Assign the new mentor on the project team
     await pool.query(
         "INSERT INTO project_entrepreneurs (project_id, user_id, role_in_project) VALUES ($1, $2, $3)",
         [projectId, mentorId, 'Mentor']
     );
 
-    // 3. Send Notification to the Entrepreneur!
+    // 3. Resolve entrepreneur (founder) on this project
     const ownerRes = await pool.query(
         "SELECT user_id FROM project_entrepreneurs WHERE project_id = $1 AND (role_in_project IS NULL OR role_in_project != 'Mentor') LIMIT 1",
         [projectId]
@@ -247,11 +247,30 @@ export const assignMentor = async (projectId, mentorId) => {
 
     const userId = ownerRes.rows[0]?.user_id;
 
+    // 4. Sync into mentor_assignments so Mentor Portal dashboard updates
     if (userId) {
+      await pool.query(`
+        ALTER TABLE mentor_assignments ALTER COLUMN cohort_id DROP NOT NULL
+      `).catch(() => {});
+      await pool.query(`
+        ALTER TABLE mentor_assignments
+          ADD COLUMN IF NOT EXISTS project_id INT REFERENCES projects(id) ON DELETE CASCADE
+      `).catch(() => {});
+
+      await pool.query(
+        `INSERT INTO mentor_assignments (mentor_id, entrepreneur_id, cohort_id, project_id, assigned_at)
+         SELECT $1, $2, NULL, $3, NOW()
+         WHERE NOT EXISTS (
+           SELECT 1 FROM mentor_assignments
+           WHERE mentor_id = $1 AND entrepreneur_id = $2
+             AND (project_id = $3 OR (project_id IS NULL AND $3 IS NULL))
+         )`,
+        [mentorId, userId, projectId]
+      );
+
       const projRes = await pool.query("SELECT name FROM projects WHERE id = $1", [projectId]);
       const projectName = projRes.rows[0]?.name || "your project";
 
-      // FETCH THE MENTOR'S NAME HERE!
       const mentorRes = await pool.query("SELECT name FROM users WHERE id = $1", [mentorId]);
       const mentorName = mentorRes.rows[0]?.name || "A mentor";
 

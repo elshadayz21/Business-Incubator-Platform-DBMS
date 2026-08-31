@@ -93,18 +93,56 @@ export const getEntrepreneurDashboard = async (userId, email) => {
   };
 };
 
+async function ensureMentorAssignmentSchema() {
+  await pool.query(`
+    ALTER TABLE mentor_assignments ALTER COLUMN cohort_id DROP NOT NULL
+  `).catch(() => {});
+  await pool.query(`
+    ALTER TABLE mentor_assignments
+      ADD COLUMN IF NOT EXISTS project_id INT REFERENCES projects(id) ON DELETE CASCADE
+  `).catch(() => {});
+}
+
+/** Sync project_entrepreneurs Mentor rows into mentor_assignments (portal source of truth). */
+async function syncProjectMentorAssignments(mentorId) {
+  await ensureMentorAssignmentSchema();
+
+  await pool.query(
+    `INSERT INTO mentor_assignments (mentor_id, entrepreneur_id, cohort_id, project_id, assigned_at)
+     SELECT pe_m.user_id, pe_e.user_id, NULL, pe_m.project_id, NOW()
+     FROM project_entrepreneurs pe_m
+     JOIN project_entrepreneurs pe_e
+       ON pe_e.project_id = pe_m.project_id
+      AND pe_e.user_id <> pe_m.user_id
+      AND (pe_e.role_in_project IS NULL OR pe_e.role_in_project <> 'Mentor')
+     WHERE pe_m.user_id = $1
+       AND pe_m.role_in_project = 'Mentor'
+       AND NOT EXISTS (
+         SELECT 1 FROM mentor_assignments ma
+         WHERE ma.mentor_id = pe_m.user_id
+           AND ma.entrepreneur_id = pe_e.user_id
+           AND ma.project_id = pe_m.project_id
+       )`,
+    [mentorId],
+  );
+}
+
 export const getMentorDashboard = async (mentorId) => {
+  await syncProjectMentorAssignments(mentorId);
+
   const result = await pool.query(
-    `SELECT ma.id AS assignment_id, ma.cohort_id,
+    `SELECT ma.id AS assignment_id, ma.cohort_id, ma.project_id,
             u.id AS entrepreneur_id, u.name AS entrepreneur_name,
             u.email AS entrepreneur_email, u.company AS entrepreneur_company,
             u.profile_image AS entrepreneur_profile_image,
             c.name AS cohort_name, c.status AS cohort_status,
+            p.name AS project_name, p.domain AS project_domain, p.stage AS project_stage,
             ma.assigned_at,
             (SELECT COUNT(*) FROM mentor_sessions ms WHERE ms.assignment_id = ma.id) AS session_count
      FROM mentor_assignments ma
      JOIN users u ON u.id = ma.entrepreneur_id
-     JOIN cohorts c ON c.id = ma.cohort_id
+     LEFT JOIN cohorts c ON c.id = ma.cohort_id
+     LEFT JOIN projects p ON p.id = ma.project_id
      WHERE ma.mentor_id = $1
      ORDER BY ma.assigned_at DESC`,
     [mentorId],

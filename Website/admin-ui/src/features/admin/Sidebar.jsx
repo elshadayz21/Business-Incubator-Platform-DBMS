@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { apiFetch, LOGIN_PATH } from "../../config/api";
 import {
   LayoutDashboard,
   BarChart3,
@@ -37,7 +38,7 @@ const Sidebar = ({
   useEffect(() => {
     const checkFundingStatus = async () => {
       try {
-        const res = await fetch('/api/admin/funding?query=', { credentials: 'include' });
+        const res = await apiFetch('/api/admin/funding?query=');
         const data = await res.json();
 
         // Check if any funding request was just Approved or Rejected by a founder
@@ -78,17 +79,25 @@ const Sidebar = ({
     { id: 16, icon: ShieldCheck, label: "System Settings", badge: null },
   ];
 
-  const navItems = isSuperadmin ? superadminNavItems : adminNavItems;
+  // Superadmin gets full control: ops modules + system/CMS modules.
+  const navItems = isSuperadmin
+    ? [
+        ...adminNavItems,
+        ...superadminNavItems.filter(
+          (item) => !adminNavItems.some((a) => a.label === item.label),
+        ),
+      ]
+    : adminNavItems;
 
   const handleLogout = async () => {
     try {
-      await fetch("/v1/auth/logout", { method: "POST" });
+      await apiFetch("/v1/auth/logout", { method: "POST" });
     } catch (e) {
       console.error("Logout error:", e);
     }
     sessionStorage.clear();
     localStorage.clear();
-    window.location.href = "/v1/auth/login";
+    window.location.href = LOGIN_PATH;
   };
 
   return (

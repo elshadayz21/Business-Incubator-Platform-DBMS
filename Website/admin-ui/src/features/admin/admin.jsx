@@ -44,7 +44,8 @@ const Admin = () => {
   ];
 
   const canAccess = (tab) => {
-    if (isSuperadmin) return !adminOnlyTabs.includes(tab);
+    // Superadmin = full control (ops + system). Admin = ops only.
+    if (isSuperadmin) return true;
     return !superadminOnlyTabs.includes(tab);
   };
 

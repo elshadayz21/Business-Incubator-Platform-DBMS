@@ -25,6 +25,13 @@ import "./subscribers/subscribers.js";
 const app = express();
 const pgSession = connectPgSimpleImport(session);
 
+// Render / reverse proxies
+app.set("trust proxy", 1);
+
+const corsOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(",").map((o) => o.trim()).filter(Boolean)
+  : true;
+
 app.set("view engine", "ejs");
 
 app.use(helmet({ contentSecurityPolicy: false }));
@@ -33,7 +40,7 @@ app.use(morgan("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use(cors({ origin: true, credentials: true }));
+app.use(cors({ origin: corsOrigins, credentials: true }));
 
 app.use(express.static("public"));
 app.use("/admin", express.static(path.resolve("public/admin"), {
@@ -73,7 +80,10 @@ app.use(
             secure: process.env.NODE_ENV === "production",
             httpOnly: true,
             maxAge: 60 * 60 * 1000,
-            sameSite: "lax",
+            sameSite:
+              process.env.CORS_ORIGINS && process.env.NODE_ENV === "production"
+                ? "none"
+                : "lax",
         },
         rolling: true,
     }),

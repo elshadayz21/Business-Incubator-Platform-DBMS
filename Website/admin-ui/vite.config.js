@@ -1,12 +1,14 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
+const isVercel = process.env.VERCEL === '1'
+
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: '/admin/',
+  base: isVercel ? '/' : '/admin/',
   build: {
-    outDir: '../public/admin',
+    outDir: isVercel ? 'dist' : '../public/admin',
     emptyOutDir: true,
   },
   server: {

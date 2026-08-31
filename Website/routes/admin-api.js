@@ -192,7 +192,8 @@ router.post(
   }),
 );
 
-const adminOnly = authorizeRole(ROLES.ADMIN);
+// Admins run day-to-day ops; Superadmin has full system control (can also access ops).
+const adminOnly = authorizeRole(ROLES.ADMIN, ROLES.SUPERADMIN);
 const superadminOnly = authorizeRole(ROLES.SUPERADMIN);
 
 // Module access is strictly separated by role (no overlap):

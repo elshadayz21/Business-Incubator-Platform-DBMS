@@ -1,7 +1,12 @@
+import { apiUrl } from "./config/api.js";
+
 window.electron = {
   invoke: async (channel, ...args) => {
     let url;
-    let options = { headers: { "Content-Type": "application/json" } };
+    let options = {
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+    };
 
     switch (channel) {
       // Auth
@@ -304,7 +309,7 @@ window.electron = {
     }
 
     try {
-      const res = await fetch(url, options);
+      const res = await fetch(apiUrl(url), options);
       if (!res.ok) {
         let msg = `HTTP error! status: ${res.status}`;
         try {

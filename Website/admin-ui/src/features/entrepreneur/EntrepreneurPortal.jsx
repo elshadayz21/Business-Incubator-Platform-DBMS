@@ -18,6 +18,7 @@ import {
   BarChart3,
 } from "lucide-react";
 import { getEntrepreneurDashboard } from "../../services/portalService";
+import { LOGIN_PATH } from "../../config/api";
 
 const STAGES = ["idea", "mvp", "scale-up"];
 
@@ -107,7 +108,7 @@ const EntrepreneurPortal = () => {
     }
     sessionStorage.clear();
     localStorage.clear();
-    window.location.href = "/v1/auth/login";
+    window.location.href = LOGIN_PATH;
   };
 
   const handleCancelEnrollment = async (workshopId) => {

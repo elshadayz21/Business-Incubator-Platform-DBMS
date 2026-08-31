@@ -3,6 +3,7 @@ import Admin from "./features/admin/admin";
 import LoginPage from "./features/auth/login";
 import EntrepreneurPortal from "./features/entrepreneur/EntrepreneurPortal";
 import MentorPortal from "./features/mentor/MentorPortal";
+import { apiFetch } from "./config/api";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -45,7 +46,7 @@ function App() {
       return;
     }
 
-    fetch("/v1/auth/me")
+    apiFetch("/v1/auth/me")
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (!data?.user) return;

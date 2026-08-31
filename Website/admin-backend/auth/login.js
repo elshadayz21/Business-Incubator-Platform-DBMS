@@ -54,7 +54,8 @@ export default async function loginRequest(credentials) {
     }
 
     console.log("✅ Login Successful!");
-    return { success: true, message: "Login successful", user };
+    const { password: _password, ...safeUser } = user;
+    return { success: true, message: "Login successful", user: safeUser };
   } catch (error) {
     console.error("🔥 Error during login:", error);
     return { success: false, message: "An error occurred during login" };

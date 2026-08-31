@@ -131,6 +131,37 @@ export const updateUserPassword = async (userId, newHashedPassword) => {
   }
 };
 
+export const setResetToken = async (email, token, expires) => {
+  const result = await pool.query(
+    `UPDATE users
+     SET reset_token = $1, reset_token_expires = $2, updated_at = CURRENT_TIMESTAMP
+     WHERE LOWER(TRIM(email)) = LOWER(TRIM($3))
+     RETURNING id, email`,
+    [token, expires, email],
+  );
+  return result.rows[0] || null;
+};
+
+export const findUserByResetToken = async (token) => {
+  const result = await pool.query(
+    `SELECT * FROM users
+     WHERE reset_token = $1
+       AND reset_token_expires IS NOT NULL
+       AND reset_token_expires > NOW()`,
+    [token],
+  );
+  return result.rows[0] || null;
+};
+
+export const clearResetToken = async (userId) => {
+  await pool.query(
+    `UPDATE users
+     SET reset_token = NULL, reset_token_expires = NULL, updated_at = CURRENT_TIMESTAMP
+     WHERE id = $1`,
+    [userId],
+  );
+};
+
 export const getUserNotifications = async (userId) => {
   try {
     const result = await pool.query(

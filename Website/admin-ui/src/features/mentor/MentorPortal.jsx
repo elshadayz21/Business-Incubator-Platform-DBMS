@@ -14,6 +14,7 @@ import {
   ClipboardCheck,
   X,
 } from "lucide-react";
+import { LOGIN_PATH } from "../../config/api";
 import {
   getMentorDashboard,
   getMentorSessions,
@@ -121,7 +122,7 @@ const MentorPortal = () => {
     }
     sessionStorage.clear();
     localStorage.clear();
-    window.location.href = "/v1/auth/login";
+    window.location.href = LOGIN_PATH;
   };
 
   return (
@@ -264,7 +265,13 @@ const MentorPortal = () => {
                       : ""}
                   </p>
                   <p className="text-xs text-[#006F9E] font-bold mt-1">
-                    Cohort: {selected.cohort_name}
+                    {selected.project_name
+                      ? `Project: ${selected.project_name}`
+                      : selected.cohort_name
+                        ? `Cohort: ${selected.cohort_name}`
+                        : "Assigned incubatee"}
+                    {selected.project_domain ? ` • ${selected.project_domain}` : ""}
+                    {selected.project_stage ? ` • ${selected.project_stage}` : ""}
                   </p>
                 </div>
               </div>
@@ -528,7 +535,13 @@ const MentorPortal = () => {
                       </p>
                       <p className="flex items-center gap-2">
                         <ClipboardCheck size={13} className="text-[#00ADEF]" />
-                        Cohort: {a.cohort_name} • {a.session_count || 0} sessions
+                        {a.project_name
+                          ? `Project: ${a.project_name}`
+                          : a.cohort_name
+                            ? `Cohort: ${a.cohort_name}`
+                            : "Assigned"}
+                        {" • "}
+                        {a.session_count || 0} sessions
                       </p>
                     </div>
                     <button
