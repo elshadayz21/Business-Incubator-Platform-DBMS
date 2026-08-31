@@ -8,26 +8,11 @@
     <header class="sticky top-0 z-50 border-b border-line bg-white/95 backdrop-blur shadow-xs">
         <div class="mx-auto flex max-w-7xl items-center justify-between px-6 py-3.5 lg:px-10">
             <div class="flex items-center gap-4">
-                <a href="/admin" class="flex items-center gap-3">
-                    <img src="/brand/dxvalley-wordmark.jpeg" alt="DxValley" class="h-9 w-auto object-contain" />
-                </a>
-                <span class="hidden h-5 w-[1px] bg-line sm:block"></span>
-                <span class="hidden text-xs font-bold text-muted sm:block">User Profile & Account Settings</span>
-            </div>
-            <div class="flex items-center gap-3">
                 <a href="/admin"
                     class="inline-flex items-center gap-2 rounded-full border border-line bg-cyan-soft px-4 py-2 text-xs font-bold text-cyan-dark transition hover:bg-cyan hover:text-white">
                     <i class="fa-solid fa-arrow-left text-[11px]" aria-hidden="true"></i>
                     <span>Back to Dashboard</span>
                 </a>
-                <form action="/v1/auth/logout" method="POST" class="inline">
-                    <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>" />
-                    <button type="submit"
-                        class="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-3.5 py-2 text-xs font-bold text-red-600 transition hover:bg-red-600 hover:text-white">
-                        <i class="fa-solid fa-right-from-bracket text-[11px]" aria-hidden="true"></i>
-                        <span class="hidden sm:inline">Sign Out</span>
-                    </button>
-                </form>
             </div>
         </div>
     </header>
