@@ -322,16 +322,14 @@ export default function Announcements() {
                                                         <input type="text" placeholder="Question (e.g., What is your revenue?)" value={field.label} onChange={(e) => handleFieldChange(index, 'label', e.target.value)} className="flex-1 px-3 py-2 border border-[#D6E4EA] rounded-md text-sm focus:ring-1 focus:ring-[#00ADEF]" />
                                                         <select value={field.field_type} onChange={(e) => handleFieldChange(index, 'field_type', e.target.value)} className="px-3 py-2 border border-[#D6E4EA] rounded-md text-sm focus:ring-1 focus:ring-[#00ADEF]">
                                                             <option value="text">Short Text</option>
-                                                            <option value="email">Email </option>
-                                                            <option value="name">Full Name</option>
-                                                            <option value="idea">Startup Idea</option>
-                                                            <option value="Phone number">Phone Number</option>
-                                                            <option value="Background">Background</option>
-                                                            <option value="number">Number</option>
                                                             <option value="textarea">Long Text</option>
+                                                            <option value="email">Email</option>
+                                                            <option value="tel">Phone Number</option>
+                                                            <option value="number">Number</option>
                                                             <option value="select">Dropdown</option>
                                                             <option value="radio">Radio (Single Choice)</option>
                                                             <option value="checkbox">Checkbox (Multiple)</option>
+                                                            <option value="file">File Upload</option> {/* Added for future use */}
                                                         </select>
                                                         <button onClick={() => removeField(index)} className="text-red-500 hover:bg-red-50 p-2 rounded-md"><X size={16} /></button>
                                                     </div>

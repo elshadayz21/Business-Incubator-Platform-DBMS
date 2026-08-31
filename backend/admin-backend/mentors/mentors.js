@@ -4,10 +4,10 @@ import { generateUserCode } from "../../utils/helpers.js";
 
 const VALID_STATUSES = ["active", "inactive"];
 
-// 1. Get All Mentors
-export const getAllMentors = async () => {
+// 1. Get All Mentors (Paginated)
+export const getAllMentors = async (limit = null, offset = 0) => {
   try {
-    const res = await pool.query(`
+    let sql = `
       SELECT 
         m.*, 
         COUNT(DISTINCT mp.project_id) as projects_count,
@@ -17,7 +17,13 @@ export const getAllMentors = async () => {
       LEFT JOIN mentor_workshop_assignments mw ON mw.mentor_id = m.id
       GROUP BY m.id
       ORDER BY m.created_at DESC
-    `);
+    `;
+    const params = [];
+    if (limit != null) {
+      sql += ` LIMIT $1 OFFSET $2`;
+      params.push(limit, offset);
+    }
+    const res = await pool.query(sql, params);
 
     return res.rows.map((mentor) => ({
       ...mentor,
@@ -63,17 +69,17 @@ export const addMentor = async (data) => {
       if (password && password.trim().length >= 6) {
         const hashed = await hashPassword(password.trim());
         await client.query(
-          `UPDATE users 
+            `UPDATE users 
            SET role = 'mentor', name = COALESCE($1, name), expertise = COALESCE($2, expertise), status = COALESCE($3, status), password = $4, updated_at = CURRENT_TIMESTAMP
            WHERE id = $5`,
-          [name, expertise, status || "active", hashed, userId]
+            [name, expertise, status || "active", hashed, userId]
         );
       } else {
         await client.query(
-          `UPDATE users 
+            `UPDATE users 
            SET role = 'mentor', name = COALESCE($1, name), expertise = COALESCE($2, expertise), status = COALESCE($3, status), updated_at = CURRENT_TIMESTAMP
            WHERE id = $4`,
-          [name, expertise, status || "active", userId]
+            [name, expertise, status || "active", userId]
         );
       }
     } else {
@@ -82,35 +88,35 @@ export const addMentor = async (data) => {
       const userCode = generateUserCode();
 
       const userInsert = await client.query(
-        `INSERT INTO users (name, user_code, email, password, role, expertise, status)
+          `INSERT INTO users (name, user_code, email, password, role, expertise, status)
          VALUES ($1, $2, $3, $4, 'mentor', $5, $6)
          RETURNING id`,
-        [name, userCode, email, hashed, expertise, status || "active"]
+          [name, userCode, email, hashed, expertise, status || "active"]
       );
       userId = userInsert.rows[0].id;
     }
 
     // B. Insert Mentor profile
     const insertRes = await client.query(
-      `INSERT INTO mentors (user_id, name, email, phone, expertise, status) 
+        `INSERT INTO mentors (user_id, name, email, phone, expertise, status) 
        VALUES ($1, $2, $3, $4, $5, $6) 
        RETURNING *`,
-      [userId, name, email, phone, expertise, status || "active"],
+        [userId, name, email, phone, expertise, status || "active"],
     );
     const newMentor = insertRes.rows[0];
 
     // C. Handle Quick Assignments
     if (assignedProject) {
       await client.query(
-        "INSERT INTO mentor_project_assignments (mentor_id, project_id) VALUES ($1, $2)",
-        [newMentor.id, assignedProject],
+          "INSERT INTO mentor_project_assignments (mentor_id, project_id) VALUES ($1, $2)",
+          [newMentor.id, assignedProject],
       );
     }
 
     if (assignedWorkshop) {
       await client.query(
-        "INSERT INTO mentor_workshop_assignments (mentor_id, workshop_id) VALUES ($1, $2)",
-        [newMentor.id, assignedWorkshop],
+          "INSERT INTO mentor_workshop_assignments (mentor_id, workshop_id) VALUES ($1, $2)",
+          [newMentor.id, assignedWorkshop],
       );
     }
 
@@ -132,17 +138,17 @@ export const deleteMentor = async (id) => {
     await client.query("BEGIN");
 
     await client.query(
-      "DELETE FROM mentor_project_assignments WHERE mentor_id = $1",
-      [id],
+        "DELETE FROM mentor_project_assignments WHERE mentor_id = $1",
+        [id],
     );
     await client.query(
-      "DELETE FROM mentor_workshop_assignments WHERE mentor_id = $1",
-      [id],
+        "DELETE FROM mentor_workshop_assignments WHERE mentor_id = $1",
+        [id],
     );
 
     const res = await client.query(
-      "DELETE FROM mentors WHERE id = $1 RETURNING id",
-      [id],
+        "DELETE FROM mentors WHERE id = $1 RETURNING id",
+        [id],
     );
 
     if (res.rows.length === 0) {
@@ -173,7 +179,7 @@ export const updateMentor = async (id, data = {}) => {
     await client.query("BEGIN");
 
     const res = await client.query(
-      `UPDATE mentors 
+        `UPDATE mentors 
        SET name = COALESCE($1, name), 
            email = COALESCE($2, email), 
            phone = COALESCE($3, phone), 
@@ -182,7 +188,7 @@ export const updateMentor = async (id, data = {}) => {
            updated_at = CURRENT_TIMESTAMP
        WHERE id = $6 
        RETURNING *`,
-      [name, email, phone, expertise, status, id],
+        [name, email, phone, expertise, status, id],
     );
 
     if (res.rows.length === 0) {
@@ -195,17 +201,17 @@ export const updateMentor = async (id, data = {}) => {
       if (password && password.trim().length >= 6) {
         const hashed = await hashPassword(password.trim());
         await client.query(
-          `UPDATE users 
+            `UPDATE users 
            SET name = COALESCE($1, name), expertise = COALESCE($2, expertise), status = COALESCE($3, status), password = $4, updated_at = CURRENT_TIMESTAMP
            WHERE email = $5`,
-          [name, expertise, status, hashed, updatedMentor.email]
+            [name, expertise, status, hashed, updatedMentor.email]
         );
       } else {
         await client.query(
-          `UPDATE users 
+            `UPDATE users 
            SET name = COALESCE($1, name), expertise = COALESCE($2, expertise), status = COALESCE($3, status), updated_at = CURRENT_TIMESTAMP
-           WHERE email = $5`,
-          [name, expertise, status, updatedMentor.email]
+           WHERE email = $4`,
+            [name, expertise, status, updatedMentor.email]
         );
       }
     }
@@ -220,4 +226,19 @@ export const updateMentor = async (id, data = {}) => {
     client.release();
   }
 };
-
+// 5. Get Mentor Totals (for stats cards — independent of pagination)
+export const getMentorTotals = async () => {
+  try {
+    const res = await pool.query(`
+      SELECT
+        (SELECT COUNT(*)::integer FROM mentors) AS total,
+        (SELECT COUNT(*)::integer FROM mentors WHERE status = 'active') AS active,
+        (SELECT COUNT(*)::integer FROM mentor_project_assignments) AS assigned_projects,
+        (SELECT COUNT(*)::integer FROM mentor_workshop_assignments) AS workshops_led
+    `);
+    return res.rows[0];
+  } catch (error) {
+    console.error("Error in getMentorTotals:", error);
+    throw new Error("Failed to fetch mentor totals.");
+  }
+};

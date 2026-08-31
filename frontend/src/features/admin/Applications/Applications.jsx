@@ -1,31 +1,54 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Eye, X, Loader2, Inbox, CheckCircle2 } from "lucide-react";
 
 export default function Applications() {
     const [applications, setApplications] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [loadMoreLoading, setLoadMoreLoading] = useState(false);
     const [selectedApp, setSelectedApp] = useState(null);
     const [newStatus, setNewStatus] = useState("");
+    const [appPage, setAppPage] = useState(1);
+    const [hasMore, setHasMore] = useState(true);
 
-    const fetchApplications = async () => {
+    const fetchApplications = useCallback(async (page = 1) => {
         try {
-            const response = await fetch('/api/admin/applications', { credentials: 'include' });
+            if (page === 1) { setLoading(true); } else { setLoadMoreLoading(true); }
+            const response = await fetch(`/api/admin/applications?page=${page}`, { credentials: 'include' });
             const data = await response.json();
-            setApplications(Array.isArray(data) ? data : []);
+            const newApps = Array.isArray(data) ? data : [];
+
+            if (page === 1) {
+                setApplications(newApps);
+            } else {
+                setApplications((prev) => [...prev, ...newApps]);
+            }
+
+            setHasMore(newApps.length >= 10);
         } catch (error) {
             console.error("Error fetching applications:", error);
-            setApplications([]);
+            if (page === 1) { setApplications([]); }
+            setHasMore(false);
         } finally {
             setLoading(false);
+            setLoadMoreLoading(false);
         }
-    };
+    }, []);
 
-    useEffect(() => { fetchApplications(); }, []);
+    useEffect(() => { fetchApplications(1); }, [fetchApplications]);
+
+    const handleLoadMore = () => {
+        const nextPage = appPage + 1;
+        setAppPage(nextPage);
+        fetchApplications(nextPage);
+    };
 
     const handleUpdateStatus = async (id, status) => {
         try {
             await fetch(`/api/admin/applications/${id}/status`, {
-                method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ status })
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ status })
             });
             setApplications(prev => prev.map(app => app.id === id ? { ...app, status: status } : app));
             setSelectedApp(null);
@@ -53,14 +76,15 @@ export default function Applications() {
                     </div>
                 ) : applications.length > 0 ? (
                     <div className="bg-white border border-[#D6E4EA] rounded-2xl shadow-xs overflow-hidden">
-                        <table className="w-full text-left border-collapse table-fixed min-w-[900px]">
+                        <table className="w-full text-left border-collapse table-fixed min-w-[1100px]">
                             <thead>
                             <tr className="bg-[#F6FAFC] text-[#526274] uppercase tracking-wider text-xs font-extrabold border-b border-[#D6E4EA]">
-                                <th className="p-4 w-1/5">Applicant</th>
-                                <th className="p-4 w-1/5 hidden lg:table-cell">Startup Idea</th>
-                                <th className="p-4 w-1/5 hidden md:table-cell">Applied For</th>
-                                <th className="p-4 w-1/5">Status</th>
-                                <th className="p-4 w-1/5 text-right">View Detail</th>
+                                <th className="p-4 w-[20%]">Applicant</th>
+                                <th className="p-4 w-[20%] hidden lg:table-cell">Startup Idea</th>
+                                <th className="p-4 w-[18%] hidden md:table-cell">Applied For</th>
+                                <th className="p-4 w-[15%] hidden md:table-cell">Phone</th>
+                                <th className="p-4 w-[12%]">Status</th>
+                                <th className="p-4 w-[15%] text-right">View Detail</th>
                             </tr>
                             </thead>
                             <tbody className="divide-y divide-[#D6E4EA]">
@@ -69,13 +93,15 @@ export default function Applications() {
                                     <td className="p-4 align-top">
                                         <div className="font-bold text-sm text-[#111827]">{app.full_name || 'Unknown'}</div>
                                         <a href={`mailto:${app.email}`} className="text-xs text-[#006F9E] hover:underline block mt-1">{app.email || 'No Email'}</a>
-                                        {app.phone && <div className="text-xs text-[#526274] mt-1">{app.phone}</div>}
                                     </td>
                                     <td className="p-4 hidden lg:table-cell align-top">
                                         <p className="text-sm text-[#111827] italic">"{app.startup_idea || 'Not provided'}"</p>
                                     </td>
                                     <td className="p-4 hidden md:table-cell text-sm text-[#526274] font-medium align-top">
                                         {app.announcement_title || 'N/A'}
+                                    </td>
+                                    <td className="p-4 hidden md:table-cell text-sm text-[#526274] align-top">
+                                        {app.phone || '—'}
                                     </td>
                                     <td className="p-4 align-top">
                                         <span className={`inline-block px-2 py-1 rounded-full text-[10px] font-bold border ${
@@ -105,6 +131,23 @@ export default function Applications() {
                             <Inbox className="text-[#00ADEF]" size={32} />
                         </div>
                         <h2 className="text-xl font-extrabold text-[#111827] mb-2">No applications yet</h2>
+                    </div>
+                )}
+
+                {applications.length > 0 && (
+                    <div className="mt-6 flex flex-col items-center gap-2">
+                        {hasMore ? (
+                            <button
+                                onClick={handleLoadMore}
+                                disabled={loadMoreLoading}
+                                className="px-6 py-2 bg-[#00ADEF] text-white rounded-lg text-sm font-bold hover:bg-[#006F9E] transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
+                            >
+                                {loadMoreLoading ? <Loader2 size={16} className="animate-spin" /> : null}
+                                Load More
+                            </button>
+                        ) : (
+                            <p className="text-xs text-[#526274] font-medium">No more applications to load</p>
+                        )}
                     </div>
                 )}
             </div>

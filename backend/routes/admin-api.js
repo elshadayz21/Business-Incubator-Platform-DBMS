@@ -1,7 +1,7 @@
 import multer from "multer";
 import path from "path";
 import { getFundingHistory } from "../admin-backend/funding/funding.js";
-import { getProjectHistory, getAssignedMentors } from "../admin-backend/projects/projects.js"; // Add to imports
+import { getProjectHistory, getAssignedMentors } from "../admin-backend/projects/projects.js";
 
 // Configure Multer for file uploads
 const storage = multer.diskStorage({
@@ -30,7 +30,6 @@ const upload = multer({
   }
 });
 
-
 import { getFormFields, saveFormFields } from "../admin-backend/applications/applications.js";
 
 import {
@@ -38,11 +37,11 @@ import {
   updateApplicationStatus,
 } from "../admin-backend/applications/applications.js";
 
-
 import { Router } from "express";
 import pool from "../config/db.js";
 import {
   getAllWorkshops,
+  getWorkshopTotals,
   getWorkshop,
   createWorkshop,
   updateWorkshop,
@@ -56,6 +55,7 @@ import {
 
 import {
   getAllResources,
+  getResourceTotals,
   addResource,
   updateResource,
   deleteResource,
@@ -66,6 +66,7 @@ import {
 
 import {
   getAllMentors,
+  getMentorTotals,
   addMentor,
   deleteMentor,
   updateMentor,
@@ -93,6 +94,7 @@ import {
 //.............
 import {
   getAllFundingRequests,
+  getFundingTotals,
   getFundingDashboard,
   getFundingByStage,
   getFundingRequestById,
@@ -279,11 +281,18 @@ router.delete(
   }),
 );
 
-// Workshops
-router.get(
-  "/workshops",
-  asyncHandler(async (req, res) => res.json(await getAllWorkshops())),
-);
+// GET: All Workshops (Paginated)
+router.get("/workshops", asyncHandler(async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = 10;
+  const offset = (page - 1) * limit;
+  res.json(await getAllWorkshops(limit, offset));
+}));
+
+// GET: Workshop Totals (stats) — ⚠️ MUST be BEFORE router.get("/workshops/:id", ...)
+router.get("/workshops/totals", asyncHandler(async (req, res) => {
+  res.json(await getWorkshopTotals());
+}));
 router.get(
   "/workshops/:id",
   asyncHandler(async (req, res) => res.json(await getWorkshop(req.params.id))),
@@ -333,11 +342,6 @@ router.get(
   asyncHandler(async (req, res) => res.json(await getFeedbackReport())),
 );
 
-// Resources & Bookings
-router.get(
-  "/resources",
-  asyncHandler(async (req, res) => res.json(await getAllResources())),
-);
 router.post(
   "/resources",
   asyncHandler(async (req, res) => res.json(await addResource(req.body))),
@@ -354,10 +358,20 @@ router.delete(
     res.json(await deleteResource(req.params.id)),
   ),
 );
-router.get(
-  "/resources/stats",
-  asyncHandler(async (req, res) => res.json(await getResourceStats())),
-);
+
+// GET: All Resources (Paginated)
+router.get("/resources", asyncHandler(async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = 10;
+  const offset = (page - 1) * limit;
+  res.json(await getAllResources(limit, offset));
+}));
+router.get("/resources/totals", asyncHandler(async (req, res) => {
+  res.json(await getResourceTotals());
+}));
+router.get("/mentors/totals", asyncHandler(async (req, res) => {
+  res.json(await getMentorTotals());
+}));
 router.get(
   "/bookings/pending",
   asyncHandler(async (req, res) => res.json(await getPendingBookings())),
@@ -369,11 +383,13 @@ router.put(
   ),
 );
 
-// Mentors
-router.get(
-  "/mentors",
-  asyncHandler(async (req, res) => res.json(await getAllMentors())),
-);
+// GET: All Mentors (Paginated)
+router.get("/mentors", asyncHandler(async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = 10;
+  const offset = (page - 1) * limit;
+  res.json(await getAllMentors(limit, offset));
+}));
 router.post(
   "/mentors",
   asyncHandler(async (req, res) => res.json(await addMentor(req.body))),
@@ -390,9 +406,20 @@ router.put(
 );
 
 // Projects
+// GET: All Projects (Paginated)
 router.get(
-  "/projects",
-  asyncHandler(async (req, res) => res.json(await getAllProjects())),
+    "/projects",
+    asyncHandler(async (req, res) => {
+      try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = 10;
+        const offset = (page - 1) * limit;
+        const projects = await getAllProjects(limit, offset);
+        res.json(projects);
+      } catch (error) {
+        res.status(500).json({ message: "Failed to fetch projects" });
+      }
+    })
 );
 router.get(
   "/projects/stats",
@@ -438,11 +465,20 @@ router.put(
 );
 
 // Funding
+// GET: All Funding Requests (Paginated)
 router.get(
-  "/funding",
-  asyncHandler(async (req, res) =>
-    res.json(await getAllFundingRequests(req.query)),
-  ),
+    "/funding",
+    asyncHandler(async (req, res) => {
+      try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = 10;
+        const offset = (page - 1) * limit;
+        const result = await getAllFundingRequests(req.query.query || "", limit, offset);
+        res.json(result.data || []);
+      } catch (error) {
+        res.status(500).json({ message: "Failed to fetch funding" });
+      }
+    })
 );
 router.get(
   "/funding/dashboard",
@@ -452,6 +488,9 @@ router.get(
   "/funding/stage",
   asyncHandler(async (req, res) => res.json(await getFundingByStage())),
 );
+router.get("/funding/totals", asyncHandler(async (req, res) => {
+  res.json(await getFundingTotals());
+}));
 router.get(
   "/funding/:id",
   asyncHandler(async (req, res) =>
@@ -490,10 +529,13 @@ router.delete(
 );
 
 // Inbox (Contact & Newsletter)
-router.get(
-  "/inbox",
-  asyncHandler(async (req, res) => res.json(await getAllSubmissions())),
-);
+// GET: Inbox Submissions (Paginated)
+router.get("/inbox", asyncHandler(async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = 10;
+  const offset = (page - 1) * limit;
+  res.json(await getAllSubmissions(limit, offset));
+}));
 router.delete(
   "/inbox/:id",
   asyncHandler(async (req, res) =>
@@ -1028,17 +1070,20 @@ router.get("/reports/summary", async (req, res) => {
   }
 });
 
-// Applications (Open Call Submissions)
+// GET: All Applications (Paginated)
 router.get(
     "/applications",
-    asyncHandler(async (req, res) => res.json(await getAllApplications()))
-);
-
-router.put(
-    "/applications/:id/status",
-    asyncHandler(async (req, res) =>
-        res.json(await updateApplicationStatus(req.params.id, req.body.status))
-    )
+    asyncHandler(async (req, res) => {
+      try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = 10;
+        const offset = (page - 1) * limit;
+        const apps = await getAllApplications(limit, offset);
+        res.json(apps);
+      } catch (error) {
+        res.status(500).json({ message: "Failed to fetch applications" });
+      }
+    })
 );
 
 

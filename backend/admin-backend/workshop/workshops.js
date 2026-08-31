@@ -5,7 +5,8 @@ import path from "path";
 import os from "os";
 
 // Get all workshops
-export const getAllWorkshops = async () => {
+// Get all workshops (Paginated)
+export const getAllWorkshops = async (limit = null, offset = 0) => {
   try {
     const query = `
       SELECT w.id,
@@ -27,9 +28,14 @@ export const getAllWorkshops = async () => {
       ORDER BY w.created_at DESC
     `;
 
-    console.log("Executing getAllWorkshops query...");
-    const result = await db.query(query);
-    console.log("Database returned workshops:", result.rows);
+    let finalQuery = query;
+    const params = [];
+    if (limit != null) {
+      finalQuery += ` LIMIT $1 OFFSET $2`;
+      params.push(limit, offset);
+    }
+
+    const result = await db.query(finalQuery, params);
     console.log(`Total workshops found: ${result.rows.length}`);
 
     if (result.rows.length === 0) {
@@ -39,7 +45,6 @@ export const getAllWorkshops = async () => {
     return result.rows;
   } catch (error) {
     console.error("❌ Error fetching workshops:", error.message);
-    console.error("Full error:", error);
     throw error;
   }
 };
@@ -608,4 +613,19 @@ export const exportFeedbackReportPDF = async () => {
     throw error;
   }
 };
-
+// Get workshop totals (for stats cards — independent of pagination)
+export const getWorkshopTotals = async () => {
+  try {
+    const res = await db.query(`
+      SELECT
+        (SELECT COUNT(*)::integer FROM workshops) AS total,
+        (SELECT COUNT(*)::integer FROM workshops WHERE status = 'ongoing') AS ongoing,
+        (SELECT COUNT(*)::integer FROM workshops WHERE status = 'completed') AS completed,
+        (SELECT COUNT(*)::integer FROM workshop_enrollments) AS enrolled
+    `);
+    return res.rows[0];
+  } catch (error) {
+    console.error("Error in getWorkshopTotals:", error);
+    throw error;
+  }
+};

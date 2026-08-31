@@ -1,4 +1,5 @@
 import { Router } from "express";
+import pool from "../config/db.js";
 import { authorizeRole } from "../middleware/check_roles.middleware.js";
 import { isAuth } from "../middleware/auth.middlware.js";
 import { ROLES } from "../utils/constants.js";
@@ -230,4 +231,74 @@ router.post(
   }),
 );
 
+// GET: Load more activity logs (Pagination)
+router.get("/entrepreneur/activity-logs", async (req, res) => {
+    try {
+        const userId = req.session.userId;
+        const page = parseInt(req.query.page) || 1;
+        const offset = (page - 1) * 10;
+
+        const result = await pool.query(
+            `SELECT id, action_type, details, created_at
+       FROM activity_logs
+       WHERE user_id = $1
+       ORDER BY created_at DESC
+       LIMIT 10 OFFSET $2`,
+            [userId, offset]
+        );
+
+        res.json({ logs: result.rows });
+    } catch (error) {
+        console.error("Error fetching more logs:", error);
+        res.status(500).json({ error: "Failed to load more logs" });
+    }
+});
+// GET: Load more notifications (Pagination)
+router.get("/entrepreneur/notifications", async (req, res) => {
+    try {
+        const userId = req.session.userId;
+        const page = parseInt(req.query.page) || 1;
+        const offset = (page - 1) * 5;
+
+        const result = await pool.query(
+            `SELECT id, type, message, read, created_at
+       FROM notifications
+       WHERE user_id = $1
+       ORDER BY created_at DESC
+       LIMIT 5 OFFSET $2`,
+            [userId, offset]
+        );
+
+        res.json({ notifications: result.rows });
+    } catch (error) {
+        console.error("Error fetching more notifications:", error);
+        res.status(500).json({ error: "Failed to load more notifications" });
+    }
+});
+
+// GET: Load more funding requests (Pagination)
+router.get("/entrepreneur/funding", async (req, res) => {
+    try {
+        const userId = req.session.userId;
+        const page = parseInt(req.query.page) || 1;
+        const offset = (page - 1) * 5;
+
+        const result = await pool.query(
+            `SELECT fr.id, fr.project_id, p.name AS project_name, fr.amount, fr.approved_amount, fr.founder_action, fr.status,
+              fr.funding_stage, fr.description, fr.requested_at, fr.reviewed_at, fr.notes
+       FROM funding_requests fr
+       JOIN projects p ON p.id = fr.project_id
+       JOIN project_entrepreneurs pe ON pe.project_id = fr.project_id
+       WHERE pe.user_id = $1
+       ORDER BY fr.requested_at DESC
+       LIMIT 5 OFFSET $2`,
+            [userId, offset]
+        );
+
+        res.json({ funding: result.rows });
+    } catch (error) {
+        console.error("Error fetching more funding:", error);
+        res.status(500).json({ error: "Failed to load more funding" });
+    }
+});
 export default router;

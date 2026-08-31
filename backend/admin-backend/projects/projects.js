@@ -25,13 +25,19 @@ const ensureProjectStatusHistoryTable = async () => {
 };
 
 // Get All Projects
-export const getAllProjects = async () => {
-  const res = await pool.query(`
-    SELECT p.*
-    FROM projects p
-    ORDER BY p.created_at DESC
-  `);
-  return res.rows;
+// 1. Get All Projects (with Pagination)
+export const getAllProjects = async (limit = 10, offset = 0) => {
+  try {
+    const res = await pool.query(`
+      SELECT * FROM projects 
+      ORDER BY created_at DESC 
+      LIMIT $1 OFFSET $2
+    `, [limit, offset]);
+    return res.rows;
+  } catch (error) {
+    console.error("Error fetching projects:", error);
+    throw error;
+  }
 };
 
 // Get One Project by ID
