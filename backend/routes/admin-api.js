@@ -473,7 +473,7 @@ router.get(
         const page = parseInt(req.query.page) || 1;
         const limit = 10;
         const offset = (page - 1) * limit;
-        const result = await getAllFundingRequests(req.query.query || "", limit, offset);
+        const result = await getAllFundingRequests(req.query, limit, offset);
         res.json(result.data || []);
       } catch (error) {
         res.status(500).json({ message: "Failed to fetch funding" });
