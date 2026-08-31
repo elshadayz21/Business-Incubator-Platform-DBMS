@@ -173,8 +173,11 @@ export const register = async (req, res, next) => {
       return res.redirect("/v1/auth/signup");
     }
 
-    // Joi Whitelist Validation
-    const { error: validationError } = signupSchema.validate(req.body);
+    // Joi Whitelist Validation. `allowUnknown` tolerates the hidden `_csrf`
+    // field that the signup form posts alongside the real data.
+    const { error: validationError } = signupSchema.validate(req.body, {
+      allowUnknown: true,
+    });
     if (validationError) {
       req.flash("error", validationError.details[0].message);
       return res.redirect(`/v1/auth/signup?token=${token || ""}`);
@@ -220,7 +223,9 @@ export const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
-    const { error: validationError } = loginSchema.validate(req.body);
+    const { error: validationError } = loginSchema.validate(req.body, {
+      allowUnknown: true,
+    });
     if (validationError) {
       req.flash("error", validationError.details[0].message);
       return res.redirect("/admin");
@@ -496,7 +501,12 @@ export const updateProfile = async (req, res, next) => {
   try {
     const { name, bio, company, expertise } = req.body;
 
-    const { error: validationError } = profileSchema.validate(req.body);
+    // The profile form posts a hidden `_csrf` field (read by the CSRF
+    // middleware). Joi rejects unknown keys by default, which surfaced as
+    // `"_csrf" is not allowed". Allow it while still validating the real fields.
+    const { error: validationError } = profileSchema.validate(req.body, {
+      allowUnknown: true,
+    });
     if (validationError) {
       req.flash("error", validationError.details[0].message);
       return res.redirect("/v1/auth/profile");

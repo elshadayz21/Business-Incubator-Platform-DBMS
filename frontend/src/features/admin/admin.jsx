@@ -7,7 +7,7 @@ import Mentors from "./Mentors/Mentors";
 import Projects from "./projects/projects";
 import Funding from "./Funding/Funding";
 import Users from "./Users/Users";
-import Inbox from "./Inbox/Inbox";
+import Inbox from "./inbox/inbox";
 import Announcements from "./Announcements/Announcements";
 import Gallery from "./Gallery/Gallery";
 import MassEmail from "./MassEmail/MassEmail";

@@ -4,19 +4,19 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://YOUR-BACKEND.onrender.com/api/:path*"
+      "destination": "https://dxvalley-icms.onrender.com/api/:path*"
     },
     {
       "source": "/v1/:path*",
-      "destination": "https://YOUR-BACKEND.onrender.com/v1/:path*"
+      "destination": "https://dxvalley-icms.onrender.com/v1/:path*"
     },
     {
       "source": "/brand/:path*",
-      "destination": "https://YOUR-BACKEND.onrender.com/brand/:path*"
+      "destination": "https://dxvalley-icms.onrender.com/brand/:path*"
     },
     {
       "source": "/uploads/:path*",
-      "destination": "https://YOUR-BACKEND.onrender.com/uploads/:path*"
+      "destination": "https://dxvalley-icms.onrender.com/uploads/:path*"
     },
     {
       "source": "/(.*)",
