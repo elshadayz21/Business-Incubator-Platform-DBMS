@@ -26,6 +26,11 @@ import "./subscribers/subscribers.js";
 const app = express();
 const pgSession = connectPgSimpleImport(session);
 
+// Render/Cloudflare terminate TLS in front of Express, so the app sees HTTP on
+// its internal network. Without this, `req.secure` is false and the
+// `secure: true` session cookie is never issued -> logins can't persist.
+app.set("trust proxy", 1);
+
 app.set("view engine", "ejs");
 
 app.use(helmet({ contentSecurityPolicy: false }));
