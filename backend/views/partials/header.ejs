@@ -61,6 +61,11 @@
                 </button>
               </div>
             </div>
+          <% } else { %>
+            <button type="button" onclick="handleGlobalApply()" class="inline-flex items-center gap-2 rounded-full bg-orange px-5 py-2 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-orange-dark focus:outline-none focus:ring-2 focus:ring-orange focus:ring-offset-2">
+              Apply now
+              <i class="fa-solid fa-arrow-up-right-from-square text-xs" aria-hidden="true"></i>
+            </button>
           <% } %>
         </div>
       </div>
@@ -106,16 +111,6 @@
       </div>
     </div>
 
-    <% if (!signedIn) { %>
-    <div id="header-apply-bar" class="hidden border-t border-line bg-[#F6FAFC]">
-      <div class="mx-auto flex max-w-7xl justify-end px-6 py-2.5 lg:px-10">
-        <button type="button" onclick="handleGlobalApply()" class="inline-flex items-center gap-2 rounded-full bg-orange px-5 py-2 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-orange-dark focus:outline-none focus:ring-2 focus:ring-orange focus:ring-offset-2">
-          Apply now
-          <i class="fa-solid fa-arrow-up-right-from-square text-xs" aria-hidden="true"></i>
-        </button>
-      </div>
-    </div>
-    <% } %>
   </div>
 </header>
 
@@ -173,27 +168,16 @@
   };
 
   window.updateHeaderApplyBar = async (announcements) => {
-    const bar = document.getElementById('header-apply-bar');
-    if (!bar) return;
-
     try {
       let data = announcements;
       if (!data) {
         const response = await fetch('/api/public/announcements');
-        if (!response.ok) {
-          bar.classList.add('hidden');
-          return;
-        }
+        if (!response.ok) return;
         data = await response.json();
       }
-
       window.announcementData = data;
-
-      const hasActiveOpenCall = data.some(window.isActiveOpenCall);
-      bar.classList.toggle('hidden', !hasActiveOpenCall);
     } catch (error) {
-      console.error('Error updating header apply bar:', error);
-      bar.classList.add('hidden');
+      console.error('Error fetching announcements:', error);
     }
   };
 
