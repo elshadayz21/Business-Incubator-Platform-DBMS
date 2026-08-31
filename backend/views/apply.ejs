@@ -161,32 +161,38 @@
                         }
 
                         if (field.field_type === 'textarea' || field.field_type === 'idea') {
-                            return `<div><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><textarea name="custom_${field.id}" ${isRequired} class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]"></textarea></div>`;
-                        }
-                        if (field.field_type === 'select') {
-                            const opts = optsStr.split(',').map(opt => `<option value="${opt.trim()}">${opt.trim()}</option>`).join('');
-                            return `<div><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><select name="custom_${field.id}" ${isRequired} class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]"><option value="">Select...</option>${opts}</select></div>`;
-                        }
-                        if (field.field_type === 'radio') {
-                            const opts = optsStr.split(',').map(opt => opt.trim()).filter(Boolean);
-                            const radioInputs = opts.map(opt => `<label class="flex items-center gap-2 py-1.5 cursor-pointer"><input type="radio" name="custom_${field.id}" value="${opt}" ${isRequired} class="h-4 w-4 border-gray-300 text-[#00ADEF] focus:ring-[#00ADEF]"><span class="text-sm font-medium text-[#111827]">${opt}</span></label>`).join('');
-                            return `<div><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><div class="flex flex-col gap-1 mt-1 p-3 bg-[#F6FAFC] border border-[#D6E4EA] rounded-xl">${radioInputs}</div></div>`;
-                        }
-                        if (field.field_type === 'checkbox') {
-                            const opts = optsStr.split(',').map(opt => opt.trim()).filter(Boolean);
-                            if (opts.length > 0) {
-                                const checkboxInputs = opts.map(opt => `<label class="flex items-center gap-2 py-1.5 cursor-pointer"><input type="checkbox" name="custom_${field.id}[]" value="${opt}" class="h-4 w-4 border-gray-300 text-[#00ADEF] focus:ring-[#00ADEF]"><span class="text-sm font-medium text-[#111827]">${opt}</span></label>`).join('');
-                                return `<div><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><div class="flex flex-col gap-1 mt-1 p-3 bg-[#F6FAFC] border border-[#D6E4EA] rounded-xl">${checkboxInputs}</div></div>`;
-                            } else {
-                                return `<div class="flex items-center gap-3 py-2"><input type="checkbox" name="custom_${field.id}" ${isRequired} class="h-4 w-4 rounded border-gray-300 text-[#00ADEF] focus:ring-[#00ADEF]"><label class="text-sm font-bold text-[#526274]">${field.label} ${reqMark}</label></div>`;
-                            }
-                        }
-                        if (field.field_type === 'number' || field.field_type === 'Phone number') {
-                            return `<div><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><input type="text" name="custom_${field.id}" ${isRequired} oninput="this.value = this.value.replace(/[^0-9+]/g, '')" class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]"></div>`;
-                        }
-                        if (field.field_type === 'email') {
-                            return `<div><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><input type="email" name="custom_${field.id}" ${isRequired} class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]"></div>`;
-                        }
+                                                if (field.field_type === 'textarea') {
+                                                    return `<div><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><textarea name="custom_${field.id}" ${isRequired} class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]"></textarea></div>`;
+                                                }
+                                                if (field.field_type === 'select') {
+                                                    const opts = optsStr.split(',').map(opt => `<option value="${opt.trim()}">${opt.trim()}</option>`).join('');
+                                                    return `<div><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><select name="custom_${field.id}" ${isRequired} class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]"><option value="">Select...</option>${opts}</select></div>`;
+                                                }
+                                                if (field.field_type === 'radio') {
+                                                    const opts = optsStr.split(',').map(opt => opt.trim()).filter(Boolean);
+                                                    const radioInputs = opts.map(opt => `<label class="flex items-center gap-2 py-1.5 cursor-pointer"><input type="radio" name="custom_${field.id}" value="${opt}" ${isRequired} class="h-4 w-4 border-gray-300 text-[#00ADEF] focus:ring-[#00ADEF]"><span class="text-sm font-medium text-[#111827]">${opt}</span></label>`).join('');
+                                                    return `<div><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><div class="flex flex-col gap-1 mt-1 p-3 bg-[#F6FAFC] border border-[#D6E4EA] rounded-xl">${radioInputs}</div></div>`;
+                                                }
+                                                if (field.field_type === 'checkbox') {
+                                                    const opts = optsStr.split(',').map(opt => opt.trim()).filter(Boolean);
+                                                    if (opts.length > 0) {
+                                                        const checkboxInputs = opts.map(opt => `<label class="flex items-center gap-2 py-1.5 cursor-pointer"><input type="checkbox" name="custom_${field.id}[]" value="${opt}" class="h-4 w-4 border-gray-300 text-[#00ADEF] focus:ring-[#00ADEF]"><span class="text-sm font-medium text-[#111827]">${opt}</span></label>`).join('');
+                                                        return `<div><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><div class="flex flex-col gap-1 mt-1 p-3 bg-[#F6FAFC] border border-[#D6E4EA] rounded-xl">${checkboxInputs}</div></div>`;
+                                                    } else {
+                                                        return `<div class="flex items-center gap-3 py-2"><input type="checkbox" name="custom_${field.id}" ${isRequired} class="h-4 w-4 rounded border-gray-300 text-[#00ADEF] focus:ring-[#00ADEF]"><label class="text-sm font-bold text-[#526274]">${field.label} ${reqMark}</label></div>`;
+                                                    }
+                                                }
+                                                if (field.field_type === 'number') {
+                                                    return `<div><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><input type="number" name="custom_${field.id}" ${isRequired} class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]"></div>`;
+                                                }
+                                                if (field.field_type === 'email') {
+                                                    return `<div><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><input type="email" name="custom_${field.id}" ${isRequired} class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]"></div>`;
+                                                }
+                                                if (field.field_type === 'tel') {
+                                                    return `<div><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><input type="tel" name="custom_${field.id}" ${isRequired} class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]"></div>`;
+                                                }
+                                                // Default: Short Text
+                                                return `<div><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><input type="text" name="custom_${field.id}" ${isRequired} class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]"></div>`;
                         return `<div><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><input type="text" name="custom_${field.id}" ${isRequired} class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]"></div>`;
                     }).join('');
                     loadFormData();

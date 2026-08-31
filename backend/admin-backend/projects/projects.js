@@ -24,14 +24,21 @@ const ensureProjectStatusHistoryTable = async () => {
   }
 };
 
-// Get All Projects
-export const getAllProjects = async () => {
-  const res = await pool.query(`
-    SELECT p.*
-    FROM projects p
-    ORDER BY p.created_at DESC
-  `);
-  return res.rows;
+// Get All Projects (with Pagination — null limit = return all)
+export const getAllProjects = async (limit = null, offset = 0) => {
+  try {
+    let sql = `SELECT * FROM projects ORDER BY created_at DESC`;
+    const params = [];
+    if (limit != null) {
+      sql += ` LIMIT $1 OFFSET $2`;
+      params.push(limit, offset);
+    }
+    const res = await pool.query(sql, params);
+    return res.rows;
+  } catch (error) {
+    console.error("Error fetching projects:", error);
+    throw error;
+  }
 };
 
 // Get One Project by ID

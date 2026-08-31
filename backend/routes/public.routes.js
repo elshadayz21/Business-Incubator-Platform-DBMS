@@ -107,8 +107,8 @@ router.post("/apply", async (req, res) => {
             }
         }
 
-        // 2. SCAN DYNAMIC ANSWERS FOR EMAIL AND NAME!
-        const fieldsRes = await pool.query("SELECT id, field_type FROM form_fields WHERE announcement_id = $1", [announcement_id]);
+        // 2. SCAN DYNAMIC ANSWERS BASED ON LABEL TEXT!
+        const fieldsRes = await pool.query("SELECT id, label FROM form_fields WHERE announcement_id = $1", [announcement_id]);
         const fields = fieldsRes.rows;
 
         let parsedAnswers = answers || {};
@@ -116,14 +116,28 @@ router.post("/apply", async (req, res) => {
         for (const field of fields) {
             const answerKey = `custom_${field.id}`;
             const userAnswer = parsedAnswers[answerKey];
+            const labelLower = (field.label || '').toLowerCase();
 
             if (userAnswer) {
-                if (field.field_type === 'email') {
+                // If label contains "email", save to email column
+                if (labelLower.includes('email')) {
                     email = userAnswer;
-                } else if (field.field_type === 'name') {
+                }
+                // If label contains "name", save to full_name column
+                else if (labelLower.includes('name')) {
                     full_name = userAnswer;
-                } else if (field.field_type === 'idea') {
+                }
+                // If label contains "idea" or "startup", save to startup_idea column
+                else if (labelLower.includes('idea') || labelLower.includes('startup')) {
                     startup_idea = userAnswer;
+                }
+                // If label contains "background", save to background column
+                else if (labelLower.includes('background')) {
+                    background = userAnswer;
+                }
+                // If label contains "phone", save to phone column
+                else if (labelLower.includes('phone')) {
+                    phone = userAnswer;
                 }
             }
         }

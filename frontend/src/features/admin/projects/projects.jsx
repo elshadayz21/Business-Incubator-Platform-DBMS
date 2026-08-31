@@ -25,6 +25,8 @@ export default function Projects() {
   const [showDetails, setShowDetails] = useState(false);
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [projectPage, setProjectPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   const [stats, setStats] = useState({
     total: 0,
     idea: 0,
@@ -42,15 +44,28 @@ export default function Projects() {
   };
 
   // --- FIXED: Using standard fetch instead of Electron invoke ---
-  const fetchProjects = useCallback(async () => {
+  const fetchProjects = useCallback(async (page = 1) => {
     setLoading(true);
     try {
-      const response = await fetch('/api/admin/projects', { credentials: 'include' });
+      const response = await fetch(`/api/admin/projects?page=${page}`, { credentials: 'include' });
       const data = await response.json();
-      setProjects(Array.isArray(data) ? data : (data?.data || []));
+      const newProjects = Array.isArray(data) ? data : [];
+
+      // If it's page 1, replace the list. If it's > 1, append to the list.
+      if (page === 1) {
+        setProjects(newProjects);
+      } else {
+        setProjects((prev) => [...prev, ...newProjects]);
+      }
+
+      // If the database returned fewer than 10 items, there is no more data!
+      if (newProjects.length < 10) {
+        setHasMore(false);
+      } else {
+        setHasMore(true);
+      }
     } catch (error) {
       console.error("Error fetching projects:", error);
-      setProjects([]);
     } finally {
       setLoading(false);
     }
@@ -266,20 +281,20 @@ export default function Projects() {
             <Filter size={14} /> Stage:
           </span>
             {["all", "idea", "in-progress", "completed"].map((status) => {
-                const labels = { "all": "All Stages", "idea": "Idea", "in-progress": "MVP", "completed": "Scale-Up" };
-                return (
-                <button
-                    key={status}
-                    onClick={() => setFilter(status)}
-                    className={`px-3.5 py-2 text-xs font-bold rounded-xl transition-all ${
-                        filter === status
-                            ? "bg-[#00ADEF] text-white shadow-xs"
-                            : "bg-[#F6FAFC] text-[#526274] border border-[#D6E4EA] hover:bg-[#EAF8FC] hover:text-[#006F9E]"
-                    }`}
-                >
-                  {labels[status]}
-                </button>
-                );
+              const labels = { "all": "All Stages", "idea": "Idea", "in-progress": "MVP", "completed": "Scale-Up" };
+              return (
+                  <button
+                      key={status}
+                      onClick={() => setFilter(status)}
+                      className={`px-3.5 py-2 text-xs font-bold rounded-xl transition-all ${
+                          filter === status
+                              ? "bg-[#00ADEF] text-white shadow-xs"
+                              : "bg-[#F6FAFC] text-[#526274] border border-[#D6E4EA] hover:bg-[#EAF8FC] hover:text-[#006F9E]"
+                      }`}
+                  >
+                    {labels[status]}
+                  </button>
+              );
             })}
           </div>
         </div>
@@ -404,6 +419,26 @@ export default function Projects() {
                   })}
                   </tbody>
                 </table>
+              </div>
+
+              {/* LOAD MORE PROJECTS BUTTON */}
+              <div className="flex justify-center mt-6 mb-4">
+                {hasMore ? (
+                    <button
+                        onClick={() => {
+                          const next = projectPage + 1;
+                          setProjectPage(next);
+                          fetchProjects(next);
+                        }}
+                        className="px-6 py-2.5 rounded-xl bg-[#EAF8FC] text-[#006F9E] border border-[#00ADEF]/20 text-xs font-bold uppercase tracking-wider hover:bg-[#D6E4EA] transition"
+                    >
+                       More
+                    </button>
+                ) : (
+                    <p className="text-xs font-bold text-[#526274] uppercase tracking-wider">
+                      No more projects to load.
+                    </p>
+                )}
               </div>
             </div>
         ) : (

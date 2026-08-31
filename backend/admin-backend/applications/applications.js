@@ -40,13 +40,15 @@ const ensureFormFieldsTable = async () => {
 };
 
 // GET ALL APPLICATIONS (with Announcement Title)
-export const getAllApplications = async () => {
+
+export const getAllApplications = async (limit = 10, offset = 0) => {
     const result = await pool.query(`
     SELECT a.*, an.title as announcement_title 
     FROM applications a
     LEFT JOIN announcements an ON a.announcement_id = an.id
     ORDER BY a.created_at DESC
-  `);
+    LIMIT $1 OFFSET $2
+  `, [limit, offset]);
     return result.rows;
 };
 

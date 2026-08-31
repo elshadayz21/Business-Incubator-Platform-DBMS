@@ -3,12 +3,16 @@ import pool from "../../config/db.js";
 const VALID_RESOURCE_TYPES = ["workspace", "meeting_room", "equipment"];
 const VALID_BOOKING_STATUSES = ["pending", "approved", "rejected"];
 
-// 1. Get All Resources
-export const getAllResources = async () => {
+// 1. Get All Resources (Paginated)
+export const getAllResources = async (limit = null, offset = 0) => {
   try {
-    const res = await pool.query(
-      "SELECT * FROM resources ORDER BY created_at DESC",
-    );
+    let sql = "SELECT * FROM resources ORDER BY created_at DESC";
+    const params = [];
+    if (limit != null) {
+      sql += " LIMIT $1 OFFSET $2";
+      params.push(limit, offset);
+    }
+    const res = await pool.query(sql, params);
     return res.rows;
   } catch (error) {
     console.error("Error in getAllResources:", error);
@@ -26,7 +30,7 @@ export const addResource = async (data = {}) => {
   }
   if (!VALID_RESOURCE_TYPES.includes(type)) {
     throw new Error(
-      `Invalid resource type: ${type}. Allowed: ${VALID_RESOURCE_TYPES.join(", ")}`,
+        `Invalid resource type: ${type}. Allowed: ${VALID_RESOURCE_TYPES.join(", ")}`,
     );
   }
   if (!Number.isInteger(Number(capacity)) || Number(capacity) <= 0) {
@@ -35,8 +39,8 @@ export const addResource = async (data = {}) => {
 
   try {
     const res = await pool.query(
-      "INSERT INTO resources (name, type, capacity, location) VALUES ($1, $2, $3, $4) RETURNING *",
-      [name, type, Number(capacity), location],
+        "INSERT INTO resources (name, type, capacity, location) VALUES ($1, $2, $3, $4) RETURNING *",
+        [name, type, Number(capacity), location],
     );
     return res.rows[0];
   } catch (error) {
@@ -45,7 +49,6 @@ export const addResource = async (data = {}) => {
   }
 };
 
-// 3. Update Resource
 // 3. Update Resource
 export const updateResource = async (id, data) => {
   const { name, type, capacity, location, status } = data;
@@ -92,13 +95,13 @@ export const deleteResource = async (id) => {
     await client.query("BEGIN");
 
     await client.query(
-      "DELETE FROM project_resources WHERE resource_id = $1",
-      [id],
+        "DELETE FROM project_resources WHERE resource_id = $1",
+        [id],
     );
 
-    const res = await client.query(
-      "DELETE FROM resources WHERE id = $1 RETURNING id",
-      [id],
+    const res = await pool.query(
+        "DELETE FROM resources WHERE id = $1 RETURNING id",
+        [id],
     );
     if (res.rows.length === 0) {
       throw new Error("Resource not found to delete.");
@@ -115,7 +118,7 @@ export const deleteResource = async (id) => {
   }
 };
 
-// 4. Get Pending Bookings
+// 5. Get Pending Bookings
 export const getPendingBookings = async () => {
   try {
     const res = await pool.query(`
@@ -132,7 +135,7 @@ export const getPendingBookings = async () => {
   }
 };
 
-// 5. Update Booking Status
+// 6. Update Booking Status
 export const updateBookingStatus = async (id, status) => {
   // Validation
   if (!VALID_BOOKING_STATUSES.includes(status)) {
@@ -141,8 +144,8 @@ export const updateBookingStatus = async (id, status) => {
 
   try {
     const res = await pool.query(
-      "UPDATE resource_bookings SET status = $1 WHERE id = $2 RETURNING *",
-      [status, id],
+        "UPDATE resource_bookings SET status = $1 WHERE id = $2 RETURNING *",
+        [status, id],
     );
 
     if (res.rows.length === 0) {
@@ -155,7 +158,7 @@ export const updateBookingStatus = async (id, status) => {
   }
 };
 
-// 6. Get Resource Stats
+// 7. Get Resource Stats
 export const getResourceStats = async () => {
   try {
     const res = await pool.query(`
@@ -174,4 +177,20 @@ export const getResourceStats = async () => {
     throw new Error("Failed to fetch resource stats.");
   }
 };
-
+// 8. Get Resource Totals (for stats cards — independent of pagination)
+export const getResourceTotals = async () => {
+  try {
+    const res = await pool.query(`
+      SELECT
+        COUNT(*)::integer AS total,
+        COUNT(*) FILTER (WHERE type = 'workspace')::integer AS workspaces,
+        COUNT(*) FILTER (WHERE type = 'meeting_room')::integer AS meeting_rooms,
+        COUNT(*) FILTER (WHERE type = 'equipment')::integer AS equipment
+      FROM resources
+    `);
+    return res.rows[0];
+  } catch (error) {
+    console.error("Error in getResourceTotals:", error);
+    throw new Error("Failed to fetch resource totals.");
+  }
+};

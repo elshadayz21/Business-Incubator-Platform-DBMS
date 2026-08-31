@@ -1,29 +1,38 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
   <component name="ChangeListManager">
     <list default="true" id="901bcf82-3eb7-452d-8742-e0e378cb8b0d" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/backend/views/partners.ejs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/admin-backend/resources/resources.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/admin-backend/resources/resources.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/app.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/app.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/admin-backend/applications/applications.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/admin-backend/applications/applications.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/admin-backend/chat/chat.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/admin-backend/chat/chat.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/admin-backend/funding/funding.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/admin-backend/funding/funding.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/admin-backend/portal/portal.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/admin-backend/portal/portal.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/admin-backend/projects/projects.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/admin-backend/projects/projects.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/logs/combined.log" beforeDir="false" afterPath="$PROJECT_DIR$/backend/logs/combined.log" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/logs/error.log" beforeDir="false" afterPath="$PROJECT_DIR$/backend/logs/error.log" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/public/admin/assets/index-C3Z2YyyZ.css" beforeDir="false" afterPath="$PROJECT_DIR$/backend/public/admin/assets/index-C3Z2YyyZ.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/public/admin/assets/index-D8bqrFtu.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/public/admin/assets/index-D8bqrFtu.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/public/admin/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/backend/public/admin/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/routes/admin-api.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/routes/admin-api.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/routes/portal-api.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/routes/portal-api.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/routes/public.routes.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/routes/public.routes.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/views/funding/request-funding.ejs" beforeDir="false" afterPath="$PROJECT_DIR$/backend/views/funding/request-funding.ejs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/views/partials/footer.ejs" beforeDir="false" afterPath="$PROJECT_DIR$/backend/views/partials/footer.ejs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/views/partials/header.ejs" beforeDir="false" afterPath="$PROJECT_DIR$/backend/views/partials/header.ejs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/views/projects/add-project.ejs" beforeDir="false" afterPath="$PROJECT_DIR$/backend/views/projects/add-project.ejs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/features/admin/Gallery/Gallery.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/admin/Gallery/Gallery.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/features/admin/Reports/Reports.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/admin/Reports/Reports.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/features/admin/Resources/AddResourceForm.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/admin/Resources/AddResourceForm.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/features/admin/Resources/Resources.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/admin/Resources/Resources.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/features/admin/StaticPages/StaticPages.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/admin/StaticPages/StaticPages.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/features/admin/Users/Users.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/admin/Users/Users.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/views/apply.ejs" beforeDir="false" afterPath="$PROJECT_DIR$/backend/views/apply.ejs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/components/ChatPanel.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/components/ChatPanel.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/features/admin/Announcements/Announcements.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/admin/Announcements/Announcements.jsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/src/features/admin/projects/projects.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/admin/projects/projects.jsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/src/features/entrepreneur/EntrepreneurPortal.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/entrepreneur/EntrepreneurPortal.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="EmbeddingIndexingInfo">
+    <option name="cachedIndexableFilesCount" value="255" />
   </component>
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
@@ -40,6 +49,69 @@
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="McpProjectServerCommands">
+    <commands />
+    <urls />
+  </component>
+  <component name="NextEditCompletionFeaturesState">
+    <decayedCancelled>
+      <entry key="MS100" value="1.0" />
+      <entry key="MS500" value="1.0" />
+      <entry key="S2" value="1.0" />
+      <entry key="S5" value="1.0" />
+      <entry key="S10" value="1.0" />
+      <entry key="S30" value="1.0" />
+      <entry key="S60" value="1.0" />
+      <entry key="M2" value="1.0" />
+      <entry key="M5" value="1.0" />
+      <entry key="M10" value="1.0" />
+      <entry key="M15" value="1.0" />
+      <entry key="M30" value="1.0" />
+      <entry key="H1" value="1.0" />
+      <entry key="H2" value="1.0" />
+      <entry key="H4" value="1.0" />
+      <entry key="D1" value="1.0" />
+      <entry key="W1" value="1.0" />
+    </decayedCancelled>
+    <decayedSelected>
+      <entry key="MS100" value="0.0" />
+      <entry key="MS500" value="0.0" />
+      <entry key="S2" value="0.0" />
+      <entry key="S5" value="0.0" />
+      <entry key="S10" value="0.0" />
+      <entry key="S30" value="0.0" />
+      <entry key="S60" value="0.0" />
+      <entry key="M2" value="0.0" />
+      <entry key="M5" value="0.0" />
+      <entry key="M10" value="0.0" />
+      <entry key="M15" value="0.0" />
+      <entry key="M30" value="0.0" />
+      <entry key="H1" value="0.0" />
+      <entry key="H2" value="0.0" />
+      <entry key="H4" value="0.0" />
+      <entry key="D1" value="0.0" />
+      <entry key="W1" value="0.0" />
+    </decayedSelected>
+    <decayedShown>
+      <entry key="MS100" value="0.00808800721751076" />
+      <entry key="MS500" value="0.3815648022401398" />
+      <entry key="S2" value="0.7859448572027585" />
+      <entry key="S5" value="0.9081484177215096" />
+      <entry key="S10" value="0.9529682144339913" />
+      <entry key="S30" value="0.9840703312042957" />
+      <entry key="S60" value="0.9920031911260647" />
+      <entry key="M2" value="0.9959935698216453" />
+      <entry key="M5" value="0.9983954976241907" />
+      <entry key="M10" value="0.9991974267501847" />
+      <entry key="M15" value="0.9994648795719356" />
+      <entry key="M30" value="0.9997324039821535" />
+      <entry key="H1" value="0.9998661930389253" />
+      <entry key="H2" value="0.9999330942812751" />
+      <entry key="H4" value="0.9999665465810719" />
+      <entry key="D1" value="0.9999944243524597" />
+      <entry key="W1" value="0.9999992034770194" />
+    </decayedShown>
+  </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 4,
   &quot;fromUser&quot;: false
@@ -49,22 +121,26 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
-    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;feature-dropdowns-and-resource-fix&quot;,
-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;ts.external.directory.path&quot;: &quot;C:\\Users\\pc\\AppData\\Local\\Programs\\IntelliJ IDEA\\plugins\\javascript-plugin\\jsLanguageServicesImpl\\external&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.MCP Project settings loaded": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "codeWithMe.voiceChat.enabledByDefault": "false",
+    "git-widget-placeholder": "feature-portal-and-form-polish",
+    "kotlin-language-version-configured": "true",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "preferences.lookFeel",
+    "ts.external.directory.path": "C:\\Users\\pc\\AppData\\Local\\Programs\\IntelliJ IDEA\\plugins\\javascript-plugin\\jsLanguageServicesImpl\\external"
   }
-}</component>
+}]]></component>
   <component name="RunManager">
     <configuration default="true" type="JetRunConfigurationType">
       <method v="2">
@@ -96,5 +172,9 @@
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
   </component>
 </project>
