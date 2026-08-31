@@ -1,5 +1,15 @@
 {
-  "dependencies": {
-    "nodemailer": "^9.0.5"
+  "name": "business-incubator-platform",
+  "version": "1.0.0",
+  "description": "Business Incubator Platform DBMS",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "cd backend && npm start",
+    "dev": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build:frontend": "cd frontend && npm run build",
+    "build:css": "cd backend && npm run build:css",
+    "install:all": "cd backend && npm install && cd ../frontend && npm install"
   }
 }

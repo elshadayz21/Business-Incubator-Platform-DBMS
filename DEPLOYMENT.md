@@ -28,7 +28,7 @@ Make sure your branch is on GitHub (`elshadayz21/Business-Incubator-Platform-DBM
 1. Go to [render.com](https://render.com) → **New** → **Blueprint**
 2. Connect your GitHub repo
 3. Render reads `render.yaml` at the repo root and creates:
-   - **Web Service:** `dxvalley-icms` (Node, root dir `Website`)
+   - **Web Service:** `dxvalley-incubator-backend` (Node, root dir `backend`)
    - **PostgreSQL:** `dxvalley-db`
 
 ### 3. Set environment variables (Render dashboard → Web Service → Environment)
@@ -46,8 +46,8 @@ Make sure your branch is on GitHub (`elshadayz21/Business-Incubator-Platform-DBM
 After the first deploy, open **Render Shell** for the web service:
 
 ```bash
-cd Website
-node run_migrations.cjs
+cd backend
+npm run migrate
 ```
 
 ### 5. Seed admin user (if empty DB)
@@ -67,12 +67,12 @@ Use this if you want the React admin portal on a separate Vercel URL.
 
 ### 1. Import project on Vercel
 
-- **Root Directory:** `Website/admin-ui`
+- **Root Directory:** `frontend`
 - **Framework:** Vite
 - **Build Command:** `npm run build:vercel`
 - **Output Directory:** `dist`
 
-(`vercel.json` in `admin-ui/` already configures this.)
+(`vercel.json` in `frontend/` already configures this.)
 
 ### 2. Environment variables (Vercel)
 
@@ -111,11 +111,11 @@ This is the **recommended** setup for this project.
 ## Local development
 
 ```bash
-cd Website
+cd backend
 cp ../.env.example .env   # fill in DB_* values
 npm install
-cd admin-ui && npm install && cd ..
-npm run build              # build admin into public/admin
+cd ../frontend && npm install && cd ../backend
+npm run build              # build admin into backend/public/admin
 npm start                  # http://localhost:3000
 ```
 
@@ -136,5 +136,5 @@ npm start                  # http://localhost:3000
 
 - `render.yaml` — Render blueprint
 - `.env.example` — environment template
-- `Website/admin-ui/vercel.json` — Vercel SPA config
-- `Website/admin-ui/src/config/api.js` — API base URL for split deploy
+- `frontend/vercel.json` — Vercel SPA config
+- `frontend/src/config/api.js` — API base URL for split deploy

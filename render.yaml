@@ -2,11 +2,13 @@
 # Docs: https://render.com/docs/blueprint-spec
 services:
   - type: web
-    name: dxvalley-icms
+    name: dxvalley-incubator-backend
     runtime: node
-    rootDir: Website
-    buildCommand: npm install && cd admin-ui && npm install && npm run build
+    plan: free
+    rootDir: backend
+    buildCommand: npm install && cd ../frontend && npm install && npm run build
     startCommand: npm start
+    autoDeploy: true
     healthCheckPath: /
     envVars:
       - key: NODE_ENV
@@ -20,6 +22,18 @@ services:
       - key: BASE_URL
         sync: false
       - key: CORS_ORIGINS
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_SECURE
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_FROM
         sync: false
 
 databases:

@@ -1,0 +1,29 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npm run build:vercel",
+  "outputDirectory": "dist",
+  "framework": "vite",
+  "cleanUrls": true,
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://dxvalley-icms.onrender.com/api/:path*"
+    },
+    {
+      "source": "/v1/:path*",
+      "destination": "https://dxvalley-icms.onrender.com/v1/:path*"
+    },
+    {
+      "source": "/brand/:path*",
+      "destination": "https://dxvalley-icms.onrender.com/brand/:path*"
+    },
+    {
+      "source": "/uploads/:path*",
+      "destination": "https://dxvalley-icms.onrender.com/uploads/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

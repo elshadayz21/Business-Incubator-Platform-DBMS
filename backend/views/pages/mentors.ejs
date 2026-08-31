@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<%- include('../partials/head', { title: 'Meet Our Mentors - DxValley Incubation Center' }) %>
+
+<body class="flex min-h-screen flex-col bg-white font-sans text-ink">
+    <%- include('../partials/header') %>
+
+    <main class="flex-grow">
+        <!-- Hero -->
+        <section class="relative overflow-hidden bg-gradient-to-br from-cyan via-cyan-mid to-cyan-deep text-white">
+            <div class="pointer-events-none absolute -left-28 -top-32 h-[520px] w-[700px] rounded-[48%] border-[76px] border-white/10" aria-hidden="true"></div>
+            <div class="pointer-events-none absolute -right-44 bottom-[-260px] h-[620px] w-[760px] rounded-[50%] border-[88px] border-white/10" aria-hidden="true"></div>
+            <div class="relative mx-auto max-w-7xl px-6 py-20 lg:px-10 lg:py-24">
+                <p class="mb-5 inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[.24em] text-white/80">
+                    <span class="h-2 w-2 rounded-full bg-orange" aria-hidden="true"></span>
+                    Expert Guidance
+                </p>
+                <h1 class="max-w-[760px] text-5xl font-extrabold leading-[1.02] tracking-[-.055em] sm:text-6xl lg:text-7xl">
+                    Meet the<br />
+                    <span class="text-white/75">mentors.</span>
+                </h1>
+                <p class="mt-7 max-w-[650px] text-lg leading-8 text-white/85 sm:text-xl">
+                    Don't learn from mistakes. Learn from people who already made them.
+                </p>
+            </div>
+        </section>
+
+        <!-- Mentors Grid -->
+        <section class="bg-surface">
+            <div class="mx-auto max-w-7xl px-6 py-20 lg:px-10 lg:py-24">
+                <% if (mentors && mentors.length > 0) { %>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <% mentors.forEach(mentor => { %>
+                            <article class="group flex h-full flex-col overflow-hidden rounded-3xl border border-line bg-white shadow-[0_12px_30px_rgba(0,88,125,.08)] transition duration-300 hover:-translate-y-1.5 hover:shadow-[0_22px_50px_rgba(0,88,125,.16)]">
+                                <div class="relative h-28" style="background-color: <%= mentor.color %>; background-image: radial-gradient(rgba(0,0,0,0.18) 1px, transparent 1px); background-size: 12px 12px;">
+                                    <div class="absolute -bottom-10 left-6">
+                                        <img src="<%= mentor.image %>" alt="<%= mentor.name %>" onerror="this.onerror=null; this.src='/assets/images/default-avatar.svg';" class="h-24 w-24 rounded-2xl border-4 border-white bg-white object-cover shadow-[0_12px_30px_rgba(0,88,125,.2)]">
+                                    </div>
+                                    <button class="absolute right-4 top-4 grid h-9 w-9 place-items-center rounded-full bg-white/90 text-muted transition hover:bg-white hover:text-cyan-dark" title="Save mentor" aria-label="Save mentor">
+                                        <i class="fa-regular fa-bookmark" aria-hidden="true"></i>
+                                    </button>
+                                </div>
+
+                                <div class="flex flex-grow flex-col px-6 pb-6 pt-14">
+                                    <h3 class="text-xl font-extrabold tracking-[-.02em] text-ink"><%= mentor.name %></h3>
+
+                                    <div class="mt-2 flex flex-wrap items-center gap-2">
+                                        <span class="rounded-full bg-cyan-soft px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-cyan-dark">
+                                            <%= mentor.role %>
+                                        </span>
+                                        <span class="text-xs font-semibold text-muted">@ <%= mentor.company %></span>
+                                    </div>
+
+                                    <p class="mt-4 border-l-2 border-line pl-3 text-sm leading-7 text-muted line-clamp-3">
+                                        "<%= mentor.bio %>"
+                                    </p>
+
+                                    <div class="mt-auto pt-5">
+                                        <span class="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-emerald-700">
+                                            <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                                            Available
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center justify-between gap-4 border-t border-line bg-surface/60 px-6 py-4">
+                                    <div class="flex items-center gap-3 text-muted">
+                                        <a href="#" class="transition hover:text-cyan-dark" title="LinkedIn" aria-label="LinkedIn"><i class="fa-brands fa-linkedin-in text-lg"></i></a>
+                                        <a href="#" class="transition hover:text-cyan-dark" title="GitHub" aria-label="GitHub"><i class="fa-brands fa-github text-lg"></i></a>
+                                    </div>
+
+                                </div>
+                            </article>
+                        <% }) %>
+                    </div>
+                <% } else { %>
+                    <div class="mx-auto max-w-xl rounded-3xl border border-line bg-white p-12 text-center shadow-[0_22px_70px_rgba(0,63,102,.1)]">
+                        <div class="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-cyan-soft text-cyan-dark" aria-hidden="true">
+                            <i class="fa-solid fa-user-graduate text-2xl"></i>
+                        </div>
+                        <h3 class="mt-6 text-2xl font-extrabold tracking-[-.03em] text-ink">No mentors yet</h3>
+                        <p class="mt-3 text-sm leading-7 text-muted">
+                            It seems all our mentors are currently busy building the future. Check back soon!
+                        </p>
+                    </div>
+                <% } %>
+            </div>
+        </section>
+
+        <!-- CTA -->
+        <section class="bg-white">
+            <div class="mx-auto max-w-7xl px-6 py-20 lg:px-10 lg:py-24">
+                <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-cyan via-cyan-mid to-cyan-deep p-10 text-white md:p-16">
+                    <div class="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full border-[48px] border-white/10" aria-hidden="true"></div>
+                    <div class="relative flex flex-col items-start justify-between gap-8 md:flex-row md:items-center">
+                        <div class="max-w-xl">
+                            <p class="text-xs font-extrabold uppercase tracking-[.24em] text-white/80">Pass on the torch</p>
+                            <h2 class="mt-3 text-4xl font-extrabold leading-[1.05] tracking-[-.04em] sm:text-5xl">Are you an expert ready to mentor?</h2>
+                            <p class="mt-4 text-base leading-8 text-white/85">Help the next generation of Ethiopian founders build a scalable future.</p>
+                        </div>
+                        <a href="/contact" class="inline-flex shrink-0 items-center gap-3 rounded-xl bg-orange px-7 py-4 text-sm font-extrabold text-white shadow-[0_10px_24px_rgba(141,67,10,.3)] transition hover:-translate-y-0.5 hover:bg-orange-dark focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-cyan-deep">
+                            Contact to Join
+                            <i class="fa-solid fa-arrow-right text-xs" aria-hidden="true"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Booking Modal -->
+    <div id="booking-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-ink/60 p-4">
+        <div class="relative w-full max-w-md rounded-3xl border border-line bg-white p-6 shadow-[0_22px_70px_rgba(0,63,102,.25)] md:p-8">
+            <button onclick="closeBookingModal()" class="absolute right-4 top-4 grid h-9 w-9 place-items-center rounded-full bg-surface text-muted transition hover:bg-rose-50 hover:text-rose-600" aria-label="Close booking modal">
+                <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+            </button>
+
+            <div class="mb-6">
+                <span class="inline-flex items-center gap-1.5 rounded-full bg-orange-soft px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-orange-dark">
+                    <i class="fa-solid fa-calendar-days text-xs" aria-hidden="true"></i>
+                    Sync Calendar
+                </span>
+                <h3 class="mt-3 text-3xl font-extrabold tracking-[-.03em] text-ink">Book <span id="modal-mentor-name" class="text-cyan-dark">Mentor</span></h3>
+            </div>
+
+            <form id="booking-form" onsubmit="submitBooking(event)" class="space-y-4">
+                <input type="hidden" id="modal-mentor-id" name="mentorId" />
+
+                <div>
+                    <label for="booking-date" class="mb-2 block text-xs font-extrabold uppercase tracking-wider text-muted">Select Date</label>
+                    <input type="date" id="booking-date" required class="w-full rounded-xl border border-line bg-surface px-4 py-3 text-sm font-medium text-ink outline-none transition focus:border-cyan focus:ring-2 focus:ring-cyan/20" />
+                </div>
+
+                <div>
+                    <label for="booking-time" class="mb-2 block text-xs font-extrabold uppercase tracking-wider text-muted">Select Time Slot</label>
+                    <select id="booking-time" required class="w-full rounded-xl border border-line bg-surface px-4 py-3 text-sm font-medium text-ink outline-none transition focus:border-cyan focus:ring-2 focus:ring-cyan/20">
+                        <option value="">Choose a slot...</option>
+                        <option value="09:00 AM - 10:00 AM">09:00 AM - 10:00 AM</option>
+                        <option value="10:30 AM - 11:30 AM">10:30 AM - 11:30 AM</option>
+                        <option value="01:00 PM - 02:00 PM">01:00 PM - 02:00 PM</option>
+                        <option value="02:30 PM - 03:30 PM">02:30 PM - 03:30 PM</option>
+                        <option value="04:00 PM - 05:00 PM">04:00 PM - 05:00 PM</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="booking-notes" class="mb-2 block text-xs font-extrabold uppercase tracking-wider text-muted">Topic of Discussion</label>
+                    <textarea id="booking-notes" placeholder="Describe what you want to achieve in this session..." rows="3" class="w-full resize-none rounded-xl border border-line bg-surface px-4 py-3 text-sm font-medium text-ink outline-none transition placeholder:text-slate-400 focus:border-cyan focus:ring-2 focus:ring-cyan/20"></textarea>
+                </div>
+
+                <div class="flex gap-4 pt-2">
+                    <button type="button" onclick="closeBookingModal()" class="w-1/2 rounded-xl border border-line bg-surface px-4 py-3 text-xs font-extrabold uppercase tracking-wider text-muted transition hover:bg-slate-100">
+                        Cancel
+                    </button>
+                    <button type="submit" class="w-1/2 rounded-xl bg-orange px-4 py-3 text-xs font-extrabold uppercase tracking-wider text-white shadow-[0_10px_24px_rgba(141,67,10,.2)] transition hover:bg-orange-dark focus:outline-none focus:ring-2 focus:ring-orange focus:ring-offset-2">
+                        Confirm Slot
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openBookingModal(mentorId, mentorName) {
+            const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+            if (!isLoggedIn) {
+                alert('Please log in to book a session with a mentor!');
+                window.location.href = '/admin';
+                return;
+            }
+
+            document.getElementById('modal-mentor-id').value = mentorId;
+            document.getElementById('modal-mentor-name').innerText = mentorName;
+
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('booking-date').setAttribute('min', today);
+
+            const modal = document.getElementById('booking-modal');
+            modal.classList.remove('hidden');
+            modal.classList.remove('flex');
+            modal.classList.add('flex');
+        }
+
+        function closeBookingModal() {
+            const modal = document.getElementById('booking-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.getElementById('booking-form').reset();
+        }
+
+        async function submitBooking(event) {
+            event.preventDefault();
+
+            const mentorId = document.getElementById('modal-mentor-id').value;
+            const date = document.getElementById('booking-date').value;
+            const time = document.getElementById('booking-time').value;
+            const notes = document.getElementById('booking-notes').value;
+
+            try {
+                const response = await fetch('/v1/mentors/book', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ mentorId, date, time, notes })
+                });
+
+                const result = await response.json();
+                if (response.ok && result.success) {
+                    alert(result.message);
+                    closeBookingModal();
+                    // Optional reload to show in timeline
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + (result.message || 'Failed to book session.'));
+                }
+            } catch (err) {
+                console.error('Booking session error:', err);
+                alert('An error occurred while booking your session.');
+            }
+        }
+    </script>
+
+    <%- include('../partials/footer') %>
+</body>
+</html>
