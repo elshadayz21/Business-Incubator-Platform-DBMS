@@ -6,6 +6,7 @@ import { ROLES } from "../utils/constants.js";
 import { getWorkshopsWithEnrollmentQuery } from "../models/workshop/Workshop.js";
 import {
   getEntrepreneurDashboard,
+    getProjectDetailsForPortal,
   getMentorDashboard,
   getMentorAssignmentSessions,
   createMentorSession,
@@ -313,6 +314,21 @@ router.get("/entrepreneur/workshops/browse", async (req, res) => {
     } catch (error) {
         console.error("Error fetching workshops for browse:", error);
         res.status(500).json({ error: "Failed to load workshops" });
+    }
+});
+// GET: One project's details (member-only)
+router.get("/entrepreneur/projects/:id", async (req, res) => {
+    try {
+        const userId = req.session.userId;
+        if (!userId) return res.status(401).json({ error: "Please log in." });
+
+        const project = await getProjectDetailsForPortal(req.params.id, userId);
+        if (!project) return res.status(404).json({ error: "Project not found or not yours." });
+
+        res.json({ project });
+    } catch (error) {
+        console.error("Error fetching project details:", error);
+        res.status(500).json({ error: "Failed to load project" });
     }
 });
 export default router;

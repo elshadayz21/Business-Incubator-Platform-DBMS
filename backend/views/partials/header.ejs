@@ -1,6 +1,7 @@
 <% const signedIn = typeof user !== 'undefined' && user; %>
 <header class="sticky top-0 z-50 border-b border-line bg-white shadow-sm" data-site-header>
-  <div class="mx-auto max-w-7xl px-6 lg:px-10">
+  <!-- Changed max-w-7xl to w-full with px-6 lg:px-12 for full-width layout -->
+  <div class="w-full px-6 lg:px-12">
     <div class="flex min-h-[88px] items-center justify-between gap-6 py-4">
       <div class="flex min-w-0 items-center gap-4">
         <a aria-label="DxValley home" class="shrink-0" href="/">
@@ -22,16 +23,20 @@
               <i class="fa-solid fa-chevron-down text-[9px] transition" :class="serviceOpen ? 'rotate-180' : ''" aria-hidden="true"></i>
             </button>
             <div x-show="serviceOpen" x-transition class="absolute left-1/2 -translate-x-1/2 top-full mt-3 w-56 bg-white border border-[#D6E4EA] rounded-xl shadow-lg py-2 z-[60]" style="display: none;">
-              <a class="block px-4 py-2 text-sm hover:bg-[#EAF8FC] hover:text-cyan-dark transition" href="<%= routes.mentors %>">Mentors</a>
+              <a class="block px-4 py-2 text-sm hover:bg-[#EAF8FC] hover:text-cyan-dark transition" href="<%= routes.mentors %>">Mentorship</a>
               <a class="block px-4 py-2 text-sm hover:bg-[#EAF8FC] hover:text-cyan-dark transition" href="<%= routes.workshops %>">Workshops</a>
-              <a class="block px-4 py-2 text-sm hover:bg-[#EAF8FC] hover:text-cyan-dark transition" href="/#resources">Resources</a>
+              <a class="block px-4 py-2 text-sm hover:bg-[#EAF8FC] hover:text-cyan-dark transition" href="/v1/workshop">Events</a>
             </div>
           </div>
 
-          <a class="transition hover:text-cyan-dark" href="/v1/workshop">Events</a>
           <a class="transition hover:text-cyan-dark" href="<%= routes.projects %>">Projects</a>
           <a class="transition hover:text-cyan-dark" href="<%= routes.about %>">About</a>
           <a class="transition hover:text-cyan-dark" href="/partners">Partners</a>
+
+          <button id="nav-apply-button" type="button" onclick="handleGlobalApply()" class="hidden items-center gap-1.5 rounded-full bg-orange px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-orange-dark focus:outline-none focus:ring-2 focus:ring-orange focus:ring-offset-2">
+            Apply now
+            <i class="fa-solid fa-arrow-up-right-from-square text-[10px]" aria-hidden="true"></i>
+          </button>
         </nav>
 
         <div class="flex items-center gap-3 border-l border-line pl-6">
@@ -74,23 +79,30 @@
       <nav aria-label="Mobile navigation" class="flex flex-col gap-1 text-sm font-semibold text-ink">
         <a class="rounded-md px-3 py-3 transition hover:bg-cyan-soft hover:text-cyan-dark" href="/">Home</a>
 
-        <!-- Mobile Our Services Dropdown -->
         <details class="group">
           <summary class="rounded-md px-3 py-3 transition hover:bg-cyan-soft hover:text-cyan-dark cursor-pointer list-none flex justify-between items-center">
             <span>Our Services</span>
             <i class="fa-solid fa-chevron-down text-[10px] group-open:rotate-180 transition"></i>
           </summary>
           <div class="pl-4 mt-1 flex flex-col gap-1">
-            <a class="rounded-md px-3 py-2 text-sm transition hover:bg-cyan-soft hover:text-cyan-dark" href="<%= routes.mentors %>">Mentors</a>
+            <a class="rounded-md px-3 py-2 text-sm transition hover:bg-cyan-soft hover:text-cyan-dark" href="<%= routes.mentors %>">Mentorship</a>
             <a class="rounded-md px-3 py-2 text-sm transition hover:bg-cyan-soft hover:text-cyan-dark" href="<%= routes.workshops %>">Workshops</a>
-            <a class="rounded-md px-3 py-2 text-sm transition hover:bg-cyan-soft hover:text-cyan-dark" href="/#resources">Resources</a>
+            <a class="rounded-md px-3 py-2 text-sm transition hover:bg-cyan-soft hover:text-cyan-dark" href="/v1/workshop">Events</a>
           </div>
         </details>
 
-        <a class="rounded-md px-3 py-3 transition hover:bg-cyan-soft hover:text-cyan-dark" href="/v1/workshop">Events</a>
         <a class="rounded-md px-3 py-3 transition hover:bg-cyan-soft hover:text-cyan-dark" href="<%= routes.projects %>">Projects</a>
         <a class="rounded-md px-3 py-3 transition hover:bg-cyan-soft hover:text-cyan-dark" href="<%= routes.about %>">About</a>
+        <a class="rounded-md px-3 py-3 transition hover:bg-cyan-soft hover:text-cyan-dark" href="/partners">Partners</a>
       </nav>
+
+      <div class="mt-4 px-3">
+        <button id="nav-apply-button-mobile" type="button" onclick="handleGlobalApply()" class="hidden w-full items-center justify-center gap-1.5 rounded-full bg-orange px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-orange-dark">
+          Apply now
+          <i class="fa-solid fa-arrow-up-right-from-square text-xs" aria-hidden="true"></i>
+        </button>
+      </div>
+
       <div class="mt-4 flex flex-col gap-2 border-t border-line pt-4">
         <% if (signedIn) { %>
           <a href="/v1/auth/profile" class="flex items-center gap-2.5 rounded-md px-3 py-3 text-sm font-semibold text-cyan-dark transition hover:bg-cyan-soft">
@@ -105,17 +117,6 @@
         <% } %>
       </div>
     </div>
-
-    <% if (!signedIn) { %>
-    <div id="header-apply-bar" class="hidden border-t border-line bg-[#F6FAFC]">
-      <div class="mx-auto flex max-w-7xl justify-end px-6 py-2.5 lg:px-10">
-        <button type="button" onclick="handleGlobalApply()" class="inline-flex items-center gap-2 rounded-full bg-orange px-5 py-2 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-orange-dark focus:outline-none focus:ring-2 focus:ring-orange focus:ring-offset-2">
-          Apply now
-          <i class="fa-solid fa-arrow-up-right-from-square text-xs" aria-hidden="true"></i>
-        </button>
-      </div>
-    </div>
-    <% } %>
   </div>
 </header>
 
@@ -146,7 +147,7 @@
   })();
 
   async function handleLogout() {
-  if (!confirm('Are you sure you want to log out?')) return;
+    if (!confirm('Are you sure you want to log out?')) return;
     try {
       const response = await fetch('/v1/auth/logout', {
         method: 'POST',
@@ -173,15 +174,18 @@
   };
 
   window.updateHeaderApplyBar = async (announcements) => {
-    const bar = document.getElementById('header-apply-bar');
-    if (!bar) return;
+    const navButton = document.getElementById('nav-apply-button');
+    const navButtonMobile = document.getElementById('nav-apply-button-mobile');
+
+    if (!navButton && !navButtonMobile) return;
 
     try {
       let data = announcements;
       if (!data) {
         const response = await fetch('/api/public/announcements');
         if (!response.ok) {
-          bar.classList.add('hidden');
+          navButton?.classList.add('hidden');
+          navButtonMobile?.classList.add('hidden');
           return;
         }
         data = await response.json();
@@ -190,10 +194,14 @@
       window.announcementData = data;
 
       const hasActiveOpenCall = data.some(window.isActiveOpenCall);
-      bar.classList.toggle('hidden', !hasActiveOpenCall);
+      navButton?.classList.toggle('hidden', !hasActiveOpenCall);
+      navButton?.classList.toggle('inline-flex', hasActiveOpenCall);
+      navButtonMobile?.classList.toggle('hidden', !hasActiveOpenCall);
+      navButtonMobile?.classList.toggle('flex', hasActiveOpenCall);
     } catch (error) {
       console.error('Error updating header apply bar:', error);
-      bar.classList.add('hidden');
+      navButton?.classList.add('hidden');
+      navButtonMobile?.classList.add('hidden');
     }
   };
 

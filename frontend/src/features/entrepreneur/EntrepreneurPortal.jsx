@@ -17,6 +17,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   MessageCircle,
+    X,
 } from "lucide-react";
 import { getEntrepreneurDashboard } from "../../services/portalService";
 import UserMenu from "../../components/UserMenu";
@@ -51,6 +52,8 @@ const EntrepreneurPortal = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+    const [detailWorkshop, setDetailWorkshop] = useState(null);
+    const [detailLoading, setDetailLoading] = useState(false);
   const [activeTab, setActiveTabState] = useState(() => {
     return sessionStorage.getItem("entrepreneur_active_tab") || "Dashboard";
   });
@@ -67,6 +70,8 @@ const EntrepreneurPortal = () => {
     const [browseWorkshops, setBrowseWorkshops] = useState([]);
     const [browseLoading, setBrowseLoading] = useState(false);
     const [enrolling, setEnrolling] = useState({});
+    const [detailProject, setDetailProject] = useState(null);
+    const [detailProjectLoading, setDetailProjectLoading] = useState(false);
     const [showBrowseCatalog, setShowBrowseCatalog] = useState(false);
   const setActiveTab = (tab) => {
     sessionStorage.setItem("entrepreneur_active_tab", tab);
@@ -288,6 +293,70 @@ const EntrepreneurPortal = () => {
             window.alert("An error occurred while enrolling.");
         } finally {
             setEnrolling((prev) => ({ ...prev, [workshopId]: false }));
+        }
+    };
+    const handleViewWorkshopDetails = async (workshopId) => {
+        const matchId = (w) => w && Number(w.id) === Number(workshopId);
+
+        // 1. Prefer the browse catalog (richest data: mentor, location, times, seats)
+        let workshop = browseWorkshops.find(matchId);
+
+        // 2. Fall back to enrolled-list data (title, schedule, capacity at minimum)
+        if (!workshop) {
+            workshop = workshops.find(matchId);
+        }
+
+        // 3. Not loaded anywhere yet? Fetch the full catalog and look there.
+        if (!workshop) {
+            setDetailLoading(true);
+            setDetailWorkshop({ id: workshopId });
+            try {
+                const res = await fetch("/api/portal/entrepreneur/workshops/browse", {
+                    credentials: "include",
+                });
+                const data = await res.json();
+                const list = data.workshops || [];
+                setBrowseWorkshops(list);
+                workshop = list.find(matchId);
+            } catch (err) {
+                console.error("Error loading workshop details:", err);
+            } finally {
+                setDetailLoading(false);
+            }
+        }
+
+        if (workshop) {
+            // Map dashboard-shape fields onto the fields the modal displays
+            setDetailWorkshop({
+                ...workshop,
+                mentor_name: workshop.mentor_name || workshop.mentor || null,
+                location: workshop.location || null,
+                start_date: workshop.start_date || workshop.schedule || null,
+                end_date: workshop.end_date || null,
+                start_time: workshop.start_time || null,
+                end_time: workshop.end_time || null,
+                enrolled_count: workshop.enrolled_count ?? null,
+                capacity: workshop.capacity ?? null,
+                status: workshop.status || "scheduled",
+            });
+        } else {
+            setDetailWorkshop({ id: workshopId, loadFailed: true });
+        }
+    };
+    const handleViewProjectDetails = async (projectId) => {
+        try {
+            setDetailProjectLoading(true);
+            setDetailProject({ id: projectId });
+            const res = await fetch(`/api/portal/entrepreneur/projects/${projectId}`, {
+                credentials: "include",
+            });
+            const data = await res.json();
+            setDetailProject(data?.project || { id: projectId, loadFailed: true });
+        } catch (err) {
+            console.error("Error loading project details:", err);
+            setDetailProject({ id: projectId, loadFailed: true });
+        } finally {
+            setDetailProjectLoading(false);
         }
     };
 
@@ -680,12 +749,12 @@ const EntrepreneurPortal = () => {
                           </div>
                           <div className="flex items-center gap-2 shrink-0">
                             <StageBadge status={p.approved ? "approved" : (p.status || p.stage)} />
-                            <a
-                                href={`/v1/projects/${p.id}`}
-                                className="inline-flex items-center gap-1 rounded-lg border border-[#D6E4EA] bg-white px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[#006F9E] hover:bg-[#EAF8FC] hover:border-[#00ADEF] transition-all"
-                            >
-                              View Details
-                            </a>
+                              <button
+                                  onClick={() => handleViewProjectDetails(p.id)}
+                                  className="inline-flex items-center gap-1 rounded-lg border border-[#D6E4EA] bg-white px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[#006F9E] hover:bg-[#EAF8FC] hover:border-[#00ADEF] transition-all"
+                              >
+                                  Details
+                              </button>
                           </div>
                         </div>
                     ))}
@@ -869,12 +938,12 @@ const EntrepreneurPortal = () => {
                                       </div>
                                       <div className="flex items-center gap-2 shrink-0">
                                           <StageBadge status={w.status || "enrolled"} />
-                                          <a
-                                              href={`/v1/workshop/${w.id}`}
+                                          <button
+                                              onClick={() => handleViewWorkshopDetails(w.id)}
                                               className="inline-flex items-center gap-1 rounded-lg border border-[#D6E4EA] bg-white px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[#006F9E] hover:bg-[#EAF8FC] hover:border-[#00ADEF] transition-all"
                                           >
                                               Details
-                                          </a>
+                                          </button>
                                           {w.status !== "completed" && (
                                               <button
                                                   onClick={() => handleCancelEnrollment(w.id)}
@@ -1494,19 +1563,224 @@ const EntrepreneurPortal = () => {
         {/* Main Content */}
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
           <header className="sticky top-0 z-20 flex items-center justify-end border-b border-[#D6E4EA] bg-white/95 px-6 py-3 backdrop-blur">
-            <UserMenu
-                user={user || currentUser}
-                roleLabel="Entrepreneur"
-                unreadCount={unreadNotifications}
-                onNotifications={() => setActiveTab("Notifications")}
-                onLogout={handleLogout}
-            />
+              <UserMenu
+                  user={user || currentUser}
+                  roleLabel="Entrepreneur"
+                  unreadCount={unreadNotifications}
+                  onNotifications={() => setActiveTab("Notifications")}
+                  onLogout={handleLogout}
+              />
           </header>
 
-          <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
-            {renderContent()}
-          </div>
+            <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
+                {renderContent()}
+            </div>
         </div>
+
+          {/* Workshop Detail Modal — goes HERE */}
+          {detailWorkshop && (
+              <div
+                  className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+                  onClick={() => setDetailWorkshop(null)}
+              >
+                  <div
+                      className="bg-white w-full max-w-2xl max-h-[90vh] rounded-2xl border border-[#D6E4EA] shadow-xl flex flex-col overflow-hidden"
+                      onClick={(e) => e.stopPropagation()}
+                  >
+                      <div className="p-5 border-b border-[#D6E4EA] flex items-center justify-between bg-white shrink-0">
+                          <div>
+                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#006F9E] block mb-1">
+                    Workshop Details
+                  </span>
+                              <h2 className="text-xl font-bold text-[#111827]">
+                                  {detailLoading ? "Loading..." : detailWorkshop.title || "Workshop"}
+                              </h2>
+                          </div>
+                          <button
+                              onClick={() => setDetailWorkshop(null)}
+                              className="p-2 rounded-xl text-[#526274] hover:bg-[#F6FAFC] hover:text-[#111827] transition"
+                          >
+                              <X size={20} />
+                          </button>
+                      </div>
+
+                      <div className="overflow-y-auto flex-1 p-6 bg-[#F6FAFC] space-y-4">
+                          {detailWorkshop.loadFailed ? (
+                              <p className="text-sm font-bold text-[#526274] text-center py-8">
+                                  Could not load workshop details.
+                              </p>
+                          ) : (
+                              <>
+                                  {detailWorkshop.description && (
+                                      <p className="text-sm text-[#111827] leading-relaxed italic bg-white border border-[#D6E4EA] rounded-xl p-4">
+                                          "{detailWorkshop.description}"
+                                      </p>
+                                  )}
+
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                      <div className="bg-white border border-[#D6E4EA] rounded-xl p-4">
+                                          <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#526274] mb-1">Mentor</p>
+                                          <p className="text-sm font-bold text-[#111827]">{detailWorkshop.mentor_name || "—"}</p>
+                                      </div>
+                                      <div className="bg-white border border-[#D6E4EA] rounded-xl p-4">
+                                          <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#526274] mb-1">Location</p>
+                                          <p className="text-sm font-bold text-[#111827]">{detailWorkshop.location || "—"}</p>
+                                      </div>
+                                      <div className="bg-white border border-[#D6E4EA] rounded-xl p-4">
+                                          <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#526274] mb-1">Date</p>
+                                          <p className="text-sm font-bold text-[#111827]">
+                                              {detailWorkshop.start_date ? new Date(detailWorkshop.start_date).toLocaleDateString() : "TBD"}
+                                              {detailWorkshop.end_date ? ` — ${new Date(detailWorkshop.end_date).toLocaleDateString()}` : ""}
+                                          </p>
+                                      </div>
+                                      <div className="bg-white border border-[#D6E4EA] rounded-xl p-4">
+                                          <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#526274] mb-1">Time</p>
+                                          <p className="text-sm font-bold text-[#111827]">
+                                              {detailWorkshop.start_time || "—"} — {detailWorkshop.end_time || "—"}
+                                          </p>
+                                      </div>
+                                      <div className="bg-white border border-[#D6E4EA] rounded-xl p-4">
+                                          <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#526274] mb-1">Seats</p>
+                                          <p className="text-sm font-bold text-[#111827]">
+                                              {detailWorkshop.enrolled_count ?? 0} / {detailWorkshop.capacity ?? "∞"}
+                                          </p>
+                                      </div>
+                                      <div className="bg-white border border-[#D6E4EA] rounded-xl p-4">
+                                          <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#526274] mb-1">Status</p>
+                                          <StageBadge status={detailWorkshop.status || "scheduled"} />
+                                      </div>
+                                  </div>
+                              </>
+                          )}
+                      </div>
+
+                      <div className="p-4 border-t border-[#D6E4EA] bg-white shrink-0 flex justify-end">
+                          <button
+                              onClick={() => setDetailWorkshop(null)}
+                              className="px-5 py-2 rounded-xl bg-[#00ADEF] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#006F9E] transition"
+                          >
+                              Close
+                          </button>
+                      </div>
+                  </div>
+              </div>
+          )}
+          {/* Project Detail Modal */}
+          {detailProject && (
+              <div
+                  className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+                  onClick={() => setDetailProject(null)}
+              >
+                  <div
+                      className="bg-white w-full max-w-2xl max-h-[90vh] rounded-2xl border border-[#D6E4EA] shadow-xl flex flex-col overflow-hidden"
+                      onClick={(e) => e.stopPropagation()}
+                  >
+                      <div className="p-5 border-b border-[#D6E4EA] flex items-center justify-between bg-white shrink-0">
+                          <div>
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#006F9E] block mb-1">
+                  Project Details
+                </span>
+                              <h2 className="text-xl font-bold text-[#111827]">
+                                  {detailProjectLoading ? "Loading..." : detailProject.name || "Project"}
+                              </h2>
+                          </div>
+                          <button
+                              onClick={() => setDetailProject(null)}
+                              className="p-2 rounded-xl text-[#526274] hover:bg-[#F6FAFC] hover:text-[#111827] transition"
+                          >
+                              <X size={20} />
+                          </button>
+                      </div>
+
+                      <div className="overflow-y-auto flex-1 p-6 bg-[#F6FAFC] space-y-4">
+                          {detailProject.loadFailed ? (
+                              <p className="text-sm font-bold text-[#526274] text-center py-8">
+                                  Could not load project details.
+                              </p>
+                          ) : (
+                              <>
+                                  {detailProject.short_description && (
+                                      <p className="text-sm text-[#111827] leading-relaxed italic bg-white border border-[#D6E4EA] rounded-xl p-4">
+                                          "{detailProject.short_description}"
+                                      </p>
+                                  )}
+
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                      <div className="bg-white border border-[#D6E4EA] rounded-xl p-4">
+                                          <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#526274] mb-1">Domain</p>
+                                          <p className="text-sm font-bold text-[#111827]">{detailProject.domain || "—"}</p>
+                                      </div>
+                                      <div className="bg-white border border-[#D6E4EA] rounded-xl p-4">
+                                          <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#526274] mb-1">Stage</p>
+                                          <p className="text-sm font-bold text-[#111827] capitalize">{detailProject.stage || "—"}</p>
+                                      </div>
+                                      <div className="bg-white border border-[#D6E4EA] rounded-xl p-4">
+                                          <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#526274] mb-1">Funding Stage</p>
+                                          <p className="text-sm font-bold text-[#111827] capitalize">{detailProject.funding_stage || "—"}</p>
+                                      </div>
+                                      <div className="bg-white border border-[#D6E4EA] rounded-xl p-4">
+                                          <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#526274] mb-1">Team</p>
+                                          <p className="text-sm font-bold text-[#111827]">
+                                              {(detailProject.team || []).length || "—"} member{(detailProject.team || []).length !== 1 ? "s" : ""}
+                                          </p>
+                                      </div>
+                                  </div>
+
+                                  {detailProject.problem && (
+                                      <div className="bg-white border border-[#D6E4EA] rounded-xl p-4">
+                                          <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#E38524] mb-1">Problem</p>
+                                          <p className="text-sm text-[#111827] leading-relaxed">{detailProject.problem}</p>
+                                      </div>
+                                  )}
+
+                                  {detailProject.solution && (
+                                      <div className="bg-white border border-[#D6E4EA] rounded-xl p-4">
+                                          <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#006F9E] mb-1">Solution</p>
+                                          <p className="text-sm text-[#111827] leading-relaxed">{detailProject.solution}</p>
+                                      </div>
+                                  )}
+
+                                  {(detailProject.techStack || []).length > 0 && (
+                                      <div className="bg-white border border-[#D6E4EA] rounded-xl p-4">
+                                          <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#526274] mb-2">Tech Stack</p>
+                                          <div className="flex flex-wrap gap-2">
+                                              {detailProject.techStack.map((tech, i) => (
+                                                  <span key={i} className="rounded-full bg-[#F6FAFC] border border-[#D6E4EA] px-3 py-1 text-[11px] font-bold text-[#111827]">
+                            {tech}
+                          </span>
+                                              ))}
+                                          </div>
+                                      </div>
+                                  )}
+
+                                  {(detailProject.team || []).length > 0 && (
+                                      <div className="bg-white border border-[#D6E4EA] rounded-xl p-4">
+                                          <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#526274] mb-2">Team Members</p>
+                                          <div className="space-y-2">
+                                              {detailProject.team.map((m, i) => (
+                                                  <div key={i} className="flex items-center justify-between text-sm">
+                                                      <span className="font-bold text-[#111827]">{m.name}</span>
+                                                      <span className="text-xs text-[#526274] font-semibold capitalize">{m.role_in_project || "Member"}</span>
+                                                  </div>
+                                              ))}
+                                          </div>
+                                      </div>
+                                  )}
+                              </>
+                          )}
+                      </div>
+
+                      <div className="p-4 border-t border-[#D6E4EA] bg-white shrink-0 flex justify-end">
+                          <button
+                              onClick={() => setDetailProject(null)}
+                              className="px-5 py-2 rounded-xl bg-[#00ADEF] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#006F9E] transition"
+                          >
+                              Close
+                          </button>
+                      </div>
+                  </div>
+              </div>
+          )}
       </div>
   );
 };

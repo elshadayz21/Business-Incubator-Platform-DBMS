@@ -290,9 +290,9 @@ export const projectsController = async (req, res, next) => {
   try {
     const dbProjects = await getAllProjects();
 
-    // Filter to show active/approved/completed projects on the public gallery
+    // Only COMPLETED projects are public — in-progress ideas could be stolen.
     const activeProjects = dbProjects.filter(
-      (p) => p.status && p.status.toLowerCase() !== "pending" && p.status.toLowerCase() !== "rejected"
+        (p) => p.status && p.status.toLowerCase().includes("completed")
     );
 
     // Fetch entrepreneurs for each project and transform
@@ -324,6 +324,22 @@ export const projectDetailController = async (req, res, next) => {
         error: { message: "Project not found", status: 404 },
       });
     }
+
+    // ↓↓↓ ADD THIS BLOCK — protect unpublished work from visitors ↓↓↓
+    const projectStatus = (dbProject.status || "").toLowerCase();
+    const isCompleted = projectStatus.includes("completed");
+    const isLoggedIn = Boolean(req.session && req.session.userId);
+
+    if (!isCompleted && !isLoggedIn) {
+      return res.status(404).render("error/error", {
+        title: "Not Found",
+        error: {
+          message: "This project is not publicly available yet.",
+          status: 404,
+        },
+      });
+    }
+    // ↑↑↑ END OF NEW BLOCK ↑↑↑
 
     const entrepreneurs = await getProjectEntrepreneurs(projectId);
     const project = transformProject(dbProject, entrepreneurs);
