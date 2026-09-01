@@ -32,6 +32,7 @@ export const getAllWorkshopsQuery = async () => {
 };
 
 // 2. Get One Workshop
+// 2. Get One Workshop
 export const getWorkshopByIdQuery = async (id) => {
   try {
     const query = `
@@ -55,6 +56,7 @@ export const getWorkshopByIdQuery = async (id) => {
           json_agg(
             json_build_object(
               'id', we.id,
+              'entrepreneur_id', we.entrepreneur_id,
               'name', we.entrepreneur_name, 
               'email', we.entrepreneur_email,
               'attended', we.attended,
@@ -269,6 +271,39 @@ export const getWorkshopsWithEnrollmentQuery = async (userId) => {
         [userId]
     );
     return result.rows;
+  } catch (err) {
+    throw err;
+  }
+};
+// 8. Public (anonymous) workshop enrollment — no account required
+export const publicJoinWorkshopQuery = async (workshopId, name, email) => {
+  try {
+    // Duplicate check by email (an anonymous visitor has no user id)
+    const existing = await pool.query(
+        `SELECT id FROM workshop_enrollments
+       WHERE workshop_id = $1 AND LOWER(entrepreneur_email) = LOWER($2)
+       LIMIT 1`,
+        [workshopId, email]
+    );
+    if (existing.rows.length > 0) {
+      return { duplicate: true, enrollment: null };
+    }
+
+    const result = await pool.query(
+        `INSERT INTO workshop_enrollments
+         (workshop_id, entrepreneur_id, entrepreneur_name, entrepreneur_email, enrollment_date)
+       VALUES ($1, NULL, $2, $3, NOW())
+       RETURNING *`,
+        [workshopId, name, email]
+    );
+
+    if (result.rows[0]) {
+      await pool.query(
+          "UPDATE workshops SET enrolled_count = enrolled_count + 1 WHERE id = $1",
+          [workshopId]
+      );
+    }
+    return { duplicate: false, enrollment: result.rows[0] };
   } catch (err) {
     throw err;
   }

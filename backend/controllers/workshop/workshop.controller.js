@@ -6,6 +6,7 @@ import {
   checkEnrollmentQuery,
 } from "../../models/workshop/Workshop.js";
 import eventBus from "../../utils/eventBus.js";
+import { publicJoinWorkshopQuery } from "../../models/workshop/Workshop.js"; // add to the existing import at top instead
 
 // 1. Get All
 export const getAllWorkshops = async (req, res, next) => {
@@ -116,6 +117,44 @@ export const cancelAttendance = async (req, res, next) => {
     res.json({
       status: "success",
       message: "Attendance cancelled successfully.",
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+// 5. Public (anonymous) attend — no login required
+
+
+export const publicAttendWorkshop = async (req, res, next) => {
+  try {
+    const workshopId = req.params.id;
+    const fullName = String(req.body.full_name || "").trim();
+    const email = String(req.body.email || "").trim().toLowerCase();
+
+    if (!fullName) {
+      return res.status(400).json({ message: "Please provide your name." });
+    }
+    if (!/^\S+@\S+\.\S+$/.test(email)) {
+      return res.status(400).json({ message: "Please provide a valid email address." });
+    }
+
+    const workshop = await getWorkshopByIdQuery(workshopId);
+    if (!workshop) return res.status(404).json({ message: "Workshop not found" });
+    if (["completed", "cancelled"].includes(workshop.status)) {
+      return res.status(400).json({ message: "This workshop is no longer open for enrollment." });
+    }
+    if (workshop.capacity && (workshop.enrolled_count ?? 0) >= workshop.capacity) {
+      return res.status(400).json({ message: "This workshop is fully booked." });
+    }
+
+    const result = await publicJoinWorkshopQuery(workshopId, fullName, email);
+    if (result.duplicate) {
+      return res.status(400).json({ message: "This email is already enrolled in this workshop." });
+    }
+
+    res.json({
+      status: "success",
+      message: "Your seat has been reserved! Check your email for details.",
     });
   } catch (err) {
     next(err);

@@ -100,7 +100,8 @@ export const getWorkshop = async (id) => {
 
     // Get enrollments details
     const enrollmentsQuery = `
-      SELECT we.id, 
+      SELECT we.id,
+             we.entrepreneur_id,
              we.entrepreneur_name as "entrepreneurName", 
              we.entrepreneur_email as "entrepreneurEmail", 
              we.enrollment_date as "enrollmentDate", 
