@@ -17,6 +17,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   MessageCircle,
+    X,
 } from "lucide-react";
 import { getEntrepreneurDashboard } from "../../services/portalService";
 import UserMenu from "../../components/UserMenu";
@@ -51,6 +52,8 @@ const EntrepreneurPortal = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+    const [detailWorkshop, setDetailWorkshop] = useState(null);
+    const [detailLoading, setDetailLoading] = useState(false);
   const [activeTab, setActiveTabState] = useState(() => {
     return sessionStorage.getItem("entrepreneur_active_tab") || "Dashboard";
   });
@@ -64,6 +67,12 @@ const EntrepreneurPortal = () => {
     const [activityLogPage, setActivityLogPage] = useState(1);
     const [notificationPage, setNotificationPage] = useState(1);
     const [fundingPage, setFundingPage] = useState(1);
+    const [browseWorkshops, setBrowseWorkshops] = useState([]);
+    const [browseLoading, setBrowseLoading] = useState(false);
+    const [enrolling, setEnrolling] = useState({});
+    const [detailProject, setDetailProject] = useState(null);
+    const [detailProjectLoading, setDetailProjectLoading] = useState(false);
+    const [showBrowseCatalog, setShowBrowseCatalog] = useState(false);
   const setActiveTab = (tab) => {
     sessionStorage.setItem("entrepreneur_active_tab", tab);
     setActiveTabState(tab);
@@ -143,6 +152,22 @@ const EntrepreneurPortal = () => {
     }
   }, []);
 
+    const fetchBrowseWorkshops = useCallback(async () => {
+        try {
+            setBrowseLoading(true);
+            const res = await fetch("/api/portal/entrepreneur/workshops/browse", {
+                credentials: "include",
+            });
+            const data = await res.json();
+            setBrowseWorkshops(data.workshops || []);
+        } catch (err) {
+            console.error("Error loading workshops:", err);
+            setBrowseWorkshops([]);
+        } finally {
+            setBrowseLoading(false);
+        }
+    }, []);
+
   const user = data?.user;
   const application = data?.application;
   const projects = data?.projects || [];
@@ -178,19 +203,26 @@ const EntrepreneurPortal = () => {
     }
   }, [activeTab, notifications.length, unreadNotifications]);
 
-  // Fetch unread chat messages for the sidebar badge
-  useEffect(() => {
-    const fetchUnread = async () => {
-      try {
-        const res = await fetch("/api/portal/chat/unread-count", { credentials: "include" });
-        const data = await res.json();
-        setUnreadMessages(data.count || 0);
-      } catch (e) {}
-    };
-    fetchUnread();
-    const interval = setInterval(fetchUnread, 10000); // Check every 10 seconds
-    return () => clearInterval(interval);
-  }, [activeTab]); // Re-check when they switch tabs
+    // Fetch unread chat messages for the sidebar badge
+    useEffect(() => {
+        const fetchUnread = async () => {
+            try {
+                const res = await fetch("/api/portal/chat/unread-count", { credentials: "include" });
+                const data = await res.json();
+                setUnreadMessages(data.count || 0);
+            } catch (e) {}
+        };
+        fetchUnread();
+        const interval = setInterval(fetchUnread, 10000); // Check every 10 seconds
+        return () => clearInterval(interval);
+    }, [activeTab]); // Re-check when they switch tabs
+
+    // Load workshop catalog data when the My Workshops tab opens
+    useEffect(() => {
+        if (activeTab === "My Workshops") {
+            fetchBrowseWorkshops();
+        }
+    }, [activeTab, fetchBrowseWorkshops]);
     const handleLoadMoreNotifications = async () => {
         try {
             const nextPage = notificationPage + 1;
@@ -235,6 +267,118 @@ const EntrepreneurPortal = () => {
             }
         } catch (err) {
             console.error("Error loading more logs:", err);
+        }
+    };
+
+
+    const handleEnrollWorkshop = async (workshopId) => {
+        if (enrolling[workshopId]) return;
+        setEnrolling((prev) => ({ ...prev, [workshopId]: true }));
+        try {
+            const response = await fetch(`/v1/workshop/${workshopId}/attend`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+            });
+            const result = await response.json();
+            if (response.ok) {
+                window.alert("Successfully enrolled! It now appears above in My Enrolled Workshops.");
+                await fetchBrowseWorkshops();
+                fetchData();
+            } else {
+                window.alert(result.message || "Failed to enroll.");
+            }
+        } catch (err) {
+            console.error("Enroll error:", err);
+            window.alert("An error occurred while enrolling.");
+        } finally {
+            setEnrolling((prev) => ({ ...prev, [workshopId]: false }));
+        }
+    };
+    const handleViewWorkshopDetails = async (workshopId) => {
+        const matchId = (w) => w && Number(w.id) === Number(workshopId);
+
+        // 1. Prefer the browse catalog (richest data: mentor, location, times, seats)
+        let workshop = browseWorkshops.find(matchId);
+
+        // 2. Fall back to enrolled-list data (title, schedule, capacity at minimum)
+        if (!workshop) {
+            workshop = workshops.find(matchId);
+        }
+
+        // 3. Not loaded anywhere yet? Fetch the full catalog and look there.
+        if (!workshop) {
+            setDetailLoading(true);
+            setDetailWorkshop({ id: workshopId });
+            try {
+                const res = await fetch("/api/portal/entrepreneur/workshops/browse", {
+                    credentials: "include",
+                });
+                const data = await res.json();
+                const list = data.workshops || [];
+                setBrowseWorkshops(list);
+                workshop = list.find(matchId);
+            } catch (err) {
+                console.error("Error loading workshop details:", err);
+            } finally {
+                setDetailLoading(false);
+            }
+        }
+
+        if (workshop) {
+            // Map dashboard-shape fields onto the fields the modal displays
+            setDetailWorkshop({
+                ...workshop,
+                mentor_name: workshop.mentor_name || workshop.mentor || null,
+                location: workshop.location || null,
+                start_date: workshop.start_date || workshop.schedule || null,
+                end_date: workshop.end_date || null,
+                start_time: workshop.start_time || null,
+                end_time: workshop.end_time || null,
+                enrolled_count: workshop.enrolled_count ?? null,
+                capacity: workshop.capacity ?? null,
+                status: workshop.status || "scheduled",
+            });
+        } else {
+            setDetailWorkshop({ id: workshopId, loadFailed: true });
+        }
+    };
+    const handleViewProjectDetails = async (projectId) => {
+        try {
+            setDetailProjectLoading(true);
+            setDetailProject({ id: projectId });
+            const res = await fetch(`/api/portal/entrepreneur/projects/${projectId}`, {
+                credentials: "include",
+            });
+            const data = await res.json();
+            setDetailProject(data?.project || { id: projectId, loadFailed: true });
+        } catch (err) {
+            console.error("Error loading project details:", err);
+            setDetailProject({ id: projectId, loadFailed: true });
+        } finally {
+            setDetailProjectLoading(false);
+        }
+    };
+
+    const handleCancelFromBrowse = async (workshopId) => {
+        if (!window.confirm("Are you sure you want to cancel your enrollment in this workshop?")) return;
+        try {
+            const response = await fetch(`/v1/workshop/${workshopId}/attend`, {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+            });
+            if (response.ok) {
+                window.alert("Enrollment cancelled.");
+                await fetchBrowseWorkshops();
+                fetchData();
+            } else {
+                const result = await response.json();
+                window.alert(result.message || "Failed to cancel.");
+            }
+        } catch (err) {
+            console.error("Cancel error:", err);
+            window.alert("An error occurred while cancelling.");
         }
     };
 
@@ -605,12 +749,12 @@ const EntrepreneurPortal = () => {
                           </div>
                           <div className="flex items-center gap-2 shrink-0">
                             <StageBadge status={p.approved ? "approved" : (p.status || p.stage)} />
-                            <a
-                                href={`/v1/projects/${p.id}`}
-                                className="inline-flex items-center gap-1 rounded-lg border border-[#D6E4EA] bg-white px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[#006F9E] hover:bg-[#EAF8FC] hover:border-[#00ADEF] transition-all"
-                            >
-                              View Details
-                            </a>
+                              <button
+                                  onClick={() => handleViewProjectDetails(p.id)}
+                                  className="inline-flex items-center gap-1 rounded-lg border border-[#D6E4EA] bg-white px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[#006F9E] hover:bg-[#EAF8FC] hover:border-[#00ADEF] transition-all"
+                              >
+                                  Details
+                              </button>
                           </div>
                         </div>
                     ))}
@@ -728,84 +872,199 @@ const EntrepreneurPortal = () => {
           );
       }
 
-    if (activeTab === "My Workshops") {
-      return (
-          <div className="space-y-6">
-            <div className="bg-white rounded-2xl border border-[#D6E4EA] p-6 shadow-xs">
-              <div className="flex items-center justify-between">
-                <div>
+      if (activeTab === "My Workshops") {
+          return (
+              <div className="space-y-6">
+                  {/* Section 1: Enrolled (your existing content) */}
+                  <div className="bg-white rounded-2xl border border-[#D6E4EA] p-6 shadow-xs">
+                      <div className="flex items-center justify-between">
+                          <div>
                 <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#006F9E] block mb-1">
                   Learning
                 </span>
-                  <h3 className="text-lg font-bold text-[#111827]">
-                    My Enrolled Workshops
-                  </h3>
-                </div>
-                <a
-                    href="/v1/workshop"
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#E38524] px-3.5 py-2 text-[11px] font-bold uppercase tracking-wider text-white shadow-xs hover:-translate-y-0.5 transition-all"
-                >
-                  Browse Workshops
-                </a>
-              </div>
-              {workshops.length === 0 ? (
-                  <p className="text-sm text-[#526274] mt-4 font-semibold">
-                    No workshops enrolled yet.
-                  </p>
-              ) : (
-                  <div className="mt-4 space-y-3">
-                    {workshops.map((w) => (
-                        <div
-                            key={w.id}
-                            className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#F6FAFC] border border-[#D6E4EA] rounded-xl p-4"
-                        >
-                          <div className="min-w-0 flex-1">
-                            <p className="font-bold text-[#111827] text-sm">{w.title}</p>
-                            <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-[#526274] font-semibold">
+                              <h3 className="text-lg font-bold text-[#111827]">
+                                  My Enrolled Workshops
+                              </h3>
+                          </div>
+                          <button
+                              onClick={() => {
+                                  const next = !showBrowseCatalog;
+                                  setShowBrowseCatalog(next);
+                                  // Fetch fresh data when expanding
+                                  if (next) fetchBrowseWorkshops();
+                                  // Scroll after React paints the section
+                                  if (next) {
+                                      setTimeout(() => {
+                                          document.getElementById("all-workshops-section")?.scrollIntoView({ behavior: "smooth" });
+                                      }, 50);
+                                  }
+                              }}
+                              className="inline-flex items-center gap-1.5 rounded-lg bg-[#E38524] px-3.5 py-2 text-[11px] font-bold uppercase tracking-wider text-white shadow-xs hover:-translate-y-0.5 transition-all"
+                          >
+                              {showBrowseCatalog ? "Hide Workshops" : "Browse Workshops"}
+                          </button>
+                      </div>
+                      {workshops.length === 0 ? (
+                          <p className="text-sm text-[#526274] mt-4 font-semibold">
+                              No workshops enrolled yet. Scroll down to browse and enroll!
+                          </p>
+                      ) : (
+                          <div className="mt-4 space-y-3">
+                              {workshops.map((w) => (
+                                  <div
+                                      key={w.id}
+                                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#F6FAFC] border border-[#D6E4EA] rounded-xl p-4"
+                                  >
+                                      <div className="min-w-0 flex-1">
+                                          <p className="font-bold text-[#111827] text-sm">{w.title}</p>
+                                          <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-[#526274] font-semibold">
                         <span className="flex items-center gap-1">
                           <Calendar size={12} className="text-[#00ADEF]" />
-                          {w.schedule
-                              ? new Date(w.schedule).toLocaleDateString()
-                              : "TBD"}
+                            {w.schedule
+                                ? new Date(w.schedule).toLocaleDateString()
+                                : "TBD"}
                         </span>
-                              {w.category && (
-                                  <span className="rounded-full bg-[#EAF8FC] text-[#006F9E] px-2 py-0.5 text-[10px] font-bold border border-[#00ADEF]/20">
+                                              {w.category && (
+                                                  <span className="rounded-full bg-[#EAF8FC] text-[#006F9E] px-2 py-0.5 text-[10px] font-bold border border-[#00ADEF]/20">
                             {w.category}
                           </span>
-                              )}
-                              {w.attended && (
-                                  <span className="rounded-full bg-green-50 text-green-700 px-2 py-0.5 text-[10px] font-bold border border-green-200">
+                                              )}
+                                              {w.attended && (
+                                                  <span className="rounded-full bg-green-50 text-green-700 px-2 py-0.5 text-[10px] font-bold border border-green-200">
                             Attended
                           </span>
-                              )}
-                            </div>
+                                              )}
+                                          </div>
+                                      </div>
+                                      <div className="flex items-center gap-2 shrink-0">
+                                          <StageBadge status={w.status || "enrolled"} />
+                                          <button
+                                              onClick={() => handleViewWorkshopDetails(w.id)}
+                                              className="inline-flex items-center gap-1 rounded-lg border border-[#D6E4EA] bg-white px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[#006F9E] hover:bg-[#EAF8FC] hover:border-[#00ADEF] transition-all"
+                                          >
+                                              Details
+                                          </button>
+                                          {w.status !== "completed" && (
+                                              <button
+                                                  onClick={() => handleCancelEnrollment(w.id)}
+                                                  className="inline-flex items-center gap-1 rounded-lg bg-rose-500 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white hover:bg-rose-600 transition-all"
+                                              >
+                                                  Cancel
+                                              </button>
+                                          )}
+                                      </div>
+                                  </div>
+                              ))}
                           </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <StageBadge status={w.status || "enrolled"} />
-                            <a
-                                href={`/v1/workshop/${w.id}`}
-                                className="inline-flex items-center gap-1 rounded-lg border border-[#D6E4EA] bg-white px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[#006F9E] hover:bg-[#EAF8FC] hover:border-[#00ADEF] transition-all"
-                            >
-                              Details
-                            </a>
-                            {w.status !== "completed" && (
-                                <button
-                                    onClick={() => handleCancelEnrollment(w.id)
-                                    }
-                                    className="inline-flex items-center gap-1 rounded-lg bg-rose-500 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white hover:bg-rose-600 transition-all"
-                                >
-                                  Cancel
-                                </button>
-                            )}
-                          </div>
-                        </div>
-                    ))}
+                      )}
                   </div>
-              )}
-            </div>
-          </div>
-      );
-    }
+
+                  {/* Section 2: Browse All Workshops (revealed on demand) */}
+                  {showBrowseCatalog && (
+                      <div id="all-workshops-section" className="bg-white rounded-2xl border border-[#D6E4EA] p-6 shadow-xs scroll-mt-4">
+
+                      <div>
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#006F9E] block mb-1">
+                  Catalog
+                </span>
+                          <h3 className="text-lg font-bold text-[#111827]">
+                              All Workshops
+                          </h3>
+                          <p className="text-sm text-[#526274] mt-1">
+                              Browse every workshop and enroll in the ones you need.
+                          </p>
+                      </div>
+
+                      {browseLoading ? (
+                          <div className="h-40 flex items-center justify-center">
+                              <div className="w-10 h-10 border-4 border-[#00ADEF] border-t-transparent rounded-full animate-spin" />
+                          </div>
+                      ) : browseWorkshops.length === 0 ? (
+                          <p className="text-sm font-bold text-[#526274] py-8 text-center">
+                              No workshops available yet.
+                          </p>
+                      ) : (
+                          <div className="mt-4 overflow-x-auto">
+                              <table className="w-full text-left border-collapse min-w-[760px]">
+                                  <thead>
+                                  <tr className="bg-[#F6FAFC] text-[#526274] uppercase tracking-wider text-xs font-extrabold border-b border-[#D6E4EA]">
+                                      <th className="p-4">Workshop</th>
+                                      <th className="p-4 hidden md:table-cell">Date</th>
+                                      <th className="p-4 hidden md:table-cell">Mentor</th>
+                                      <th className="p-4 hidden md:table-cell">Seats</th>
+                                      <th className="p-4">Status</th>
+                                      <th className="p-4 text-right">Action</th>
+                                  </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-[#D6E4EA] text-sm">
+                                  {browseWorkshops.map((w) => (
+                                      <tr key={w.id} className="hover:bg-[#F6FAFC] transition align-top">
+                                          <td className="p-4">
+                                              <p className="font-bold text-[#111827]">{w.title}</p>
+                                              {w.category && (
+                                                  <span className="rounded-full bg-[#EAF8FC] text-[#006F9E] px-2 py-0.5 text-[10px] font-bold border border-[#00ADEF]/20 mt-1 inline-block">
+                                                      {w.category}
+                                                  </span>
+                                              )}
+                                          </td>
+                                          <td className="p-4 hidden md:table-cell text-[#526274] font-semibold whitespace-nowrap">
+                                              {w.start_date
+                                                  ? new Date(w.start_date).toLocaleDateString()
+                                                  : "TBD"}
+                                          </td>
+                                          <td className="p-4 hidden md:table-cell text-[#111827] font-medium">
+                                              {w.mentor_name || "—"}
+                                          </td>
+                                          <td className="p-4 hidden md:table-cell text-[#526274] font-semibold">
+                                              {w.enrolled_count ?? 0}/{w.capacity ?? "∞"}
+                                          </td>
+                                          <td className="p-4">
+                                              <StageBadge status={w.status || "scheduled"} />
+                                          </td>
+                                          <td className="p-4 text-right">
+                                              {w.is_enrolled ? (
+                                                  <div className="flex items-center justify-end gap-2">
+                                                      <span className="inline-flex items-center rounded-full bg-green-50 text-green-700 border border-green-200 px-2.5 py-1 text-[10px] font-bold uppercase">
+                                                          Enrolled
+                                                      </span>
+                                                      {w.status !== "completed" && (
+                                                          <button
+                                                              onClick={() => handleCancelFromBrowse(w.id)}
+                                                              className="rounded-lg bg-rose-500 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white hover:bg-rose-600 transition-all"
+                                                          >
+                                                              Cancel
+                                                          </button>
+                                                      )}
+                                                  </div>
+                                              ) : w.status === "full" ? (
+                                                  <span className="inline-flex items-center rounded-full bg-slate-100 text-slate-600 border border-slate-200 px-2.5 py-1 text-[10px] font-bold uppercase">
+                                                      Full
+                                                  </span>
+                                              ) : w.status === "completed" ? (
+                                                  <span className="inline-flex items-center rounded-full bg-slate-100 text-slate-600 border border-slate-200 px-2.5 py-1 text-[10px] font-bold uppercase">
+                                                      Completed
+                                                  </span>
+                                              ) : (
+                                                  <button
+                                                      onClick={() => handleEnrollWorkshop(w.id)}
+                                                      disabled={enrolling[w.id]}
+                                                      className="rounded-lg bg-[#E38524] px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-xs hover:bg-[#C97019] transition-all disabled:opacity-60"
+                                                  >
+                                                      {enrolling[w.id] ? "Enrolling..." : "Enroll"}
+                                                  </button>
+                                              )}
+                                          </td>
+                                      </tr>
+                                  ))}
+                                  </tbody>
+                              </table>
+                          </div>
+                      )}
+                      </div>
+                  )}
+              </div>
+          );
+      }
 
       if (activeTab === "Notifications") {
           return (
@@ -1304,19 +1563,224 @@ const EntrepreneurPortal = () => {
         {/* Main Content */}
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
           <header className="sticky top-0 z-20 flex items-center justify-end border-b border-[#D6E4EA] bg-white/95 px-6 py-3 backdrop-blur">
-            <UserMenu
-                user={user || currentUser}
-                roleLabel="Entrepreneur"
-                unreadCount={unreadNotifications}
-                onNotifications={() => setActiveTab("Notifications")}
-                onLogout={handleLogout}
-            />
+              <UserMenu
+                  user={user || currentUser}
+                  roleLabel="Entrepreneur"
+                  unreadCount={unreadNotifications}
+                  onNotifications={() => setActiveTab("Notifications")}
+                  onLogout={handleLogout}
+              />
           </header>
 
-          <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
-            {renderContent()}
-          </div>
+            <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
+                {renderContent()}
+            </div>
         </div>
+
+          {/* Workshop Detail Modal — goes HERE */}
+          {detailWorkshop && (
+              <div
+                  className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+                  onClick={() => setDetailWorkshop(null)}
+              >
+                  <div
+                      className="bg-white w-full max-w-2xl max-h-[90vh] rounded-2xl border border-[#D6E4EA] shadow-xl flex flex-col overflow-hidden"
+                      onClick={(e) => e.stopPropagation()}
+                  >
+                      <div className="p-5 border-b border-[#D6E4EA] flex items-center justify-between bg-white shrink-0">
+                          <div>
+                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#006F9E] block mb-1">
+                    Workshop Details
+                  </span>
+                              <h2 className="text-xl font-bold text-[#111827]">
+                                  {detailLoading ? "Loading..." : detailWorkshop.title || "Workshop"}
+                              </h2>
+                          </div>
+                          <button
+                              onClick={() => setDetailWorkshop(null)}
+                              className="p-2 rounded-xl text-[#526274] hover:bg-[#F6FAFC] hover:text-[#111827] transition"
+                          >
+                              <X size={20} />
+                          </button>
+                      </div>
+
+                      <div className="overflow-y-auto flex-1 p-6 bg-[#F6FAFC] space-y-4">
+                          {detailWorkshop.loadFailed ? (
+                              <p className="text-sm font-bold text-[#526274] text-center py-8">
+                                  Could not load workshop details.
+                              </p>
+                          ) : (
+                              <>
+                                  {detailWorkshop.description && (
+                                      <p className="text-sm text-[#111827] leading-relaxed italic bg-white border border-[#D6E4EA] rounded-xl p-4">
+                                          "{detailWorkshop.description}"
+                                      </p>
+                                  )}
+
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                      <div className="bg-white border border-[#D6E4EA] rounded-xl p-4">
+                                          <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#526274] mb-1">Mentor</p>
+                                          <p className="text-sm font-bold text-[#111827]">{detailWorkshop.mentor_name || "—"}</p>
+                                      </div>
+                                      <div className="bg-white border border-[#D6E4EA] rounded-xl p-4">
+                                          <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#526274] mb-1">Location</p>
+                                          <p className="text-sm font-bold text-[#111827]">{detailWorkshop.location || "—"}</p>
+                                      </div>
+                                      <div className="bg-white border border-[#D6E4EA] rounded-xl p-4">
+                                          <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#526274] mb-1">Date</p>
+                                          <p className="text-sm font-bold text-[#111827]">
+                                              {detailWorkshop.start_date ? new Date(detailWorkshop.start_date).toLocaleDateString() : "TBD"}
+                                              {detailWorkshop.end_date ? ` — ${new Date(detailWorkshop.end_date).toLocaleDateString()}` : ""}
+                                          </p>
+                                      </div>
+                                      <div className="bg-white border border-[#D6E4EA] rounded-xl p-4">
+                                          <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#526274] mb-1">Time</p>
+                                          <p className="text-sm font-bold text-[#111827]">
+                                              {detailWorkshop.start_time || "—"} — {detailWorkshop.end_time || "—"}
+                                          </p>
+                                      </div>
+                                      <div className="bg-white border border-[#D6E4EA] rounded-xl p-4">
+                                          <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#526274] mb-1">Seats</p>
+                                          <p className="text-sm font-bold text-[#111827]">
+                                              {detailWorkshop.enrolled_count ?? 0} / {detailWorkshop.capacity ?? "∞"}
+                                          </p>
+                                      </div>
+                                      <div className="bg-white border border-[#D6E4EA] rounded-xl p-4">
+                                          <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#526274] mb-1">Status</p>
+                                          <StageBadge status={detailWorkshop.status || "scheduled"} />
+                                      </div>
+                                  </div>
+                              </>
+                          )}
+                      </div>
+
+                      <div className="p-4 border-t border-[#D6E4EA] bg-white shrink-0 flex justify-end">
+                          <button
+                              onClick={() => setDetailWorkshop(null)}
+                              className="px-5 py-2 rounded-xl bg-[#00ADEF] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#006F9E] transition"
+                          >
+                              Close
+                          </button>
+                      </div>
+                  </div>
+              </div>
+          )}
+          {/* Project Detail Modal */}
+          {detailProject && (
+              <div
+                  className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+                  onClick={() => setDetailProject(null)}
+              >
+                  <div
+                      className="bg-white w-full max-w-2xl max-h-[90vh] rounded-2xl border border-[#D6E4EA] shadow-xl flex flex-col overflow-hidden"
+                      onClick={(e) => e.stopPropagation()}
+                  >
+                      <div className="p-5 border-b border-[#D6E4EA] flex items-center justify-between bg-white shrink-0">
+                          <div>
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#006F9E] block mb-1">
+                  Project Details
+                </span>
+                              <h2 className="text-xl font-bold text-[#111827]">
+                                  {detailProjectLoading ? "Loading..." : detailProject.name || "Project"}
+                              </h2>
+                          </div>
+                          <button
+                              onClick={() => setDetailProject(null)}
+                              className="p-2 rounded-xl text-[#526274] hover:bg-[#F6FAFC] hover:text-[#111827] transition"
+                          >
+                              <X size={20} />
+                          </button>
+                      </div>
+
+                      <div className="overflow-y-auto flex-1 p-6 bg-[#F6FAFC] space-y-4">
+                          {detailProject.loadFailed ? (
+                              <p className="text-sm font-bold text-[#526274] text-center py-8">
+                                  Could not load project details.
+                              </p>
+                          ) : (
+                              <>
+                                  {detailProject.short_description && (
+                                      <p className="text-sm text-[#111827] leading-relaxed italic bg-white border border-[#D6E4EA] rounded-xl p-4">
+                                          "{detailProject.short_description}"
+                                      </p>
+                                  )}
+
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                      <div className="bg-white border border-[#D6E4EA] rounded-xl p-4">
+                                          <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#526274] mb-1">Domain</p>
+                                          <p className="text-sm font-bold text-[#111827]">{detailProject.domain || "—"}</p>
+                                      </div>
+                                      <div className="bg-white border border-[#D6E4EA] rounded-xl p-4">
+                                          <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#526274] mb-1">Stage</p>
+                                          <p className="text-sm font-bold text-[#111827] capitalize">{detailProject.stage || "—"}</p>
+                                      </div>
+                                      <div className="bg-white border border-[#D6E4EA] rounded-xl p-4">
+                                          <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#526274] mb-1">Funding Stage</p>
+                                          <p className="text-sm font-bold text-[#111827] capitalize">{detailProject.funding_stage || "—"}</p>
+                                      </div>
+                                      <div className="bg-white border border-[#D6E4EA] rounded-xl p-4">
+                                          <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#526274] mb-1">Team</p>
+                                          <p className="text-sm font-bold text-[#111827]">
+                                              {(detailProject.team || []).length || "—"} member{(detailProject.team || []).length !== 1 ? "s" : ""}
+                                          </p>
+                                      </div>
+                                  </div>
+
+                                  {detailProject.problem && (
+                                      <div className="bg-white border border-[#D6E4EA] rounded-xl p-4">
+                                          <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#E38524] mb-1">Problem</p>
+                                          <p className="text-sm text-[#111827] leading-relaxed">{detailProject.problem}</p>
+                                      </div>
+                                  )}
+
+                                  {detailProject.solution && (
+                                      <div className="bg-white border border-[#D6E4EA] rounded-xl p-4">
+                                          <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#006F9E] mb-1">Solution</p>
+                                          <p className="text-sm text-[#111827] leading-relaxed">{detailProject.solution}</p>
+                                      </div>
+                                  )}
+
+                                  {(detailProject.techStack || []).length > 0 && (
+                                      <div className="bg-white border border-[#D6E4EA] rounded-xl p-4">
+                                          <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#526274] mb-2">Tech Stack</p>
+                                          <div className="flex flex-wrap gap-2">
+                                              {detailProject.techStack.map((tech, i) => (
+                                                  <span key={i} className="rounded-full bg-[#F6FAFC] border border-[#D6E4EA] px-3 py-1 text-[11px] font-bold text-[#111827]">
+                            {tech}
+                          </span>
+                                              ))}
+                                          </div>
+                                      </div>
+                                  )}
+
+                                  {(detailProject.team || []).length > 0 && (
+                                      <div className="bg-white border border-[#D6E4EA] rounded-xl p-4">
+                                          <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#526274] mb-2">Team Members</p>
+                                          <div className="space-y-2">
+                                              {detailProject.team.map((m, i) => (
+                                                  <div key={i} className="flex items-center justify-between text-sm">
+                                                      <span className="font-bold text-[#111827]">{m.name}</span>
+                                                      <span className="text-xs text-[#526274] font-semibold capitalize">{m.role_in_project || "Member"}</span>
+                                                  </div>
+                                              ))}
+                                          </div>
+                                      </div>
+                                  )}
+                              </>
+                          )}
+                      </div>
+
+                      <div className="p-4 border-t border-[#D6E4EA] bg-white shrink-0 flex justify-end">
+                          <button
+                              onClick={() => setDetailProject(null)}
+                              className="px-5 py-2 rounded-xl bg-[#00ADEF] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#006F9E] transition"
+                          >
+                              Close
+                          </button>
+                      </div>
+                  </div>
+              </div>
+          )}
       </div>
   );
 };

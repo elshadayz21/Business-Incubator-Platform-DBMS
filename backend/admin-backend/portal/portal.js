@@ -582,3 +582,41 @@ export const mentorReplyToEntrepreneurSession = async (mentorUserId, sessionId, 
 
   return updateRes.rows[0];
 };
+// Get one project's details for the entrepreneur portal (member-only)
+export const getProjectDetailsForPortal = async (projectId, userId) => {
+  try {
+    const res = await pool.query(
+        `SELECT p.id, p.name, p.domain, p.short_description, p.problem, p.solution,
+              p.tech_stack, p.stage, p.status, p.approved, p.funding_stage,
+              p.looking_for_cofounders, p.github_url, p.demo_url, p.created_at
+       FROM projects p
+       WHERE p.id = $1
+         AND EXISTS (
+           SELECT 1 FROM project_entrepreneurs pe
+           WHERE pe.project_id = p.id AND pe.user_id = $2
+         )`,
+        [projectId, userId]
+    );
+
+    if (res.rows.length === 0) return null;
+
+    const project = res.rows[0];
+    const teamRes = await pool.query(
+        `SELECT u.name, pe.role_in_project
+       FROM project_entrepreneurs pe
+       JOIN users u ON u.id = pe.user_id
+       WHERE pe.project_id = $1
+       ORDER BY pe.role_in_project = 'founder' DESC, u.name ASC`,
+        [projectId]
+    );
+
+    return {
+      ...project,
+      techStack: project.tech_stack ? project.tech_stack.split(",").map((t) => t.trim()) : [],
+      team: teamRes.rows,
+    };
+  } catch (error) {
+    console.error("Error in getProjectDetailsForPortal:", error);
+    throw error;
+  }
+};
