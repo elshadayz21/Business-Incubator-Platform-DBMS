@@ -3,6 +3,7 @@ import pool from "../config/db.js";
 import { authorizeRole } from "../middleware/check_roles.middleware.js";
 import { isAuth } from "../middleware/auth.middlware.js";
 import { ROLES } from "../utils/constants.js";
+import { getWorkshopsWithEnrollmentQuery } from "../models/workshop/Workshop.js";
 import {
   getEntrepreneurDashboard,
   getMentorDashboard,
@@ -299,6 +300,19 @@ router.get("/entrepreneur/funding", async (req, res) => {
     } catch (error) {
         console.error("Error fetching more funding:", error);
         res.status(500).json({ error: "Failed to load more funding" });
+    }
+});
+// GET: All workshops with the logged-in entrepreneur's enrollment status (browse tab)
+router.get("/entrepreneur/workshops/browse", async (req, res) => {
+    try {
+        const userId = req.session.userId;
+        if (!userId) return res.status(401).json({ error: "Please log in." });
+
+        const workshops = await getWorkshopsWithEnrollmentQuery(userId);
+        res.json({ workshops });
+    } catch (error) {
+        console.error("Error fetching workshops for browse:", error);
+        res.status(500).json({ error: "Failed to load workshops" });
     }
 });
 export default router;

@@ -239,3 +239,37 @@ export const getUserWorkshops = async (userId) => {
     throw err;
   }
 };
+// 7. Get all workshops + enrollment status for one user (for portal browse)
+export const getWorkshopsWithEnrollmentQuery = async (userId) => {
+  try {
+    const result = await pool.query(
+        `
+      SELECT
+        w.id,
+        w.title,
+        w.description,
+        w.mentor_name,
+        w.location,
+        w.start_date,
+        w.end_date,
+        w.start_time,
+        w.end_time,
+        w.capacity,
+        w.enrolled_count,
+        w.status,
+        w.schedule,
+        w.category,
+        EXISTS(
+          SELECT 1 FROM workshop_enrollments we2
+          WHERE we2.workshop_id = w.id AND we2.entrepreneur_id = $1
+        ) AS is_enrolled
+      FROM workshops w
+      ORDER BY w.start_date DESC
+      `,
+        [userId]
+    );
+    return result.rows;
+  } catch (err) {
+    throw err;
+  }
+};
