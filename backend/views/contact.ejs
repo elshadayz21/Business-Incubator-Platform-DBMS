@@ -61,6 +61,25 @@
               </div>
 
               <div>
+                <label class="mb-2 block text-sm font-bold text-ink">I am a</label>
+                <div id="sender-role-group" class="flex flex-wrap gap-2">
+                  <button type="button" class="role-pill" data-role="mentor">
+                    <i class="fa-solid fa-chalkboard-user text-[10px]" aria-hidden="true"></i> Mentor
+                  </button>
+                  <button type="button" class="role-pill" data-role="investor">
+                    <i class="fa-solid fa-hand-holding-dollar text-[10px]" aria-hidden="true"></i> Investor
+                  </button>
+                  <button type="button" class="role-pill" data-role="partner">
+                    <i class="fa-solid fa-handshake text-[10px]" aria-hidden="true"></i> Partner
+                  </button>
+                  <button type="button" class="role-pill role-pill-selected" data-role="other">
+                    <i class="fa-solid fa-user text-[10px]" aria-hidden="true"></i> Other
+                  </button>
+                </div>
+                <input type="hidden" id="sender_role" name="sender_role" value="other">
+              </div>
+
+              <div>
                 <label for="message" class="mb-2 block text-sm font-bold text-ink">Message</label>
                 <textarea id="message" name="message" rows="5" required class="w-full resize-none rounded-xl border border-line bg-surface px-4 py-3.5 text-sm font-medium text-ink outline-none transition placeholder:text-slate-400 focus:border-cyan focus:ring-2 focus:ring-cyan/20" placeholder="How can we help you?"></textarea>
               </div>
@@ -77,14 +96,61 @@
 
     <%- include('./partials/footer') %>
 
+    <style>
+      .role-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border-radius: 9999px;
+        border: 1px solid #D6E4EA;
+        background: #F6FAFC;
+        padding: 10px 16px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #526274;
+        cursor: pointer;
+        transition: all .15s ease;
+      }
+      .role-pill:hover { border-color: #00ADEF; }
+      .role-pill-selected {
+        background: #00ADEF;
+        border-color: #00ADEF;
+        color: #fff;
+      }
+      .role-pill-selected[data-role="investor"] {
+        background: #E38524;
+        border-color: #E38524;
+      }
+    </style>
+
     <!-- JavaScript to handle the form submission -->
     <script>
+
+      // --- Sender role pills ---
+      const rolePills = document.querySelectorAll('.role-pill');
+      const roleInput = document.getElementById('sender_role');
+
+      rolePills.forEach((pill) => {
+        pill.addEventListener('click', () => {
+          rolePills.forEach((p) => p.classList.toggle('role-pill-selected', p === pill));
+          roleInput.value = pill.dataset.role;
+        });
+      });
+            // --- Pre-select role from ?role= parameter (e.g. /contact?role=partner) ---
+            const roleParam = new URLSearchParams(window.location.search).get('role');
+            if (roleParam && ['mentor', 'investor', 'partner', 'other'].includes(roleParam)) {
+              const targetPill = document.querySelector(`.role-pill[data-role="${roleParam}"]`);
+              if (targetPill) targetPill.click();
+            }
+
+      // --- Contact form submission ---
       document.getElementById('contact-form').addEventListener('submit', async (e) => {
         e.preventDefault(); // Prevent page reload
 
         const name = document.getElementById('name').value;
         const email = document.getElementById('email').value;
         const message = document.getElementById('message').value;
+        const sender_role = document.getElementById('sender_role').value || 'other';
         const messageBox = document.getElementById('form-message');
         const submitButton = e.target.querySelector('button[type="submit"]');
         const originalLabel = submitButton.innerHTML;
@@ -94,11 +160,11 @@
         submitButton.innerHTML = '<span class="inline-block h-5 w-5 animate-spin rounded-full border-4 border-white border-t-transparent"></span> Sending...';
 
         try {
-          // Send data to our new backend API!
+          // Send data to our backend API
           const response = await fetch('/api/public/contact', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, email, message })
+            body: JSON.stringify({ name, email, message, sender_role })
           });
 
           const data = await response.json();
@@ -111,6 +177,10 @@
 
             // Clear the form
             document.getElementById('contact-form').reset();
+
+            // Reset role pills back to "Other"
+            rolePills.forEach((p) => p.classList.toggle('role-pill-selected', p.dataset.role === 'other'));
+            roleInput.value = 'other';
           } else {
             throw new Error(data.message || 'Something went wrong');
           }

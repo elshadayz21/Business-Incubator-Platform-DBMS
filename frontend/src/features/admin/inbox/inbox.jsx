@@ -86,13 +86,30 @@ export default function Inbox() {
                                     <tr key={msg.id} className="hover:bg-[#F6FAFC] transition align-top">
 
                                         <td className="p-4 hidden md:table-cell">
-                      <span className={`px-2 py-1 rounded-full text-[10px] font-bold border ${
-                          msg.type === 'contact'
-                              ? 'bg-[#EAF8FC] text-[#006F9E] border-[#00ADEF]/20'
-                              : 'bg-[#FFF1E3] text-[#E38524] border-[#E38524]/20'
-                      }`}>
-                        {msg.type === 'contact' ? 'Contact' : 'Newsletter'}
-                      </span>
+                                            {msg.type === 'contact' ? (
+                                                <div className="flex flex-col items-start gap-1">
+                                                    <span className="px-2 py-1 rounded-full text-[10px] font-bold border bg-[#EAF8FC] text-[#006F9E] border-[#00ADEF]/20">
+                                                        Contact
+                                                    </span>
+                                                    {msg.sender_role === 'mentor' ? (
+                                                        <span className="px-2 py-1 rounded-full text-[10px] font-bold border bg-[#EAF8FC] text-[#006F9E] border-[#00ADEF]/20">
+                                                            Mentor
+                                                        </span>
+                                                    ) : msg.sender_role === 'investor' ? (
+                                                        <span className="px-2 py-1 rounded-full text-[10px] font-bold border bg-[#FFF1E3] text-[#E38524] border-[#E38524]/20">
+                                                            Investor
+                                                        </span>
+                                                    ) : msg.sender_role === 'partner' ? (
+                                                        <span className="px-2 py-1 rounded-full text-[10px] font-bold border bg-purple-50 text-purple-700 border-purple-200">
+                                                            Partner
+                                                        </span>
+                                                    ) : null}
+                                                </div>
+                                            ) : (
+                                                <span className="px-2 py-1 rounded-full text-[10px] font-bold border bg-[#FFF1E3] text-[#E38524] border-[#E38524]/20">
+                                                    Newsletter
+                                                </span>
+                                            )}
                                         </td>
 
                                         <td className="p-4 max-w-[200px]">
