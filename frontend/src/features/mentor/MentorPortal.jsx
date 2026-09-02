@@ -38,7 +38,7 @@ const MentorPortal = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeTab, setActiveTabState] = useState(() => {
-    return sessionStorage.getItem("mentor_active_tab") || "My Entrepreneurs";
+    return sessionStorage.getItem("mentor_active_tab") || "My Mentees";
   });
 
   const setActiveTab = (tab) => {
@@ -243,7 +243,7 @@ const MentorPortal = () => {
   };
 
   const navItems = [
-    { id: 1, icon: Users, label: "My Entrepreneurs" },
+    { id: 1, icon: Users, label: "My Mentees" },
     { id: 2, icon: Bell, label: "Notifications", badge: unreadNotifications || null },
     { id: 3, icon: Scroll, label: "Activity Timeline" },
     { id: 4, icon: MessageCircle, label: "Chat" },
@@ -360,22 +360,6 @@ const MentorPortal = () => {
           />
         </header>
         <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
-        <div className="bg-gradient-to-br from-[#00ADEF] via-[#078CC8] to-[#0878B4] rounded-2xl p-6 md:p-8 text-white shadow-sm">
-          <p className="mb-2 inline-flex items-center gap-2 rounded-full bg-white/15 px-3.5 py-1 text-[11px] font-bold uppercase tracking-[.18em] text-white">
-            <span className="h-2 w-2 rounded-full bg-[#E38524]" aria-hidden="true" />
-            Mentor Portal
-          </p>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-            {selected
-              ? selected.entrepreneur_name
-              : `Welcome back, ${currentUser.name?.split(" ")[0] || "Mentor"}!`}
-          </h1>
-          <p className="mt-2 text-sm text-white/85 max-w-2xl leading-relaxed">
-            {selected
-              ? "Log sessions, share feedback, and track progress notes for this entrepreneur."
-              : "Manage your assigned entrepreneurs, log mentorship sessions, and provide feedback."}
-          </p>
-        </div>
 
         {loading ? (
           <div className="h-full flex items-center justify-center">
@@ -888,61 +872,92 @@ const MentorPortal = () => {
             {assignments.length === 0 ? (
               <div className="bg-white rounded-2xl border border-[#D6E4EA] p-8 text-center">
                 <p className="text-sm font-bold text-[#526274]">
-                  No entrepreneurs are assigned to you yet. The program
+                  No mentees are assigned to you yet. The program
                   coordinator will assign you shortly.
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                {assignments.map((a) => (
-                  <div
-                    key={a.assignment_id}
-                    className="bg-white rounded-2xl border border-[#D6E4EA] p-6 shadow-xs hover:shadow-md transition-all"
-                  >
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-11 h-11 rounded-full bg-[#00ADEF] text-white flex items-center justify-center font-bold text-sm shadow-xs overflow-hidden">
-                        {a.entrepreneur_profile_image ? (
-                          <img
-                            src={a.entrepreneur_profile_image}
-                            alt={a.entrepreneur_name}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              e.currentTarget.onerror = null;
-                              e.currentTarget.src = "/assets/images/default-avatar.svg";
-                            }}
-                          />
-                        ) : (
-                          a.entrepreneur_name?.charAt(0)?.toUpperCase() || "E"
-                        )}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-bold text-[#111827] text-sm truncate">
-                          {a.entrepreneur_name}
-                        </p>
-                        <p className="text-xs text-[#526274] font-semibold truncate">
-                          {a.entrepreneur_email}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="space-y-2 mb-4 text-xs text-[#526274] font-semibold">
-                      <p className="flex items-center gap-2">
-                        <Building2 size={13} className="text-[#00ADEF]" />
-                        {a.entrepreneur_company || "Startup"}
-                      </p>
-                      <p className="flex items-center gap-2">
-                        <ClipboardCheck size={13} className="text-[#00ADEF]" />
-                        {a.cohort_name ? `Cohort: ${a.cohort_name}` : a.project_name ? `Project: ${a.project_name}` : "Mentorship"} • {a.session_count || 0} sessions
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => openSessions(a)}
-                      className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#EAF8FC] text-[#006F9E] border border-[#00ADEF]/20 text-xs font-bold hover:bg-[#dff2fa] transition-all"
-                    >
-                      <ClipboardCheck size={15} />
-                      Manage Sessions
-                    </button>
-                  </div>
-                ))}
+              <div className="bg-white rounded-2xl border border-[#D6E4EA] shadow-xs overflow-hidden">
+                <div className="overflow-x-auto font-sans">
+                  <table className="w-full text-left border-collapse min-w-[850px]">
+                    <thead>
+                      <tr className="bg-[#F6FAFC] border-b border-[#D6E4EA] text-[#526274] text-xs font-bold uppercase tracking-wider">
+                        <th className="p-4">Mentee Name &amp; Email</th>
+                        <th className="p-4">Company</th>
+                        <th className="p-4">Cohort / Project</th>
+                        <th className="p-4 text-center">Sessions</th>
+                        <th className="p-4 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#D6E4EA] text-sm">
+                      {assignments.map((a) => (
+                        <tr
+                          key={a.assignment_id}
+                          className="hover:bg-[#F6FAFC] transition-colors"
+                        >
+                          <td className="p-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-[#00ADEF] text-white flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden">
+                                {a.entrepreneur_profile_image ? (
+                                  <img
+                                    src={a.entrepreneur_profile_image}
+                                    alt={a.entrepreneur_name}
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      e.currentTarget.onerror = null;
+                                      e.currentTarget.src = "/assets/images/default-avatar.svg";
+                                    }}
+                                  />
+                                ) : (
+                                  a.entrepreneur_name?.charAt(0)?.toUpperCase() || "E"
+                                )}
+                              </div>
+                              <div className="min-w-0">
+                                <div className="font-bold text-[#111827] text-sm truncate">
+                                  {a.entrepreneur_name}
+                                </div>
+                                <div className="text-xs text-[#526274] font-medium truncate">
+                                  {a.entrepreneur_email}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+
+                          <td className="p-4">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#EAF8FC] text-[#006F9E] text-xs font-bold border border-[#00ADEF]/20">
+                              <Building2 size={12} />
+                              {a.entrepreneur_company || "Startup"}
+                            </span>
+                          </td>
+
+                          <td className="p-4 text-xs font-semibold text-[#526274]">
+                            {a.cohort_name
+                              ? `Cohort: ${a.cohort_name}`
+                              : a.project_name
+                              ? `Project: ${a.project_name}`
+                              : "Mentorship"}
+                          </td>
+
+                          <td className="p-4 text-center">
+                            <span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-1 rounded-full bg-slate-100 text-[#111827] text-xs font-bold">
+                              {a.session_count || 0}
+                            </span>
+                          </td>
+
+                          <td className="p-4 text-right">
+                            <button
+                              onClick={() => openSessions(a)}
+                              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#EAF8FC] text-[#006F9E] border border-[#00ADEF]/20 text-xs font-bold hover:bg-[#dff2fa] transition-all"
+                            >
+                              <ClipboardCheck size={14} />
+                              Manage Sessions
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </div>
