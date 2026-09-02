@@ -11,7 +11,8 @@ export const getAllMentors = async () => {
       bio, 
       profile_image, 
       role,
-      status
+      status,
+      is_available
     FROM users 
     WHERE role = 'mentor' AND status = 'active'
     ORDER BY created_at DESC;

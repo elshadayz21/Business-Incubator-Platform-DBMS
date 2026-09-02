@@ -31,7 +31,12 @@
 
           <a class="transition hover:text-cyan-dark" href="<%= routes.projects %>">Projects</a>
           <a class="transition hover:text-cyan-dark" href="<%= routes.about %>">About</a>
-          <a class="transition hover:text-cyan-dark" href="/partners">Partners</a>
+          <a class="transition hover:text-cyan-dark" href="/#partners">Partners</a>
+
+          <button id="nav-apply-button" type="button" onclick="handleGlobalApply()" class="hidden items-center gap-1.5 rounded-full bg-orange px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-orange-dark focus:outline-none focus:ring-2 focus:ring-orange focus:ring-offset-2">
+            Apply now
+            <i class="fa-solid fa-arrow-up-right-from-square text-[10px]" aria-hidden="true"></i>
+          </button>
         </nav>
 
         <div class="flex items-center gap-3 border-l border-line pl-6">
@@ -93,7 +98,7 @@
 
         <a class="rounded-md px-3 py-3 transition hover:bg-cyan-soft hover:text-cyan-dark" href="<%= routes.projects %>">Projects</a>
         <a class="rounded-md px-3 py-3 transition hover:bg-cyan-soft hover:text-cyan-dark" href="<%= routes.about %>">About</a>
-        <a class="rounded-md px-3 py-3 transition hover:bg-cyan-soft hover:text-cyan-dark" href="/partners">Partners</a>
+        <a class="rounded-md px-3 py-3 transition hover:bg-cyan-soft hover:text-cyan-dark" href="/#partners">Partners</a>
       </nav>
 
       <div class="mt-4 px-3">

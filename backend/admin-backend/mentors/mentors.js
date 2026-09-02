@@ -44,10 +44,12 @@ export const addMentor = async (data) => {
     phone,
     expertise,
     status,
+    isAvailable,
     password,
     assignedProject,
     assignedWorkshop,
   } = data;
+  const availableFlag = isAvailable === undefined ? true : Boolean(isAvailable);
 
   if (!name || !email) {
     throw new Error("Name and Email are required.");
@@ -70,16 +72,16 @@ export const addMentor = async (data) => {
         const hashed = await hashPassword(password.trim());
         await client.query(
             `UPDATE users 
-           SET role = 'mentor', name = COALESCE($1, name), expertise = COALESCE($2, expertise), status = COALESCE($3, status), password = $4, updated_at = CURRENT_TIMESTAMP
-           WHERE id = $5`,
-            [name, expertise, status || "active", hashed, userId]
+           SET role = 'mentor', name = COALESCE($1, name), expertise = COALESCE($2, expertise), status = COALESCE($3, status), is_available = $4, password = $5, updated_at = CURRENT_TIMESTAMP
+           WHERE id = $6`,
+            [name, expertise, status || "active", availableFlag, hashed, userId]
         );
       } else {
         await client.query(
             `UPDATE users 
-           SET role = 'mentor', name = COALESCE($1, name), expertise = COALESCE($2, expertise), status = COALESCE($3, status), updated_at = CURRENT_TIMESTAMP
-           WHERE id = $4`,
-            [name, expertise, status || "active", userId]
+           SET role = 'mentor', name = COALESCE($1, name), expertise = COALESCE($2, expertise), status = COALESCE($3, status), is_available = $4, updated_at = CURRENT_TIMESTAMP
+           WHERE id = $5`,
+            [name, expertise, status || "active", availableFlag, userId]
         );
       }
     } else {
@@ -88,20 +90,20 @@ export const addMentor = async (data) => {
       const userCode = generateUserCode();
 
       const userInsert = await client.query(
-          `INSERT INTO users (name, user_code, email, password, role, expertise, status)
-         VALUES ($1, $2, $3, $4, 'mentor', $5, $6)
+          `INSERT INTO users (name, user_code, email, password, role, expertise, status, is_available)
+         VALUES ($1, $2, $3, $4, 'mentor', $5, $6, $7)
          RETURNING id`,
-          [name, userCode, email, hashed, expertise, status || "active"]
+          [name, userCode, email, hashed, expertise, status || "active", availableFlag]
       );
       userId = userInsert.rows[0].id;
     }
 
     // B. Insert Mentor profile
     const insertRes = await client.query(
-        `INSERT INTO mentors (user_id, name, email, phone, expertise, status) 
-       VALUES ($1, $2, $3, $4, $5, $6) 
+        `INSERT INTO mentors (user_id, name, email, phone, expertise, status, is_available) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7) 
        RETURNING *`,
-        [userId, name, email, phone, expertise, status || "active"],
+        [userId, name, email, phone, expertise, status || "active", availableFlag],
     );
     const newMentor = insertRes.rows[0];
 
@@ -168,7 +170,8 @@ export const deleteMentor = async (id) => {
 
 // 4. Update Mentor
 export const updateMentor = async (id, data = {}) => {
-  const { name, email, phone, expertise, status, password } = data || {};
+  const { name, email, phone, expertise, status, isAvailable, password } = data || {};
+  const availableFlag = isAvailable === undefined ? null : Boolean(isAvailable);
 
   if (status && !VALID_STATUSES.includes(status)) {
     throw new Error(`Invalid status: ${status}`);
@@ -185,10 +188,11 @@ export const updateMentor = async (id, data = {}) => {
            phone = COALESCE($3, phone), 
            expertise = COALESCE($4, expertise), 
            status = COALESCE($5, status),
+           is_available = COALESCE($6, is_available),
            updated_at = CURRENT_TIMESTAMP
-       WHERE id = $6 
+       WHERE id = $7 
        RETURNING *`,
-        [name, email, phone, expertise, status, id],
+        [name, email, phone, expertise, status, availableFlag, id],
     );
 
     if (res.rows.length === 0) {
@@ -202,16 +206,16 @@ export const updateMentor = async (id, data = {}) => {
         const hashed = await hashPassword(password.trim());
         await client.query(
             `UPDATE users 
-           SET name = COALESCE($1, name), expertise = COALESCE($2, expertise), status = COALESCE($3, status), password = $4, updated_at = CURRENT_TIMESTAMP
-           WHERE email = $5`,
-            [name, expertise, status, hashed, updatedMentor.email]
+           SET name = COALESCE($1, name), expertise = COALESCE($2, expertise), status = COALESCE($3, status), is_available = COALESCE($4, is_available), password = $5, updated_at = CURRENT_TIMESTAMP
+           WHERE email = $6`,
+            [name, expertise, status, availableFlag, hashed, updatedMentor.email]
         );
       } else {
         await client.query(
             `UPDATE users 
-           SET name = COALESCE($1, name), expertise = COALESCE($2, expertise), status = COALESCE($3, status), updated_at = CURRENT_TIMESTAMP
-           WHERE email = $4`,
-            [name, expertise, status, updatedMentor.email]
+           SET name = COALESCE($1, name), expertise = COALESCE($2, expertise), status = COALESCE($3, status), is_available = COALESCE($4, is_available), updated_at = CURRENT_TIMESTAMP
+           WHERE email = $5`,
+            [name, expertise, status, availableFlag, updatedMentor.email]
         );
       }
     }
@@ -233,6 +237,7 @@ export const getMentorTotals = async () => {
       SELECT
         (SELECT COUNT(*)::integer FROM mentors) AS total,
         (SELECT COUNT(*)::integer FROM mentors WHERE status = 'active') AS active,
+        (SELECT COUNT(*)::integer FROM mentors WHERE is_available IS NOT FALSE) AS available,
         (SELECT COUNT(*)::integer FROM mentor_project_assignments) AS assigned_projects,
         (SELECT COUNT(*)::integer FROM mentor_workshop_assignments) AS workshops_led
     `);

@@ -246,10 +246,5 @@ router.put("/funding/:id/respond", async (req, res) => {
         res.status(403).json({ message: error.message });
     }
 });
-// GET: Partners Page
-router.get("/partners", (req, res) => {
-    res.render("partners");
-});
-
 
 export { router as publicRoutes };
