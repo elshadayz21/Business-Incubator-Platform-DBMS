@@ -5,7 +5,7 @@
     <div class="pointer-events-none absolute -right-40 bottom-[-240px] h-[620px] w-[760px] rounded-[50%] border-[90px] border-white/10" aria-hidden="true"></div>
     <div class="pointer-events-none absolute right-[28%] top-14 h-20 w-20 rounded-full bg-white/10 blur-xl" aria-hidden="true"></div>
 
-    <div class="relative mx-auto grid max-w-7xl items-center gap-12 px-6 py-20 lg:grid-cols-[1.06fr_.94fr] lg:px-10 lg:py-24">
+    <div class="relative mx-auto grid max-w-7xl items-center gap-12 px-6 py-20 lg:grid-cols-[0.92fr_1.08fr] lg:px-10 lg:py-24">
       <div class="dv-reveal max-w-[680px]" data-delay="0">
         <p class="mb-5 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[.24em] text-white/80">
           <span class="h-2 w-2 rounded-full bg-orange" aria-hidden="true"></span>
@@ -33,44 +33,42 @@
       </div>
 
       <div class="dv-reveal relative lg:justify-self-end" data-delay="140">
-        <div class="relative w-full max-w-[520px] rounded-[28px] border border-white/30 bg-white/10 p-5 shadow-[0_22px_70px_rgba(0,63,102,.25)] backdrop-blur-md sm:p-7">
+        <!-- Soft pulsing glow behind the card so it draws the eye before anything else on the page -->
+        <div class="pointer-events-none absolute -inset-3 rounded-[36px] bg-orange/25 blur-2xl animate-pulse" aria-hidden="true"></div>
+
+        <div class="relative w-full max-w-[600px] rounded-[28px] border border-white/30 bg-white/10 p-6 shadow-[0_22px_70px_rgba(0,63,102,.25)] backdrop-blur-md sm:p-8">
           <div class="flex items-start justify-between gap-4 border-b border-white/20 pb-6">
             <div>
               <p class="text-xs font-bold uppercase tracking-[.2em] text-white/65">Founder dashboard</p>
-              <p class="mt-2 text-2xl font-bold">Make the next move.</p>
+              <p class="mt-2 text-2xl font-bold sm:text-3xl">Startup calls open now.</p>
             </div>
-            <span class="rounded-full bg-white/15 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white/80">Batch 04</span>
-          </div>
-
-          <div class="grid grid-cols-2 gap-3 py-6 sm:grid-cols-3">
-            <div class="rounded-xl bg-white/10 p-4">
-              <p class="text-2xl font-extrabold">03</p>
-              <p class="mt-1 text-xs text-white/70">Growth stages</p>
-            </div>
-            <div class="rounded-xl bg-white/10 p-4">
-              <p class="text-2xl font-extrabold">02</p>
-              <p class="mt-1 text-xs text-white/70">Cohort tracks</p>
-            </div>
-            <div class="col-span-2 rounded-xl bg-white/10 p-4 sm:col-span-1">
-              <p class="text-2xl font-extrabold">01</p>
-              <p class="mt-1 text-xs text-white/70">Founder network</p>
-            </div>
-          </div>
-
-          <div class="flex items-center justify-between rounded-xl bg-white p-4 text-ink">
-            <div>
-              <p class="text-[10px] font-bold uppercase tracking-[.16em] text-cyan-dark">Current focus</p>
-              <p class="mt-1 text-sm font-bold">Validate your market</p>
-            </div>
-            <span class="grid h-9 w-9 place-items-center rounded-full bg-orange-soft text-orange" aria-hidden="true">
-              <i class="fa-solid fa-wand-magic-sparkles text-sm"></i>
+            <span class="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-orange/90 px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-wider text-white shadow-[0_6px_16px_rgba(227,133,36,.4)]">
+              <span class="relative flex h-2 w-2">
+                <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-white/80"></span>
+                <span class="relative inline-flex h-2 w-2 rounded-full bg-white"></span>
+              </span>
+              Live
             </span>
           </div>
 
-          <div class="absolute -bottom-8 -left-6 hidden items-center gap-3 rounded-2xl bg-white p-3 text-ink shadow-[0_18px_40px_rgba(0,63,102,.22)] sm:flex">
-            <img src="/brand/dxvalley-wordmark.jpeg" alt="DxValley" class="h-10 w-[118px] object-contain object-left mix-blend-multiply" loading="lazy" decoding="async" />
-            <span class="h-8 w-px bg-line" aria-hidden="true"></span>
-            <span class="pr-2 text-[10px] font-bold uppercase tracking-wider text-muted">For founders<br />with momentum</span>
+          <!-- Rotating "recent startup calls" carousel: swaps to the next open
+               call automatically every 5s, and can be navigated with the
+               arrow buttons (anchored to the card's own edges) or the dots
+               below. -->
+          <div id="hero-calls-carousel" class="relative py-6">
+            <button type="button" id="hero-calls-prev" aria-label="Previous startup call" class="hidden absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 grid h-9 w-9 place-items-center rounded-full bg-cyan-deep text-white shadow-lg ring-2 ring-white/40 transition hover:bg-cyan-deep/80 focus:outline-none focus:ring-2 focus:ring-white/70">
+              <i class="fa-solid fa-chevron-left text-xs" aria-hidden="true"></i>
+            </button>
+
+            <div id="hero-calls-track" class="min-h-[150px] px-2">
+              <div class="flex h-[150px] items-center justify-center text-center text-sm font-semibold text-white/70">Loading open calls…</div>
+            </div>
+
+            <button type="button" id="hero-calls-next" aria-label="Next startup call" class="hidden absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10 grid h-9 w-9 place-items-center rounded-full bg-cyan-deep text-white shadow-lg ring-2 ring-white/40 transition hover:bg-cyan-deep/80 focus:outline-none focus:ring-2 focus:ring-white/70">
+              <i class="fa-solid fa-chevron-right text-xs" aria-hidden="true"></i>
+            </button>
+
+            <div id="hero-calls-dots" class="mt-4 flex items-center justify-center gap-2"></div>
           </div>
         </div>
         <img src="/brand/coopbank-mark.jpeg" alt="" class="pointer-events-none absolute -bottom-12 -right-12 hidden h-40 w-40 object-contain opacity-[.12] mix-blend-screen lg:block" loading="lazy" decoding="async" aria-hidden="true" />
@@ -303,6 +301,149 @@
   // this only falls back to the raw id for older rows that predate slugs.
   window.applyUrl = (ann) => `/apply/${ann.slug || ann.id}`;
 
+  // --- HERO "FOUNDER DASHBOARD" CAROUSEL ---------------------------------
+  // Shows the most recent open startup calls in the hero card, auto-advancing
+  // every 5s, with dot + arrow navigation to move between them manually.
+  let heroCallsData = [];
+  let heroCallsIndex = 0;
+  let heroCallsTimer = null;
+  const HERO_CALLS_INTERVAL = 5000;
+
+  function heroCallsDeadlineLabel(ann) {
+    if (!ann.deadline) return 'Rolling applications';
+    const deadline = new Date(ann.deadline);
+    if (Number.isNaN(deadline.getTime())) return 'Rolling applications';
+    const distance = deadline.getTime() - Date.now();
+    if (distance <= 0) return 'Applications closed';
+    const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+    if (days > 0) return `Closes in ${days} day${days === 1 ? '' : 's'}`;
+    const hours = Math.floor(distance / (1000 * 60 * 60));
+    return hours > 0 ? `Closes in ${hours} hour${hours === 1 ? '' : 's'}` : 'Closes today';
+  }
+
+  // Strips HTML from the rich-text announcement body and trims it to a short
+  // teaser so the card stays a fixed, predictable height across slides.
+  function heroCallsDescription(ann, maxLen = 110) {
+    if (!ann.content) return 'Tap to read the full call and apply.';
+    let text = ann.content;
+    if (/<[a-z][\s\S]*>/i.test(text)) {
+      const temp = document.createElement('div');
+      temp.innerHTML = text;
+      text = temp.textContent || temp.innerText || '';
+    }
+    text = text.replace(/\s+/g, ' ').trim();
+    if (!text) return 'Tap to read the full call and apply.';
+    return text.length > maxLen ? `${text.slice(0, maxLen).trim()}…` : text;
+  }
+
+  function renderHeroCallsSlide() {
+    const track = document.getElementById('hero-calls-track');
+    const dotsWrap = document.getElementById('hero-calls-dots');
+    const prevBtn = document.getElementById('hero-calls-prev');
+    const nextBtn = document.getElementById('hero-calls-next');
+    if (!track) return;
+
+    if (heroCallsData.length === 0) {
+      if (prevBtn) prevBtn.classList.add('hidden');
+      if (nextBtn) nextBtn.classList.add('hidden');
+      if (dotsWrap) dotsWrap.innerHTML = '';
+      track.innerHTML = `
+        <div class="flex h-[150px] flex-col items-center justify-center gap-2 text-center">
+          <p class="text-sm font-bold text-white">No open startup calls right now.</p>
+          <p class="text-xs text-white/70">Check back soon or explore our programs below.</p>
+        </div>
+      `;
+      return;
+    }
+
+    if (heroCallsIndex >= heroCallsData.length) heroCallsIndex = 0;
+    const ann = heroCallsData[heroCallsIndex];
+
+    track.innerHTML = `
+      <a href="${window.applyUrl(ann)}" class="hero-calls-slide block rounded-xl bg-white/10 p-4 opacity-0 translate-y-1 transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/15 hover:shadow-[0_10px_24px_rgba(0,0,0,.18)]">
+        <p class="text-[10px] font-bold uppercase tracking-[.16em] text-white/70">Recent startup call</p>
+        <p class="mt-1.5 text-xl font-extrabold leading-snug text-white">${ann.title}</p>
+        <p class="mt-1.5 text-sm leading-6 text-white/75 line-clamp-2">${heroCallsDescription(ann)}</p>
+        <div class="mt-3 flex items-center justify-between gap-3">
+          <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-white/80">
+            <i class="fa-regular fa-clock text-[11px]" aria-hidden="true"></i>
+            ${heroCallsDeadlineLabel(ann)}
+          </span>
+          <span class="shrink-0 rounded-full bg-orange px-3.5 py-1.5 text-[11px] font-extrabold uppercase tracking-wider text-white shadow-[0_6px_14px_rgba(227,133,36,.45)]">Apply now</span>
+        </div>
+      </a>
+    `;
+
+    // Fade + rise the new slide in rather than snapping it in instantly.
+    const slideEl = track.querySelector('.hero-calls-slide');
+    if (slideEl) {
+      requestAnimationFrame(() => {
+        slideEl.classList.remove('opacity-0', 'translate-y-1');
+      });
+    }
+
+    if (dotsWrap) {
+      if (heroCallsData.length > 1) {
+        dotsWrap.innerHTML = heroCallsData.map((_, i) => `
+          <button type="button" class="hero-calls-dot h-2 rounded-full transition-all ${i === heroCallsIndex ? 'w-5 bg-white' : 'w-2 bg-white/35 hover:bg-white/60'}" data-index="${i}" aria-label="Show startup call ${i + 1}"></button>
+        `).join('');
+        dotsWrap.querySelectorAll('.hero-calls-dot').forEach((dot) => {
+          dot.addEventListener('click', () => {
+            heroCallsGoTo(parseInt(dot.dataset.index, 10));
+          });
+        });
+      } else {
+        dotsWrap.innerHTML = '';
+      }
+    }
+
+    const showArrows = heroCallsData.length > 1;
+    if (prevBtn) prevBtn.classList.toggle('hidden', !showArrows);
+    if (nextBtn) nextBtn.classList.toggle('hidden', !showArrows);
+  }
+
+  function heroCallsGoTo(index) {
+    if (heroCallsData.length === 0) return;
+    heroCallsIndex = ((index % heroCallsData.length) + heroCallsData.length) % heroCallsData.length;
+    renderHeroCallsSlide();
+    heroCallsRestartTimer();
+  }
+
+  function heroCallsRestartTimer() {
+    if (heroCallsTimer) clearInterval(heroCallsTimer);
+    if (heroCallsData.length <= 1) return;
+    heroCallsTimer = setInterval(() => {
+      heroCallsIndex = (heroCallsIndex + 1) % heroCallsData.length;
+      renderHeroCallsSlide();
+    }, HERO_CALLS_INTERVAL);
+  }
+
+  function updateHeroCalls(announcements) {
+    const openCalls = (announcements || []).filter((ann) => ann.is_open_call);
+    // Keep the currently shown call in view (by id) when the underlying data
+    // refreshes, instead of always snapping back to the first slide.
+    const currentId = heroCallsData[heroCallsIndex] ? heroCallsData[heroCallsIndex].id : null;
+    heroCallsData = openCalls;
+    const matchIndex = currentId != null ? heroCallsData.findIndex((ann) => ann.id === currentId) : -1;
+    heroCallsIndex = matchIndex >= 0 ? matchIndex : 0;
+    renderHeroCallsSlide();
+    heroCallsRestartTimer();
+  }
+
+  (function initHeroCallsNav() {
+    const prevBtn = document.getElementById('hero-calls-prev');
+    const nextBtn = document.getElementById('hero-calls-next');
+    if (prevBtn) prevBtn.addEventListener('click', () => heroCallsGoTo(heroCallsIndex - 1));
+    if (nextBtn) nextBtn.addEventListener('click', () => heroCallsGoTo(heroCallsIndex + 1));
+
+    const carousel = document.getElementById('hero-calls-carousel');
+    if (carousel) {
+      // Pause auto-advance while the person is looking at the card, resume on mouseleave.
+      carousel.addEventListener('mouseenter', () => { if (heroCallsTimer) clearInterval(heroCallsTimer); });
+      carousel.addEventListener('mouseleave', () => heroCallsRestartTimer());
+    }
+  })();
+
   // --- SMART APPLY BUTTON LOGIC (NOW REDIRECTS TO DEDICATED PAGE!) ---
   window.handleGlobalApply = () => {
     if (window.announcementData && window.announcementData.length > 0) {
@@ -326,6 +467,7 @@
       let announcements = await response.json();
       window.announcementData = announcements;
       startHomeCountdown(announcements);
+      updateHeroCalls(announcements);
     } catch (error) {
       console.error('Error refreshing announcements:', error);
     }
@@ -335,6 +477,8 @@
     try {
       const response = await fetch('/api/public/announcements');
       let announcements = await response.json();
+
+      updateHeroCalls(announcements);
 
       const container = document.getElementById('home-announcements-list');
       if (!container) return;
