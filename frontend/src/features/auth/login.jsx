@@ -52,14 +52,6 @@ export default function LoginPage() {
               className="h-10 w-auto max-w-[190px] object-contain object-left mix-blend-multiply"
             />
           </a>
-
-          <a
-            href="/"
-            className="inline-flex items-center gap-2 rounded-full border border-[#D6E4EA] bg-[#F6FAFC] px-4 py-2 text-xs font-bold text-[#006F9E] transition hover:bg-[#EAF8FC] hover:border-[#00ADEF] shadow-2xs"
-          >
-            <i className="fa-solid fa-arrow-left text-[11px]" aria-hidden="true" />
-            Main Website
-          </a>
         </div>
       </header>
 
@@ -186,7 +178,7 @@ export default function LoginPage() {
           <div className="mt-6 pt-4 border-t border-[#D6E4EA] text-center text-[11px] text-[#526274]">
             Need credentials? Contact{" "}
             <a
-              href="mailto:support@dxvalley.com"
+              href="mailto:hello@dxvalley.com"
               className="text-[#006F9E] font-bold hover:underline"
             >
               DxValley Support

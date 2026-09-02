@@ -11,33 +11,33 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link href="/css/style.css" rel="stylesheet" />
   </head>
-  <body class="bg-gray-100 min-h-screen flex flex-col font-sans">
+  <body class="bg-[#F6FAFC] min-h-screen flex flex-col font-sans text-[#111827] antialiased selection:bg-[#E38524] selection:text-white">
      <%- include('../partials/header') %>
-    <main class="flex-grow flex items-center justify-center p-6 relative overflow-hidden">
+    <main class="flex-grow relative overflow-hidden bg-gradient-to-br from-[#00ADEF] via-[#078CC8] to-[#0878B4] text-white py-12 px-6 flex items-center justify-center">
       
-      <div class="absolute top-20 left-10 w-32 h-32 rounded-full bg-brand-yellow blur-3xl opacity-30 animate-pulse"></div>
-      <div class="absolute bottom-20 right-10 w-40 h-40 rounded-full bg-brand-pink blur-3xl opacity-30 animate-pulse"></div>
+      <div class="pointer-events-none absolute -left-24 -top-20 h-[460px] w-[620px] rounded-[48%] border-[70px] border-white/10" aria-hidden="true"></div>
+      <div class="pointer-events-none absolute -right-40 bottom-[-240px] h-[620px] w-[760px] rounded-[50%] border-[90px] border-white/10" aria-hidden="true"></div>
 
-      <div class="relative bg-neo-white border-4 border-neo-black shadow-neo p-10 max-w-lg w-full text-center rounded-xl transform transition hover:-translate-y-1 hover:shadow-neo-hover duration-300">
+      <div class="relative w-full max-w-[440px] rounded-[24px] border border-white/30 bg-white p-8 sm:p-9 text-[#111827] shadow-[0_20px_60px_rgba(0,63,102,0.25)] text-center">
         
-        <div class="w-24 h-24 mx-auto mb-6 rounded-full border-4 border-neo-black shadow-neo-sm flex items-center justify-center text-4xl" style="background-color: <%= typeof color !== 'undefined' ? color : '#e38524' %>;">
-          <i class="<%= typeof icon !== 'undefined' ? icon : 'fa-solid fa-triangle-exclamation' %> text-neo-black"></i>
+        <div class="w-20 h-20 mx-auto mb-5 rounded-full flex items-center justify-center text-3xl" style="background-color: <%= typeof color !== 'undefined' ? color : '#EAF8FC' %>;">
+          <i class="<%= typeof icon !== 'undefined' ? icon : 'fa-solid fa-triangle-exclamation' %> text-[#006F9E]"></i>
         </div>
 
-        <h1 class="font-display text-8xl font-bold text-neo-black mb-2 tracking-tighter">
+        <h1 class="text-7xl font-extrabold tracking-tight text-[#111827] mb-2">
           <%= typeof statusCode !== 'undefined' ? statusCode : '500' %>
         </h1>
 
-        <h2 class="font-display text-2xl font-bold text-gray-800 mb-4 uppercase tracking-wide">
+        <h2 class="text-2xl font-extrabold text-[#111827] mb-3 uppercase tracking-wide">
           <%= typeof title !== 'undefined' ? title : 'Server Error' %>
         </h2>
 
-        <p class="font-sans text-gray-600 mb-8 text-lg leading-relaxed">
+        <p class="text-sm leading-relaxed text-[#526274] mb-8 font-medium">
           <%= typeof message !== 'undefined' ? message : 'Something went wrong.' %>
         </p>
 
-        <a href="<%= typeof redirectLink !== 'undefined' ? redirectLink : '/' %>" class="inline-block px-8 py-3 bg-neo-black text-white font-display font-bold text-lg rounded-lg border-2 border-transparent hover:bg-white hover:text-neo-black hover:border-neo-black transition-all duration-300 shadow-neo-sm hover:shadow-none">
-          <%= typeof buttonText !== 'undefined' ? buttonText : 'Go Home' %> <i class="fa-solid fa-arrow-right ml-2"></i>
+        <a href="<%= typeof redirectLink !== 'undefined' ? redirectLink : '/' %>" class="inline-flex items-center justify-center gap-2 px-8 py-3 bg-[#E38524] text-white rounded-xl font-extrabold uppercase tracking-[.1em] text-xs shadow-[0_8px_20px_rgba(227,133,36,0.3)] transition hover:bg-[#C97019] hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgba(227,133,36,0.35)]">
+          <%= typeof buttonText !== 'undefined' ? buttonText : 'Go Home' %> <i class="fa-solid fa-arrow-right text-xs"></i>
         </a>
       </div>
 

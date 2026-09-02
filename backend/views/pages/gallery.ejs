@@ -9,7 +9,7 @@
         <div class="pointer-events-none absolute -left-28 -top-32 h-[520px] w-[700px] rounded-[48%] border-[76px] border-white/10" aria-hidden="true"></div>
         <div class="pointer-events-none absolute -right-44 bottom-[-260px] h-[620px] w-[760px] rounded-[50%] border-[88px] border-white/10" aria-hidden="true"></div>
 
-        <div class="relative mx-auto grid max-w-7xl gap-12 px-6 py-20 lg:grid-cols-[1.1fr_.9fr] lg:items-end lg:px-10 lg:py-24">
+        <div class="relative mx-auto grid max-w-7xl gap-8 px-6 py-10 lg:grid-cols-[1.1fr_.9fr] lg:items-end lg:px-10 lg:py-14">
           <div class="dv-reveal max-w-[720px]" data-delay="0">
             <p class="mb-5 inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[.24em] text-white/80">
               <span class="h-2 w-2 rounded-full bg-orange" aria-hidden="true"></span>
@@ -38,7 +38,7 @@
 
               <!-- Filters: search + category -->
               <form method="get" action="<%= routes.gallery %>" class="mt-4 flex flex-col sm:flex-row gap-3">
-                <input name="q" value="<%= q %>" type="search" placeholder="Search photos..." class="w-full sm:w-auto px-3.5 py-2.5 rounded-xl text-sm font-medium text-[#111827]" />
+                <input name="q" value="<%= q %>" type="search" placeholder="Search photos..." class="w-full sm:w-auto px-3.5 py-2.5 rounded-xl text-sm font-medium text-[#111827] bg-white" />
                 <select name="category" class="px-3.5 py-2.5 rounded-xl text-sm font-bold">
                   <% (categories || ['All']).forEach(function(cat){ %>
                     <option value="<%= cat === 'All' ? 'all' : cat %>" <%= (selectedCategory === cat || (selectedCategory === 'all' && cat === 'All')) ? 'selected' : '' %>><%= cat %></option>
@@ -52,7 +52,7 @@
       </section>
 
       <section id="gallery-grid" class="bg-white">
-        <div class="mx-auto max-w-7xl px-6 py-20 lg:px-10 lg:py-24">
+        <div class="mx-auto max-w-7xl px-6 py-6 lg:px-10 lg:py-8">
           <% if (photos.length > 0) { %>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               <% photos.forEach((photo, index) => { %>

@@ -66,6 +66,11 @@
                 </button>
               </div>
             </div>
+          <% } else { %>
+            <button type="button" onclick="handleGlobalApply()" class="inline-flex items-center gap-2 rounded-full bg-orange px-5 py-2 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-orange-dark focus:outline-none focus:ring-2 focus:ring-orange focus:ring-offset-2">
+              Apply now
+              <i class="fa-solid fa-arrow-up-right-from-square text-xs" aria-hidden="true"></i>
+            </button>
           <% } %>
         </div>
       </div>
@@ -174,33 +179,27 @@
   };
 
   window.updateHeaderApplyBar = async (announcements) => {
-    const navButton = document.getElementById('nav-apply-button');
     const navButtonMobile = document.getElementById('nav-apply-button-mobile');
 
-    if (!navButton && !navButtonMobile) return;
+    if (!navButtonMobile) return;
 
     try {
       let data = announcements;
       if (!data) {
         const response = await fetch('/api/public/announcements');
         if (!response.ok) {
-          navButton?.classList.add('hidden');
           navButtonMobile?.classList.add('hidden');
           return;
         }
         data = await response.json();
       }
-
       window.announcementData = data;
 
       const hasActiveOpenCall = data.some(window.isActiveOpenCall);
-      navButton?.classList.toggle('hidden', !hasActiveOpenCall);
-      navButton?.classList.toggle('inline-flex', hasActiveOpenCall);
       navButtonMobile?.classList.toggle('hidden', !hasActiveOpenCall);
       navButtonMobile?.classList.toggle('flex', hasActiveOpenCall);
     } catch (error) {
       console.error('Error updating header apply bar:', error);
-      navButton?.classList.add('hidden');
       navButtonMobile?.classList.add('hidden');
     }
   };
