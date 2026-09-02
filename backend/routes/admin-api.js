@@ -560,13 +560,20 @@ router.get(
 );
 
 // Create Announcement with File Upload
+// Create Announcement with File Upload
+// If it's an open call, the application form's fields are submitted together
+// with the announcement (built client-side first) and saved right after the
+// announcement row is created, BEFORE the response goes out — so an open
+// call is never published without its form already in place. If saving the
+// form fails, the just-created announcement is rolled back rather than left
+// published with no way to apply.
 router.post(
     "/announcements",
     upload.single("document"),
     asyncHandler(async (req, res) => {
       try {
         // 1. Destructure ALL fields from req.body!
-        const { title, content, deadline, is_open_call, capacity, category, applicant_type } = req.body;
+        const { title, content, deadline, is_open_call, capacity, category, applicant_type, fields } = req.body;
 
         let document_url = null;
         if (req.file) {
@@ -576,6 +583,27 @@ router.post(
         // 2. Parse the checkbox and capacity values
         const parsedIsOpenCall = is_open_call === "true" || is_open_call === true;
         const parsedCapacity = capacity ? parseInt(capacity, 10) : null;
+
+        let parsedFields = [];
+        if (fields) {
+          try {
+            parsedFields = JSON.parse(fields);
+          } catch (e) {
+            return res.status(400).json({ message: "Invalid form fields data." });
+          }
+        }
+        const hasRealField = parsedFields.some(f => f && f.label && f.label.trim());
+        if (parsedIsOpenCall && !hasRealField) {
+          return res.status(400).json({ message: "Build the application form (at least one question) before publishing an open call." });
+        }
+        // With no hardcoded name/email inputs on the public form, a linked
+        // question is the only way an applicant gets identified — require it.
+        if (parsedIsOpenCall) {
+          const mappedFields = new Set(parsedFields.filter(f => f && f.label && f.label.trim()).map(f => f.maps_to).filter(Boolean));
+          if (!mappedFields.has("full_name") || !mappedFields.has("email")) {
+            return res.status(400).json({ message: 'Link one question to "Applicant Full Name" and one to "Applicant Email" before publishing an open call.' });
+          }
+        }
 
         // 3. Pass them to the database function!
         const newAnnouncement = await createAnnouncement({
@@ -589,6 +617,16 @@ router.post(
           applicant_type: applicant_type || "both",
           is_published: true
         });
+
+        if (parsedIsOpenCall && hasRealField) {
+          try {
+            await saveFormFields(newAnnouncement.id, parsedFields);
+          } catch (fieldError) {
+            // Don't leave a published open call with a broken/missing form.
+            await deleteAnnouncement(newAnnouncement.id);
+            return res.status(400).json({ message: fieldError.message || "Failed to save the application form." });
+          }
+        }
 
         res.json(newAnnouncement);
       } catch (error) {
@@ -1106,11 +1144,25 @@ router.post(
     asyncHandler(async (req, res) => {
       try {
         console.log("Saving form fields for announcement:", req.params.id, "fields:", JSON.stringify(req.body.fields));
-        const result = await saveFormFields(req.params.id, req.body.fields);
+        const fieldsToSave = Array.isArray(req.body.fields) ? req.body.fields : [];
+
+        const announcement = await getAnnouncementById(req.params.id);
+        if (announcement && announcement.is_open_call) {
+          // With no hardcoded name/email inputs on the public form, a linked
+          // question is the only way an applicant gets identified — require it.
+          const mapped = new Set(
+              fieldsToSave.filter(f => f && f.label && f.label.trim()).map(f => f.maps_to).filter(Boolean)
+          );
+          if (!mapped.has("full_name") || !mapped.has("email")) {
+            return res.status(400).json({ message: 'Link one question to "Applicant Full Name" and one to "Applicant Email" — this is an open call and needs a way to identify applicants.' });
+          }
+        }
+
+        const result = await saveFormFields(req.params.id, fieldsToSave);
         res.json(result);
       } catch (error) {
         console.error("Error saving form fields:", error);
-        res.status(500).json({ message: error.message });
+        res.status(400).json({ message: error.message });
       }
     })
 );

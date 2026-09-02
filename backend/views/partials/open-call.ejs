@@ -64,33 +64,10 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div>
-            <label class="block text-xs font-bold text-[#526274] mb-2 uppercase">Full Name *</label>
-            <input type="text" id="full_name" required class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]">
-          </div>
-          <div>
-            <label class="block text-xs font-bold text-[#526274] mb-2 uppercase">Email Address *</label>
-            <input type="email" id="email" required class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]">
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div>
-            <label class="block text-xs font-bold text-[#526274] mb-2 uppercase">Phone Number</label>
-            <input type="text" id="phone" class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]">
-          </div>
-          <div>
-            <label class="block text-xs font-bold text-[#526274] mb-2 uppercase">Background</label>
-            <input type="text" id="background" class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]">
-          </div>
-        </div>
-
-        <div>
-          <label class="block text-xs font-bold text-[#526274] mb-2 uppercase">Startup Idea</label>
-          <textarea id="startup_idea" rows="4" required class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]"></textarea>
-        </div>
- <div id="custom-form-fields" class="space-y-5"></div>
+        <!-- Dynamic Application Questions (schema-driven from the admin's form builder,
+             including the standard Full Name / Email / Phone / Background / Startup Idea
+             questions when the admin has linked them) -->
+        <div id="custom-form-fields" class="space-y-5"></div>
         <div>
           <label class="block text-xs font-bold text-[#526274] mb-2 uppercase">Attach Document (PDF, DOC, PNG, JPG - Max 5MB)</label>
           <input type="file" id="document_upload" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" class="w-full text-sm text-[#526274] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[#EAF8FC] file:text-[#006F9E] file:font-bold hover:file:bg-[#D6E4EA]">
@@ -430,6 +407,20 @@
               <input type="file" name="custom_${field.id}" ${isRequired} class="w-full text-sm text-[#526274] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[#EAF8FC] file:text-[#006F9E] file:font-bold hover:file:bg-[#D6E4EA]">
             </div>
           `;
+        } else if (field.field_type === 'email') {
+          return `
+            <div>
+              <label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label>
+              <input type="email" name="custom_${field.id}" ${isRequired} class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]">
+            </div>
+          `;
+        } else if (field.field_type === 'tel') {
+          return `
+            <div>
+              <label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label>
+              <input type="tel" name="custom_${field.id}" ${isRequired} class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]">
+            </div>
+          `;
         } else {
           return `
             <div>
@@ -518,49 +509,47 @@
       applicant_type: selectedApplicantType,
       team_name: selectedApplicantType === 'team' ? teamNameVal : null,
       team_size: selectedApplicantType === 'team' ? parseInt(teamSizeVal, 10) : 1,
-      full_name: document.getElementById('full_name').value,
-      email: document.getElementById('email').value,
-      phone: document.getElementById('phone').value,
-      background: document.getElementById('background').value,
-      startup_idea: document.getElementById('startup_idea').value,
       answers: {}
     };
 
-            // Capture dynamic custom fields by question label!
+            // Capture the dynamic questions, keyed by `custom_<field id>` — the
+            // same key format the fields were rendered with. This is what lets
+            // the backend match a linked question (maps_to) back to the right
+            // applicant column (full name, email, phone, ...); a question with
+            // no maps_to just stays in `answers` as a plain custom question.
             if (window.currentCustomFields && window.currentCustomFields.length > 0) {
               window.currentCustomFields.forEach(field => {
                 const fieldName = `custom_${field.id}`;
-                const label = field.label;
 
                 if (field.field_type === 'checkbox') {
                   const checkboxes = document.querySelectorAll(`[name="${fieldName}"]:checked`);
                   if (checkboxes.length === 0) {
-                    data.answers[label] = "No";
+                    data.answers[fieldName] = "No";
                   } else if (checkboxes.length === 1 && !checkboxes[0].value) {
-                    data.answers[label] = "Yes";
+                    data.answers[fieldName] = "Yes";
                   } else {
                     const vals = Array.from(checkboxes).map(cb => cb.value || "Yes");
-                    data.answers[label] = vals.join(', ');
+                    data.answers[fieldName] = vals.join(', ');
                   }
                 } else if (field.field_type === 'radio') {
                   const checked = document.querySelector(`[name="${fieldName}"]:checked`);
-                  data.answers[label] = checked ? checked.value : '';
+                  data.answers[fieldName] = checked ? checked.value : '';
                 } else if (field.field_type === 'select') {
                   const select = document.querySelector(`[name="${fieldName}"]`);
                   if (select) {
                     if (select.value.toLowerCase() === 'others') {
                       const otherInput = document.querySelector(`[name="${fieldName}_other"]`);
-                      data.answers[label] = `Others: ${otherInput ? otherInput.value : ''}`;
+                      data.answers[fieldName] = `Others: ${otherInput ? otherInput.value : ''}`;
                     } else {
-                      data.answers[label] = select.value;
+                      data.answers[fieldName] = select.value;
                     }
                   }
                 } else if (field.field_type === 'file') {
                   const fileEl = document.querySelector(`[name="${fieldName}"]`);
-                  data.answers[label] = fileEl && fileEl.files[0] ? fileEl.files[0].name : '';
+                  data.answers[fieldName] = fileEl && fileEl.files[0] ? fileEl.files[0].name : '';
                 } else {
                   const input = document.querySelector(`[name="${fieldName}"]`);
-                  data.answers[label] = input ? input.value : '';
+                  data.answers[fieldName] = input ? input.value : '';
                 }
               });
             } else {

@@ -298,12 +298,17 @@
     homeCountdownInterval = setInterval(() => updateCountdownValues(deadlineDate), 1000);
   }
 
+  // Builds the public apply link for an announcement. Every announcement
+  // gets a slug when it's created (see backend/admin-backend/announcements.js);
+  // this only falls back to the raw id for older rows that predate slugs.
+  window.applyUrl = (ann) => `/apply/${ann.slug || ann.id}`;
+
   // --- SMART APPLY BUTTON LOGIC (NOW REDIRECTS TO DEDICATED PAGE!) ---
   window.handleGlobalApply = () => {
     if (window.announcementData && window.announcementData.length > 0) {
       const openCall = window.announcementData.find(ann => ann.is_open_call);
       if (openCall) {
-        window.location.href = `/apply/${openCall.id}`; // REDIRECTS!
+        window.location.href = window.applyUrl(openCall); // REDIRECTS!
         return;
       }
     }
@@ -347,10 +352,11 @@
       container.innerHTML = announcements.map((ann, index) => {
         const dateStr = new Date(ann.created_at).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
         const isOpenCall = ann.is_open_call;
+        const applyHref = window.applyUrl(ann);
 
         if (isOpenCall) {
           return `
-            <div class="group flex gap-4 py-4 cursor-pointer rounded-xl hover:bg-[#F6FAFC] transition p-2" onclick="window.location.href='/apply/${ann.id}'">
+            <div class="group flex gap-4 py-4 cursor-pointer rounded-xl hover:bg-[#F6FAFC] transition p-2" onclick="window.location.href='${applyHref}'">
               <span class="w-20 shrink-0 text-xs font-semibold text-muted">${dateStr}</span>
               <span class="text-sm font-semibold leading-6 text-ink transition group-hover:text-cyan-dark flex-grow">${ann.title}</span>
               <span class="ml-auto text-xs font-bold text-[#E38524] bg-[#FFF1E3] px-2 py-1 rounded-full border border-[#E38524]/20">Apply Now</span>

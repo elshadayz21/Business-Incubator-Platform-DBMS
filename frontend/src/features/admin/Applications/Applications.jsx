@@ -7,6 +7,8 @@ export default function Applications() {
     const [loadMoreLoading, setLoadMoreLoading] = useState(false);
     const [selectedApp, setSelectedApp] = useState(null);
     const [newStatus, setNewStatus] = useState("");
+    const [fieldLabels, setFieldLabels] = useState({}); // { [`custom_${fieldId}`]: "Question label" }
+    const [mappedAnswerKeys, setMappedAnswerKeys] = useState(new Set()); // keys already shown via full_name/email/phone/background/startup_idea
     const [appPage, setAppPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
 
@@ -57,9 +59,34 @@ export default function Applications() {
         }
     };
 
-    const openModal = (app) => {
+    const openModal = async (app) => {
         setSelectedApp(app);
         setNewStatus(app.status || 'Pending');
+        setFieldLabels({});
+        setMappedAnswerKeys(new Set());
+        // Answers are keyed by `custom_<field id>` — look up each question's
+        // actual label so we can show it instead of a bare id, and skip any
+        // question already linked to a normalized column (it's shown in its
+        // own dedicated field above, so listing it again here would be a
+        // duplicate).
+        if (app.announcement_id) {
+            try {
+                const response = await fetch(`/api/admin/announcements/${app.announcement_id}/form-fields`, { credentials: 'include' });
+                const fields = await response.json();
+                if (Array.isArray(fields)) {
+                    const labelMap = {};
+                    const mapped = new Set();
+                    fields.forEach(f => {
+                        labelMap[`custom_${f.id}`] = f.label;
+                        if (f.maps_to) mapped.add(`custom_${f.id}`);
+                    });
+                    setFieldLabels(labelMap);
+                    setMappedAnswerKeys(mapped);
+                }
+            } catch (error) {
+                console.error("Error fetching form field labels:", error);
+            }
+        }
     };
 
     return (
@@ -194,6 +221,13 @@ export default function Applications() {
                                 if (typeof answersObj === 'string') {
                                     try { answersObj = JSON.parse(answersObj); } catch (e) { answersObj = null; }
                                 }
+                                if (answersObj) {
+                                    // Don't repeat questions already shown above via their
+                                    // dedicated field (full name, email, phone, ...).
+                                    answersObj = Object.fromEntries(
+                                        Object.entries(answersObj).filter(([key]) => !mappedAnswerKeys.has(key))
+                                    );
+                                }
                                 if (answersObj && Object.keys(answersObj).length > 0) {
                                     return (
                                         <div>
@@ -208,7 +242,7 @@ export default function Applications() {
                                                     }
                                                     return (
                                                         <div key={key} className="text-sm border-b border-[#D6E4EA] pb-2">
-                                                            <p className="font-bold text-[#526274] capitalize">{key.replace('custom_', '').replace(/_/g, ' ')}</p>
+                                                            <p className="font-bold text-[#526274]">{fieldLabels[key] || key.replace('custom_', 'Question ').replace(/_/g, ' ')}</p>
                                                             <p className="text-[#111827] mt-1">{String(displayValue)}</p>
                                                         </div>
                                                     );
