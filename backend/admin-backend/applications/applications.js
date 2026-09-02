@@ -46,12 +46,14 @@ const ensureFormFieldsTable = async () => {
                 required BOOLEAN DEFAULT false,
                 maps_to VARCHAR(30),
                 width VARCHAR(10) NOT NULL DEFAULT 'auto',
+                section VARCHAR(100) NOT NULL DEFAULT 'General Information',
                 created_at TIMESTAMP DEFAULT NOW()
             )
         `);
-        // Backfill maps_to/width for tables that already existed pre-migration-026/027.
+        // Backfill maps_to/width/section for tables that already existed pre-migration-026/027/030.
         await pool.query(`ALTER TABLE form_fields ADD COLUMN IF NOT EXISTS maps_to VARCHAR(30)`);
         await pool.query(`ALTER TABLE form_fields ADD COLUMN IF NOT EXISTS width VARCHAR(10) NOT NULL DEFAULT 'auto'`);
+        await pool.query(`ALTER TABLE form_fields ADD COLUMN IF NOT EXISTS section VARCHAR(100) NOT NULL DEFAULT 'General Information'`);
         formFieldsTableReady = true;
         console.log("form_fields table is ready");
     } catch (err) {
@@ -143,7 +145,20 @@ export const saveFormFields = async (announcementId, fields) => {
 
         const width = FIELD_WIDTHS.includes(field.width) ? field.width : "auto";
 
-        rowsToInsert.push([announcementId, field.label.trim(), fieldType, optionsJson, field.required || false, mapsTo, width]);
+        // Which step of the apply form this question appears on. An admin
+        // leaving this blank shouldn't split the form into a "General
+        // Information" step plus their own steps, so a blank section falls
+        // back to whatever the previous question's section was (and to the
+        // default only for the very first question) — that way a form
+        // nobody bothered to section stays a single page, exactly like
+        // before this feature existed.
+        let section = typeof field.section === "string" ? field.section.trim() : "";
+        if (!section) {
+            section = rowsToInsert.length > 0 ? rowsToInsert[rowsToInsert.length - 1][7] : "General Information";
+        }
+        section = section.slice(0, 100);
+
+        rowsToInsert.push([announcementId, field.label.trim(), fieldType, optionsJson, field.required || false, mapsTo, width, section]);
     }
 
     // Replace old fields with the new set. Delete + insert only happens once
@@ -152,8 +167,8 @@ export const saveFormFields = async (announcementId, fields) => {
     await pool.query("DELETE FROM form_fields WHERE announcement_id = $1", [announcementId]);
     for (const row of rowsToInsert) {
         await pool.query(
-            `INSERT INTO form_fields (announcement_id, label, field_type, options, required, maps_to, width) 
-       VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7)`,
+            `INSERT INTO form_fields (announcement_id, label, field_type, options, required, maps_to, width, section) 
+       VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7, $8)`,
             row
         );
     }

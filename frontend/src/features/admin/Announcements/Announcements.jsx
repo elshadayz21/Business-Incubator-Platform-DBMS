@@ -44,17 +44,23 @@ const FIELD_WIDTHS = [
     { value: "full", label: "Full row" },
 ];
 
-const emptyField = () => ({ label: "", field_type: "text", options: "", required: false, maps_to: "", width: "auto" });
+// Which step of the public apply form a question appears on. Questions
+// sharing the same section (in the order they're added here) become one
+// page of the multi-step apply form, with the section name shown as that
+// step's label in the progress bar.
+const emptyField = () => ({ label: "", field_type: "text", options: "", required: false, maps_to: "", width: "auto", section: "General Information" });
 
 // Every open call needs a way to identify the applicant, so the builder
 // starts pre-seeded with the standard questions (fully editable/removable —
-// this is just a sensible starting point, not a hardcoded form).
+// this is just a sensible starting point, not a hardcoded form). They're
+// pre-split into a couple of sections so a fresh open call already shows
+// applicants the paginated form, not one long page.
 const DEFAULT_OPEN_CALL_FIELDS = () => ([
-    { label: "Full Name", field_type: "text", options: "", required: true, maps_to: "full_name", width: "auto" },
-    { label: "Email Address", field_type: "email", options: "", required: true, maps_to: "email", width: "auto" },
-    { label: "Phone Number", field_type: "tel", options: "", required: false, maps_to: "phone", width: "auto" },
-    { label: "Startup Idea", field_type: "textarea", options: "", required: true, maps_to: "startup_idea", width: "auto" },
-    { label: "Background", field_type: "textarea", options: "", required: false, maps_to: "background", width: "auto" },
+    { label: "Full Name", field_type: "text", options: "", required: true, maps_to: "full_name", width: "auto", section: "Personal Information" },
+    { label: "Email Address", field_type: "email", options: "", required: true, maps_to: "email", width: "auto", section: "Personal Information" },
+    { label: "Phone Number", field_type: "tel", options: "", required: false, maps_to: "phone", width: "auto", section: "Personal Information" },
+    { label: "Startup Idea", field_type: "textarea", options: "", required: true, maps_to: "startup_idea", width: "auto", section: "Your Idea" },
+    { label: "Background", field_type: "textarea", options: "", required: false, maps_to: "background", width: "auto", section: "Your Idea" },
 ]);
 
 // Helper: Format content to professional HTML with proper spacing
@@ -286,7 +292,7 @@ export default function Announcements() {
                 else if (typeof opts === 'string' && opts.startsWith('[')) {
                     try { opts = JSON.parse(opts).join(', '); } catch (e) { /* keep original */ }
                 }
-                return { ...f, options: opts, maps_to: f.maps_to || "", width: f.width || "auto" };
+                return { ...f, options: opts, maps_to: f.maps_to || "", width: f.width || "auto", section: f.section || "General Information" };
             });
             setFormFields(parsedFields);
         } catch (error) {
@@ -387,6 +393,9 @@ export default function Announcements() {
                                                 <input type="text" placeholder="Question (e.g., What is your revenue?)" value={field.label} onChange={(e) => handleCreateFieldChange(index, 'label', e.target.value)} className="flex-1 px-3 py-2 border border-[#D6E4EA] rounded-md text-sm focus:ring-1 focus:ring-[#00ADEF]" />
                                                 <button type="button" onClick={() => removeCreateField(index)} className="text-red-500 hover:bg-red-50 p-2 rounded-md"><X size={16} /></button>
                                             </div>
+                                            <div>
+                                                <input type="text" list="create-sections-list" placeholder="Page / section (e.g., Personal Information)" value={field.section || ''} onChange={(e) => handleCreateFieldChange(index, 'section', e.target.value)} className="w-full px-3 py-2 border border-[#D6E4EA] rounded-md text-sm focus:ring-1 focus:ring-[#00ADEF]" title="Questions with the same page/section name appear together as one step of the apply form" />
+                                            </div>
                                             <div className="flex gap-2">
                                                 <select value={field.field_type} onChange={(e) => handleCreateFieldChange(index, 'field_type', e.target.value)} className="flex-1 px-3 py-2 border border-[#D6E4EA] rounded-md text-sm focus:ring-1 focus:ring-[#00ADEF]">
                                                     {FIELD_WIDGET_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
@@ -408,6 +417,9 @@ export default function Announcements() {
                                             </div>
                                         </div>
                                     ))}
+                                    <datalist id="create-sections-list">
+                                        {[...new Set(createFormFields.map(f => f.section).filter(Boolean))].map(s => <option key={s} value={s} />)}
+                                    </datalist>
                                     <button type="button" onClick={addCreateField} className="w-full py-2 border border-dashed border-[#00ADEF] text-[#00ADEF] rounded-lg text-xs font-bold hover:bg-[#EAF8FC]">+ Add Field</button>
                                 </div>
                             )}
@@ -459,6 +471,9 @@ export default function Announcements() {
                                                         <input type="text" placeholder="Question (e.g., What is your revenue?)" value={field.label} onChange={(e) => handleFieldChange(index, 'label', e.target.value)} className="flex-1 px-3 py-2 border border-[#D6E4EA] rounded-md text-sm focus:ring-1 focus:ring-[#00ADEF]" />
                                                         <button onClick={() => removeField(index)} className="text-red-500 hover:bg-red-50 p-2 rounded-md"><X size={16} /></button>
                                                     </div>
+                                                    <div>
+                                                        <input type="text" list="edit-sections-list" placeholder="Page / section (e.g., Personal Information)" value={field.section || ''} onChange={(e) => handleFieldChange(index, 'section', e.target.value)} className="w-full px-3 py-2 border border-[#D6E4EA] rounded-md text-sm focus:ring-1 focus:ring-[#00ADEF]" title="Questions with the same page/section name appear together as one step of the apply form" />
+                                                    </div>
                                                     <div className="flex gap-2">
                                                         <select value={field.field_type} onChange={(e) => handleFieldChange(index, 'field_type', e.target.value)} className="flex-1 px-3 py-2 border border-[#D6E4EA] rounded-md text-sm focus:ring-1 focus:ring-[#00ADEF]">
                                                             {FIELD_WIDGET_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
@@ -480,6 +495,9 @@ export default function Announcements() {
                                                     </div>
                                                 </div>
                                             ))}
+                                            <datalist id="edit-sections-list">
+                                                {[...new Set(formFields.map(f => f.section).filter(Boolean))].map(s => <option key={s} value={s} />)}
+                                            </datalist>
                                             <div className="flex gap-2 pt-2">
                                                 <button onClick={addField} className="flex-1 py-2 border border-dashed border-[#00ADEF] text-[#00ADEF] rounded-lg text-xs font-bold hover:bg-[#EAF8FC]">+ Add Field</button>
                                                 <button onClick={() => handleSaveForm(ann.id)} className="flex-1 py-2 bg-[#E38524] text-white rounded-lg text-xs font-bold hover:bg-[#C97019]">Save Form</button>
