@@ -4,6 +4,59 @@ import { Megaphone, Trash2, Loader2, Send, PlusCircle, FileUp, X, Pencil, Copy, 
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 
+// The actual input widgets a question can render as. Kept to the small,
+// common set — "what this question means" (full name, email, ...) is a
+// separate concern, handled by linking the question to a database field
+// below, not by inventing a new "field type" per concept.
+const FIELD_WIDGET_TYPES = [
+    { value: "text", label: "Short Text" },
+    { value: "textarea", label: "Long Text" },
+    { value: "email", label: "Email" },
+    { value: "tel", label: "Phone Number" },
+    { value: "number", label: "Number" },
+    { value: "date", label: "Date" },
+    { value: "select", label: "Dropdown" },
+    { value: "radio", label: "Radio (Single Choice)" },
+    { value: "checkbox", label: "Checkbox (Multiple)" },
+];
+
+// The normalized applications columns a question's answer can be linked to.
+// Linking a question here is what actually connects the filled-in data to
+// its respective column in the database, instead of it only sitting in the
+// generic answers blob (or, worse, being guessed from the label text).
+const MAPPABLE_DB_FIELDS = [
+    { value: "", label: "Not linked (custom question)" },
+    { value: "full_name", label: "Applicant Full Name" },
+    { value: "email", label: "Applicant Email" },
+    { value: "phone", label: "Applicant Phone" },
+    { value: "startup_idea", label: "Startup Idea" },
+    { value: "background", label: "Applicant Background" },
+];
+
+// How much of the row a question takes on the public apply form. 'auto'
+// (default) lets the form pick a sensible width from the widget type
+// (long text = full row, short inputs = half row, side-by-side). An admin
+// can override this for a specific question — e.g. a dropdown with long
+// option text that would look cramped at half-width.
+const FIELD_WIDTHS = [
+    { value: "auto", label: "Auto (based on question type)" },
+    { value: "half", label: "Half row (side-by-side)" },
+    { value: "full", label: "Full row" },
+];
+
+const emptyField = () => ({ label: "", field_type: "text", options: "", required: false, maps_to: "", width: "auto" });
+
+// Every open call needs a way to identify the applicant, so the builder
+// starts pre-seeded with the standard questions (fully editable/removable —
+// this is just a sensible starting point, not a hardcoded form).
+const DEFAULT_OPEN_CALL_FIELDS = () => ([
+    { label: "Full Name", field_type: "text", options: "", required: true, maps_to: "full_name", width: "auto" },
+    { label: "Email Address", field_type: "email", options: "", required: true, maps_to: "email", width: "auto" },
+    { label: "Phone Number", field_type: "tel", options: "", required: false, maps_to: "phone", width: "auto" },
+    { label: "Startup Idea", field_type: "textarea", options: "", required: true, maps_to: "startup_idea", width: "auto" },
+    { label: "Background", field_type: "textarea", options: "", required: false, maps_to: "background", width: "auto" },
+]);
+
 // Helper: Format content to professional HTML with proper spacing
 const formatAnnouncementContent = (text) => {
     if (!text) return '';
@@ -34,6 +87,11 @@ export default function Announcements() {
     // Form state
     const [isOpenCall, setIsOpenCall] = useState(false);
     const [capacity, setCapacity] = useState("");
+
+    // Application form fields, built inline while creating the announcement.
+    // These are saved together with the announcement in a single submit, so
+    // an open call is only ever published once its form already exists.
+    const [createFormFields, setCreateFormFields] = useState([emptyField()]);
 
     // Edit Modal state
     const [editModal, setEditModal] = useState({ open: false, announcement: null });
@@ -90,6 +148,24 @@ export default function Announcements() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!title || !content) return;
+
+        // Open calls must have their application form built BEFORE the
+        // announcement is published — not published first and built after.
+        const realFields = createFormFields.filter(f => f.label && f.label.trim());
+        if (isOpenCall && realFields.length === 0) {
+            alert("This is an open call — build the application form (add at least one question) before publishing.");
+            return;
+        }
+        // The form has no more hardcoded name/email inputs to fall back on —
+        // whatever the admin links here IS how applicants get identified.
+        if (isOpenCall) {
+            const mapped = new Set(realFields.map(f => f.maps_to).filter(Boolean));
+            if (!mapped.has("full_name") || !mapped.has("email")) {
+                alert("Link one question to \"Applicant Full Name\" and one to \"Applicant Email\" before publishing — otherwise there'll be no way to identify who applied.");
+                return;
+            }
+        }
+
         setSubmitting(true);
         try {
             const formData = new FormData();
@@ -99,6 +175,7 @@ export default function Announcements() {
             if (capacity) formData.append('capacity', capacity);
             if (deadline) formData.append('deadline', deadline);
             if (document) formData.append('document', document);
+            if (isOpenCall) formData.append('fields', JSON.stringify(realFields));
 
             const response = await fetch('/api/admin/announcements', {
                 method: 'POST', credentials: 'include', body: formData
@@ -109,14 +186,19 @@ export default function Announcements() {
                 throw new Error(message);
             }
             setTitle(""); setContent(""); setDeadline(""); setDocument(null); setIsOpenCall(false); setCapacity("");
+            setCreateFormFields([emptyField()]);
             fetchAnnouncements();
         } catch (error) {
             console.error("Error creating announcement:", error);
-            alert("Failed to publish announcement.");
+            alert(error.message || "Failed to publish announcement.");
         } finally {
             setSubmitting(false);
         }
     };
+
+    const addCreateField = () => setCreateFormFields([...createFormFields, emptyField()]);
+    const removeCreateField = (index) => { const updated = [...createFormFields]; updated.splice(index, 1); setCreateFormFields(updated); };
+    const handleCreateFieldChange = (index, key, value) => { const updated = [...createFormFields]; updated[index][key] = value; setCreateFormFields(updated); };
 
     const handleDelete = async (id) => {
         try {
@@ -198,26 +280,34 @@ export default function Announcements() {
         try {
             const response = await fetch(`/api/admin/announcements/${ann.id}/form-fields`, { credentials: 'include' });
             const data = await response.json();
-            const parsedFields = (Array.isArray(data) && data.length > 0 ? data : [{ label: '', field_type: 'text', options: '', required: false }]).map(f => {
+            const parsedFields = (Array.isArray(data) && data.length > 0 ? data : DEFAULT_OPEN_CALL_FIELDS()).map(f => {
                 let opts = f.options || '';
                 if (Array.isArray(opts)) { opts = opts.join(', '); }
                 else if (typeof opts === 'string' && opts.startsWith('[')) {
                     try { opts = JSON.parse(opts).join(', '); } catch (e) { /* keep original */ }
                 }
-                return { ...f, options: opts };
+                return { ...f, options: opts, maps_to: f.maps_to || "", width: f.width || "auto" };
             });
             setFormFields(parsedFields);
         } catch (error) {
             console.error("Error fetching form fields:", error);
-            setFormFields([{ label: '', field_type: 'text', options: '', required: false }]);
+            setFormFields([emptyField()]);
         }
     };
 
-    const addField = () => setFormFields([...formFields, { label: '', field_type: 'text', options: '', required: false }]);
+    const addField = () => setFormFields([...formFields, emptyField()]);
     const removeField = (index) => { const updated = [...formFields]; updated.splice(index, 1); setFormFields(updated); };
     const handleFieldChange = (index, key, value) => { const updated = [...formFields]; updated[index][key] = value; setFormFields(updated); };
 
     const handleSaveForm = async (annId) => {
+        // With no hardcoded name/email inputs on the public form, a linked
+        // question is the only way an applicant gets identified — require it.
+        const realFields = formFields.filter(f => f.label && f.label.trim());
+        const mapped = new Set(realFields.map(f => f.maps_to).filter(Boolean));
+        if (realFields.length === 0 || !mapped.has("full_name") || !mapped.has("email")) {
+            alert("Link one question to \"Applicant Full Name\" and one to \"Applicant Email\" before saving — otherwise there'll be no way to identify who applied.");
+            return;
+        }
         try {
             const response = await fetch(`/api/admin/announcements/${annId}/form-fields`, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ fields: formFields })
@@ -266,7 +356,16 @@ export default function Announcements() {
                                 </div>
                             </div>
                             <div className="flex items-center gap-3 py-2">
-                                <input id="is_open_call" type="checkbox" checked={isOpenCall} onChange={(e) => setIsOpenCall(e.target.checked)} className="h-4 w-4 rounded border-gray-300 text-[#00ADEF] focus:ring-[#00ADEF]" />
+                                <input id="is_open_call" type="checkbox" checked={isOpenCall} onChange={(e) => {
+                                    const checked = e.target.checked;
+                                    setIsOpenCall(checked);
+                                    // Seed the standard questions the first time this is turned on
+                                    // in this session, so the applicant is always identifiable —
+                                    // the admin can still edit or remove any of them.
+                                    if (checked && createFormFields.every(f => !f.label.trim())) {
+                                        setCreateFormFields(DEFAULT_OPEN_CALL_FIELDS());
+                                    }
+                                }} className="h-4 w-4 rounded border-gray-300 text-[#00ADEF] focus:ring-[#00ADEF]" />
                                 <label htmlFor="is_open_call" className="text-sm font-bold text-[#526274]">Enable Application Form (Open Call)</label>
                             </div>
                             {isOpenCall && (
@@ -275,6 +374,44 @@ export default function Announcements() {
                                     <input type="number" value={capacity} onChange={(e) => setCapacity(e.target.value)} className="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]" placeholder="e.g., 50" />
                                 </div>
                             )}
+
+                            {/* Application form is built here, BEFORE publishing — an open call
+                                can't go live without its form already in place. */}
+                            {isOpenCall && (
+                                <div className="p-4 bg-[#F6FAFC] border border-[#00ADEF]/30 rounded-xl space-y-3">
+                                    <h4 className="text-sm font-extrabold text-[#111827] uppercase tracking-wider">Application Form</h4>
+                                    <p className="text-xs text-[#526274]">Add the questions applicants will answer. Link a question to a field below to have its answer stored on the applicant's record — otherwise it's saved as a custom answer.</p>
+                                    {createFormFields.map((field, index) => (
+                                        <div key={index} className="bg-white p-3 border border-[#D6E4EA] rounded-lg space-y-2">
+                                            <div className="flex gap-2">
+                                                <input type="text" placeholder="Question (e.g., What is your revenue?)" value={field.label} onChange={(e) => handleCreateFieldChange(index, 'label', e.target.value)} className="flex-1 px-3 py-2 border border-[#D6E4EA] rounded-md text-sm focus:ring-1 focus:ring-[#00ADEF]" />
+                                                <button type="button" onClick={() => removeCreateField(index)} className="text-red-500 hover:bg-red-50 p-2 rounded-md"><X size={16} /></button>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <select value={field.field_type} onChange={(e) => handleCreateFieldChange(index, 'field_type', e.target.value)} className="flex-1 px-3 py-2 border border-[#D6E4EA] rounded-md text-sm focus:ring-1 focus:ring-[#00ADEF]">
+                                                    {FIELD_WIDGET_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                                                </select>
+                                                <select value={field.maps_to} onChange={(e) => handleCreateFieldChange(index, 'maps_to', e.target.value)} className="flex-1 px-3 py-2 border border-[#D6E4EA] rounded-md text-sm focus:ring-1 focus:ring-[#00ADEF]" title="Link this question's answer to an applicant field">
+                                                    {MAPPABLE_DB_FIELDS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+                                                </select>
+                                            </div>
+                                            {(field.field_type === 'select' || field.field_type === 'radio' || field.field_type === 'checkbox') && (
+                                                <input type="text" placeholder="Options (comma-separated: Yes, No, Maybe)" value={field.options || ''} onChange={(e) => handleCreateFieldChange(index, 'options', e.target.value)} className="w-full px-3 py-2 border border-[#D6E4EA] rounded-md text-sm focus:ring-1 focus:ring-[#00ADEF]" />
+                                            )}
+                                            <div className="flex items-center justify-between gap-2">
+                                                <label className="flex items-center gap-2 text-xs font-bold text-[#526274]">
+                                                    <input type="checkbox" checked={field.required} onChange={(e) => handleCreateFieldChange(index, 'required', e.target.checked)} className="h-4 w-4 rounded border-gray-300 text-[#00ADEF] focus:ring-[#00ADEF]" />Required
+                                                </label>
+                                                <select value={field.width || 'auto'} onChange={(e) => handleCreateFieldChange(index, 'width', e.target.value)} className="px-2 py-1.5 border border-[#D6E4EA] rounded-md text-xs focus:ring-1 focus:ring-[#00ADEF]" title="How much of the row this question takes on the apply form">
+                                                    {FIELD_WIDTHS.map(w => <option key={w.value} value={w.value}>{w.label}</option>)}
+                                                </select>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    <button type="button" onClick={addCreateField} className="w-full py-2 border border-dashed border-[#00ADEF] text-[#00ADEF] rounded-lg text-xs font-bold hover:bg-[#EAF8FC]">+ Add Field</button>
+                                </div>
+                            )}
+
                             <button type="submit" disabled={submitting} className="w-full py-3 bg-[#00ADEF] text-white rounded-xl font-bold transition hover:bg-[#006F9E] disabled:opacity-50 flex items-center justify-center gap-2 mt-4">
                                 {submitting ? 'Publishing...' : 'Publish Announcement'}<Send size={16} />
                             </button>
@@ -309,36 +446,38 @@ export default function Announcements() {
 
                                     {ann.is_open_call && (
                                         <button onClick={() => handleBuildForm(ann)} className="mt-3 text-xs font-bold text-[#00ADEF] hover:underline self-start">
-                                            {editingFormId === ann.id ? "Close Form Builder" : "Build Application Form"}
+                                            {editingFormId === ann.id ? "Close Form Builder" : "Edit Application Form"}
                                         </button>
                                     )}
 
                                     {editingFormId === ann.id && (
                                         <div className="mt-4 p-4 bg-[#F6FAFC] border border-[#00ADEF]/30 rounded-xl space-y-3">
-                                            <h4 className="text-sm font-extrabold text-[#111827] uppercase tracking-wider">Custom Application Form</h4>
+                                            <h4 className="text-sm font-extrabold text-[#111827] uppercase tracking-wider">Application Form</h4>
                                             {formFields.map((field, index) => (
                                                 <div key={index} className="bg-white p-3 border border-[#D6E4EA] rounded-lg space-y-2">
                                                     <div className="flex gap-2">
                                                         <input type="text" placeholder="Question (e.g., What is your revenue?)" value={field.label} onChange={(e) => handleFieldChange(index, 'label', e.target.value)} className="flex-1 px-3 py-2 border border-[#D6E4EA] rounded-md text-sm focus:ring-1 focus:ring-[#00ADEF]" />
-                                                        <select value={field.field_type} onChange={(e) => handleFieldChange(index, 'field_type', e.target.value)} className="px-3 py-2 border border-[#D6E4EA] rounded-md text-sm focus:ring-1 focus:ring-[#00ADEF]">
-                                                            <option value="text">Short Text</option>
-                                                            <option value="textarea">Long Text</option>
-                                                            <option value="email">Email</option>
-                                                            <option value="tel">Phone Number</option>
-                                                            <option value="number">Number</option>
-                                                            <option value="select">Dropdown</option>
-                                                            <option value="radio">Radio (Single Choice)</option>
-                                                            <option value="checkbox">Checkbox (Multiple)</option>
-                                                            <option value="file">File Upload</option> {/* Added for future use */}
-                                                        </select>
                                                         <button onClick={() => removeField(index)} className="text-red-500 hover:bg-red-50 p-2 rounded-md"><X size={16} /></button>
+                                                    </div>
+                                                    <div className="flex gap-2">
+                                                        <select value={field.field_type} onChange={(e) => handleFieldChange(index, 'field_type', e.target.value)} className="flex-1 px-3 py-2 border border-[#D6E4EA] rounded-md text-sm focus:ring-1 focus:ring-[#00ADEF]">
+                                                            {FIELD_WIDGET_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                                                        </select>
+                                                        <select value={field.maps_to || ""} onChange={(e) => handleFieldChange(index, 'maps_to', e.target.value)} className="flex-1 px-3 py-2 border border-[#D6E4EA] rounded-md text-sm focus:ring-1 focus:ring-[#00ADEF]" title="Link this question's answer to an applicant field">
+                                                            {MAPPABLE_DB_FIELDS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+                                                        </select>
                                                     </div>
                                                     {(field.field_type === 'select' || field.field_type === 'radio' || field.field_type === 'checkbox') && (
                                                         <input type="text" placeholder="Options (comma-separated: Yes, No, Maybe)" value={field.options || ''} onChange={(e) => handleFieldChange(index, 'options', e.target.value)} className="w-full px-3 py-2 border border-[#D6E4EA] rounded-md text-sm focus:ring-1 focus:ring-[#00ADEF]" />
                                                     )}
-                                                    <label className="flex items-center gap-2 text-xs font-bold text-[#526274]">
-                                                        <input type="checkbox" checked={field.required} onChange={(e) => handleFieldChange(index, 'required', e.target.checked)} className="h-4 w-4 rounded border-gray-300 text-[#00ADEF] focus:ring-[#00ADEF]" />Required
-                                                    </label>
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        <label className="flex items-center gap-2 text-xs font-bold text-[#526274]">
+                                                            <input type="checkbox" checked={field.required} onChange={(e) => handleFieldChange(index, 'required', e.target.checked)} className="h-4 w-4 rounded border-gray-300 text-[#00ADEF] focus:ring-[#00ADEF]" />Required
+                                                        </label>
+                                                        <select value={field.width || 'auto'} onChange={(e) => handleFieldChange(index, 'width', e.target.value)} className="px-2 py-1.5 border border-[#D6E4EA] rounded-md text-xs focus:ring-1 focus:ring-[#00ADEF]" title="How much of the row this question takes on the apply form">
+                                                            {FIELD_WIDTHS.map(w => <option key={w.value} value={w.value}>{w.label}</option>)}
+                                                        </select>
+                                                    </div>
                                                 </div>
                                             ))}
                                             <div className="flex gap-2 pt-2">

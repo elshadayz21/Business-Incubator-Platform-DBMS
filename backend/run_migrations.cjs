@@ -27,7 +27,22 @@ const pool = new Pool(poolConfig);
 const SKIPPABLE_CODES = ["42701", "42P07", "42P06", "42P16", "42501"];
 
 async function runStatements(sql, label) {
-  const statements = sql
+  // Strip `-- ...` line comments before splitting on `;`. The naive split
+  // below has no notion of SQL syntax, so a semicolon that happens to
+  // appear inside a comment (prose, an example sentence, ...) would
+  // otherwise cut a statement in the wrong place and feed a bogus
+  // fragment to Postgres. None of these migrations put `--` inside an
+  // actual string literal, so it's safe to drop everything from `--` to
+  // end of line on every line before splitting.
+  const withoutComments = sql
+    .split("\n")
+    .map((line) => {
+      const idx = line.indexOf("--");
+      return idx === -1 ? line : line.slice(0, idx);
+    })
+    .join("\n");
+
+  const statements = withoutComments
     .split(";")
     .map((s) => s.trim())
     .filter(Boolean);
