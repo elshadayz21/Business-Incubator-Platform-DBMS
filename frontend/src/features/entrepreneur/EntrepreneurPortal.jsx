@@ -22,6 +22,15 @@ import {
 import { getEntrepreneurDashboard } from "../../services/portalService";
 import UserMenu from "../../components/UserMenu";
 import ChatPanel from "../../components/ChatPanel";
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "../../components/ui/table";
 
 const STAGES = ["idea", "mvp", "scale-up"];
 
@@ -72,7 +81,7 @@ const EntrepreneurPortal = () => {
     const [enrolling, setEnrolling] = useState({});
     const [detailProject, setDetailProject] = useState(null);
     const [detailProjectLoading, setDetailProjectLoading] = useState(false);
-    const [showBrowseCatalog, setShowBrowseCatalog] = useState(false);
+    const [showBrowseCatalog, setShowBrowseCatalog] = useState(true);
   const setActiveTab = (tab) => {
     sessionStorage.setItem("entrepreneur_active_tab", tab);
     setActiveTabState(tab);
@@ -567,6 +576,7 @@ const EntrepreneurPortal = () => {
 
       return (
           <div className="space-y-6">
+            {/* Mentor Directory */}
             <div className="bg-white rounded-2xl border border-[#D6E4EA] p-6 shadow-xs">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                 <div>
@@ -984,44 +994,44 @@ const EntrepreneurPortal = () => {
                               No workshops available yet.
                           </p>
                       ) : (
-                          <div className="mt-4 overflow-x-auto">
-                              <table className="w-full text-left border-collapse min-w-[760px]">
-                                  <thead>
-                                  <tr className="bg-[#F6FAFC] text-[#526274] uppercase tracking-wider text-xs font-extrabold border-b border-[#D6E4EA]">
-                                      <th className="p-4">Workshop</th>
-                                      <th className="p-4 hidden md:table-cell">Date</th>
-                                      <th className="p-4 hidden md:table-cell">Mentor</th>
-                                      <th className="p-4 hidden md:table-cell">Seats</th>
-                                      <th className="p-4">Status</th>
-                                      <th className="p-4 text-right">Action</th>
-                                  </tr>
-                                  </thead>
-                                  <tbody className="divide-y divide-[#D6E4EA] text-sm">
-                                  {browseWorkshops.map((w) => (
-                                      <tr key={w.id} className="hover:bg-[#F6FAFC] transition align-top">
-                                          <td className="p-4">
+                          <div className="mt-4">
+                                  <Table>
+                                    <TableHeader>
+                                      <TableRow>
+                                        <TableHead>Workshop</TableHead>
+                                        <TableHead className="hidden md:table-cell">Date</TableHead>
+                                        <TableHead className="hidden md:table-cell">Mentor</TableHead>
+                                        <TableHead className="hidden md:table-cell">Seats</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead className="text-right">Action</TableHead>
+                                      </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                      {browseWorkshops.map((w) => (
+                                          <TableRow key={w.id} className="align-top">
+                                            <TableCell>
                                               <p className="font-bold text-[#111827]">{w.title}</p>
                                               {w.category && (
                                                   <span className="rounded-full bg-[#EAF8FC] text-[#006F9E] px-2 py-0.5 text-[10px] font-bold border border-[#00ADEF]/20 mt-1 inline-block">
                                                       {w.category}
                                                   </span>
                                               )}
-                                          </td>
-                                          <td className="p-4 hidden md:table-cell text-[#526274] font-semibold whitespace-nowrap">
+                                            </TableCell>
+                                            <TableCell className="hidden md:table-cell text-[#526274] font-semibold whitespace-nowrap">
                                               {w.start_date
                                                   ? new Date(w.start_date).toLocaleDateString()
                                                   : "TBD"}
-                                          </td>
-                                          <td className="p-4 hidden md:table-cell text-[#111827] font-medium">
+                                            </TableCell>
+                                            <TableCell className="hidden md:table-cell text-[#111827] font-medium">
                                               {w.mentor_name || "—"}
-                                          </td>
-                                          <td className="p-4 hidden md:table-cell text-[#526274] font-semibold">
+                                            </TableCell>
+                                            <TableCell className="hidden md:table-cell text-[#526274] font-semibold">
                                               {w.enrolled_count ?? 0}/{w.capacity ?? "∞"}
-                                          </td>
-                                          <td className="p-4">
+                                            </TableCell>
+                                            <TableCell>
                                               <StageBadge status={w.status || "scheduled"} />
-                                          </td>
-                                          <td className="p-4 text-right">
+                                            </TableCell>
+                                            <TableCell className="text-right">
                                               {w.is_enrolled ? (
                                                   <div className="flex items-center justify-end gap-2">
                                                       <span className="inline-flex items-center rounded-full bg-green-50 text-green-700 border border-green-200 px-2.5 py-1 text-[10px] font-bold uppercase">
@@ -1053,12 +1063,12 @@ const EntrepreneurPortal = () => {
                                                       {enrolling[w.id] ? "Enrolling..." : "Enroll"}
                                                   </button>
                                               )}
-                                          </td>
-                                      </tr>
-                                  ))}
-                                  </tbody>
-                              </table>
-                          </div>
+                                            </TableCell>
+                                          </TableRow>
+                                      ))}
+                                    </TableBody>
+                                  </Table>
+                              </div>
                       )}
                       </div>
                   )}
