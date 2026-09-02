@@ -218,8 +218,8 @@ router.get("/form-fields/:announcementId", async (req, res) => {
         // working even on a database that hasn't had every migration file
         // run against it yet.
         const fields = await getFormFields(req.params.announcementId);
-        const publicFields = fields.map(({ id, label, field_type, options, required, maps_to, width }) => (
-            { id, label, field_type, options, required, maps_to, width }
+        const publicFields = fields.map(({ id, label, field_type, options, required, maps_to, width, section }) => (
+            { id, label, field_type, options, required, maps_to, width, section }
         ));
         res.status(200).json(publicFields);
     } catch (error) {
