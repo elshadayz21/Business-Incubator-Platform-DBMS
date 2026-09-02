@@ -178,7 +178,7 @@ export default function LoginPage() {
           <div className="mt-6 pt-4 border-t border-[#D6E4EA] text-center text-[11px] text-[#526274]">
             Need credentials? Contact{" "}
             <a
-              href="mailto:support@dxvalley.com"
+              href="mailto:hello@dxvalley.com"
               className="text-[#006F9E] font-bold hover:underline"
             >
               DxValley Support
