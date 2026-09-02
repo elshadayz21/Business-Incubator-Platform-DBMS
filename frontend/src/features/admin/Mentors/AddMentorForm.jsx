@@ -6,6 +6,7 @@ import {
   Key,
   Briefcase,
   Activity,
+  CalendarCheck,
   Loader2,
   AlertCircle,
   Save,
@@ -21,6 +22,7 @@ const AddMentorForm = ({ onSuccess, onClose, initialData }) => {
     expertise: "",
     phone: "",
     status: "active",
+    isAvailable: true,
     assignedProject: "",
     assignedWorkshop: "",
   });
@@ -39,6 +41,7 @@ const AddMentorForm = ({ onSuccess, onClose, initialData }) => {
         expertise: initialData.expertise || "",
         phone: initialData.phone || "",
         status: initialData.status || "active",
+        isAvailable: initialData.is_available !== false,
         assignedProject: "",
         assignedWorkshop: "",
       });
@@ -220,6 +223,27 @@ const AddMentorForm = ({ onSuccess, onClose, initialData }) => {
               </select>
             </div>
           </div>
+        </div>
+
+        <div className="flex items-center gap-3 rounded-xl border border-[#D6E4EA] bg-white px-4 py-3">
+          <CalendarCheck size={16} className="text-[#526274] shrink-0" />
+          <div className="flex-1">
+            <label htmlFor="mentor-is-available" className="block text-xs font-bold text-[#111827]">
+              Available for booking
+            </label>
+            <p className="text-[11px] text-[#526274] mt-0.5">
+              Shown to founders on the public mentors page. Turn this off if the
+              mentor is temporarily at capacity, even while their account stays active.
+            </p>
+          </div>
+          <input
+            id="mentor-is-available"
+            type="checkbox"
+            checked={formData.isAvailable}
+            onChange={(e) => handleChange("isAvailable", e.target.checked)}
+            disabled={loading}
+            className="h-5 w-5 rounded border-gray-300 text-[#00ADEF] focus:ring-[#00ADEF] cursor-pointer"
+          />
         </div>
       </div>
 

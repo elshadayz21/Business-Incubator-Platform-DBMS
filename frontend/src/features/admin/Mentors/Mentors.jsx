@@ -3,6 +3,7 @@ import {
   Plus,
   Briefcase,
   UserCheck,
+  CalendarCheck,
   Search,
   Loader2,
   Inbox,
@@ -28,6 +29,7 @@ const Mentors = () => {
   const [totals, setTotals] = useState({
     total: 0,
     active: 0,
+    available: 0,
     assigned_projects: 0,
     workshops_led: 0,
   });
@@ -42,6 +44,7 @@ const Mentors = () => {
         setTotals({
           total: parseInt(data.total) || 0,
           active: parseInt(data.active) || 0,
+          available: parseInt(data.available) || 0,
           assigned_projects: parseInt(data.assigned_projects) || 0,
           workshops_led: parseInt(data.workshops_led) || 0,
         });
@@ -99,6 +102,24 @@ const Mentors = () => {
     setShowAddForm(true);
   };
 
+  const handleToggleAvailability = async (mentor) => {
+    const nextAvailable = !(mentor.is_available !== false);
+    try {
+      await fetch(`/api/admin/mentors/${mentor.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ isAvailable: nextAvailable }),
+      });
+      setMentorsPage(1);
+      fetchMentors(1);
+      fetchTotals();
+    } catch (err) {
+      console.error("Failed to update mentor availability:", err);
+      window.alert("Failed to update mentor availability. Please try again.");
+    }
+  };
+
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this mentor? This cannot be undone.")) return;
     try {
@@ -141,7 +162,7 @@ const Mentors = () => {
         </button>
 
         {/* Stats Cards — real totals from server, independent of pagination */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
           <StatCard
               title="Total Mentors"
               value={totals.total}
@@ -153,8 +174,15 @@ const Mentors = () => {
               title="Active Status"
               value={totals.active}
               icon={UserCheck}
-              badgeText="Available"
+              badgeText="Accounts enabled"
               accentColor="orange"
+          />
+          <StatCard
+              title="Available for Booking"
+              value={totals.available}
+              icon={CalendarCheck}
+              badgeText="Open to founders"
+              accentColor="cyan"
           />
           <StatCard
               title="Assigned Projects"
@@ -220,6 +248,7 @@ const Mentors = () => {
                     onAddClick={() => setShowAddForm(true)}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
+                    onToggleAvailability={handleToggleAvailability}
                 />
               </div>
 

@@ -186,10 +186,7 @@ app.get("/apply/:idOrSlug", async (req, res) => {
         res.status(500).send("Server Error");
     }
 });
-// Partners Page
-app.get("/partners", (req, res) => {
-    res.render("partners");
-});
+// Partners info now lives in the "#partners" section on the homepage.
 
 app.use("/v1", GlobalRouter);
 app.use("/api/admin", adminApiRoutes);

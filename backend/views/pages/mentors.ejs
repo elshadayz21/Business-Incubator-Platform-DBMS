@@ -54,10 +54,18 @@
                                     </p>
 
                                                                         <div class="mt-auto pt-5">
-                                                                            <span class="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-emerald-700">
-                                                                                <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                                                                                Available
-                                                                            </span>
+                                                                            <% const isMentorAvailable = String(mentor.status || 'active').toLowerCase() === 'active' && mentor.isAvailable !== false; %>
+                                                                            <% if (isMentorAvailable) { %>
+                                                                                <span class="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-emerald-700">
+                                                                                    <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                                                                                    Available
+                                                                                </span>
+                                                                            <% } else { %>
+                                                                                <span class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-slate-600">
+                                                                                    <span class="h-2 w-2 rounded-full bg-slate-400"></span>
+                                                                                    Unavailable
+                                                                                </span>
+                                                                            <% } %>
                                                                         </div>
                                 </div>
                             </article>
