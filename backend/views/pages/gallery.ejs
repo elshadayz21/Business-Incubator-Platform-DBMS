@@ -84,6 +84,16 @@
                     </div>
                   <% }); %>
                 </div>
+
+                <div class="mt-10 flex items-center justify-center gap-4">
+                  <button type="button" id="gallery-prev" class="inline-flex items-center gap-2 rounded-md border border-line bg-white px-5 py-2.5 text-sm font-bold text-ink transition hover:border-orange hover:text-orange disabled:opacity-40 disabled:cursor-not-allowed" aria-label="Previous page">
+                    <i class="fa-solid fa-chevron-left text-xs" aria-hidden="true"></i> Prev
+                  </button>
+                  <span id="gallery-page-info" class="text-sm font-bold text-muted"></span>
+                  <button type="button" id="gallery-next" class="inline-flex items-center gap-2 rounded-md border border-line bg-white px-5 py-2.5 text-sm font-bold text-ink transition hover:border-orange hover:text-orange disabled:opacity-40 disabled:cursor-not-allowed" aria-label="Next page">
+                    Next <i class="fa-solid fa-chevron-right text-xs" aria-hidden="true"></i>
+                  </button>
+                </div>
               <% } else { %>
             <div class="rounded-2xl border border-line bg-surface px-6 py-20 text-center">
               <span class="mx-auto grid h-14 w-14 place-items-center rounded-full bg-orange-soft text-orange" aria-hidden="true">
@@ -119,6 +129,26 @@
         const lightboxCaption = document.getElementById('lightbox-caption');
         const lightboxMeta = document.getElementById('lightbox-meta');
         let current = 0;
+
+        // ---- Pagination: show IMAGES_PER_PAGE photos at a time ----
+        const IMAGES_PER_PAGE = 3;
+        const prevBtn = document.getElementById('gallery-prev');
+        const nextBtn = document.getElementById('gallery-next');
+        const pageInfo = document.getElementById('gallery-page-info');
+        const totalPages = Math.max(1, Math.ceil(items.length / IMAGES_PER_PAGE));
+        let currentPage = 0;
+
+        const renderPage = () => {
+          items.forEach((item, i) => {
+            const show = i >= currentPage * IMAGES_PER_PAGE && i < (currentPage + 1) * IMAGES_PER_PAGE;
+            item.classList.toggle('hidden', !show);
+          });
+          if (pageInfo) pageInfo.textContent = items.length > 0 ? `Page ${currentPage + 1} of ${totalPages}` : '';
+          if (prevBtn) prevBtn.disabled = currentPage === 0;
+          if (nextBtn) nextBtn.disabled = currentPage >= totalPages - 1;
+        };
+        prevBtn?.addEventListener('click', () => { if (currentPage > 0) { currentPage--; renderPage(); } });
+        nextBtn?.addEventListener('click', () => { if (currentPage < totalPages - 1) { currentPage++; renderPage(); } });
 
         const openLightbox = (index) => {
           current = index;
@@ -194,6 +224,8 @@
         } else {
           revealItems.forEach((item) => item.classList.add('dv-visible'));
         }
+
+        renderPage();
       })();
     </script>
   </body>
