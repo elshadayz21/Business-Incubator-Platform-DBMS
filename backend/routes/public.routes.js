@@ -5,12 +5,19 @@ import { getFormFields } from "../admin-backend/applications/applications.js";
 const router = Router();
 
 // POST: Contact Us Form
+// POST: Contact Us Form (with sender role)
+const ALLOWED_SENDER_ROLES = ["mentor", "investor", "partner", "other"];
+
 router.post("/contact", async (req, res) => {
     try {
         const { name, email, message } = req.body;
+        const sender_role = ALLOWED_SENDER_ROLES.includes(req.body.sender_role)
+            ? req.body.sender_role
+            : "other";
+
         await pool.query(
-            "INSERT INTO public_submissions (type, name, email, message) VALUES ('contact', $1, $2, $3)",
-            [name, email, message]
+            "INSERT INTO public_submissions (type, name, email, message, sender_role) VALUES ('contact', $1, $2, $3, $4)",
+            [name, email, message, sender_role]
         );
         res.status(201).json({ success: true, message: "Message sent successfully!" });
     } catch (error) {
@@ -228,23 +235,6 @@ router.get("/form-fields/:announcementId", async (req, res) => {
     }
 });
 
-// Entrepreneur Accept/Reject Funding Route
-router.put("/funding/:id/respond", async (req, res) => {
-    try {
-        const { action } = req.body;
-        const userId = req.session.userId;
 
-        if (!userId) return res.status(401).json({ message: "Please log in." });
-        if (!['Founder Accepted', 'Founder Declined'].includes(action)) {
-            return res.status(400).json({ message: "Invalid action." });
-        }
-
-        const result = await founderRespondToFunding(req.params.id, userId, action);
-        res.json(result);
-    } catch (error) {
-        console.error("Error responding to funding:", error.message);
-        res.status(403).json({ message: error.message });
-    }
-});
 
 export { router as publicRoutes };
