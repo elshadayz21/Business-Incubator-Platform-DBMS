@@ -1,7 +1,7 @@
 import React from "react";
-import { Mail, Loader2, Inbox, Edit2, Trash2 } from "lucide-react";
+import { Mail, Loader2, Inbox, Edit2, Trash2, CalendarCheck, CalendarX } from "lucide-react";
 
-const MentorTable = ({ mentors, loading, onEdit, onDelete }) => {
+const MentorTable = ({ mentors, loading, onEdit, onDelete, onToggleAvailability }) => {
   if (loading)
     return (
       <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-[#D6E4EA]">
@@ -33,6 +33,7 @@ const MentorTable = ({ mentors, loading, onEdit, onDelete }) => {
             <th className="p-4">Expertise Field</th>
             <th className="p-4">Assignments</th>
             <th className="p-4 text-center">Status</th>
+            <th className="p-4 text-center">Availability</th>
             <th className="p-4 text-right">Actions</th>
           </tr>
         </thead>
@@ -85,6 +86,26 @@ const MentorTable = ({ mentors, loading, onEdit, onDelete }) => {
                 >
                   {m.status === "active" ? "Active" : "Inactive"}
                 </span>
+              </td>
+
+              <td className="p-4 text-center">
+                {(() => {
+                  const isAvailable = m.is_available !== false;
+                  return (
+                    <button
+                      onClick={() => onToggleAvailability && onToggleAvailability(m)}
+                      title={isAvailable ? "Mark as unavailable" : "Mark as available"}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border transition ${
+                        isAvailable
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100"
+                          : "bg-slate-100 text-slate-600 border-slate-300 hover:bg-slate-200"
+                      }`}
+                    >
+                      {isAvailable ? <CalendarCheck size={12} /> : <CalendarX size={12} />}
+                      {isAvailable ? "Available" : "Unavailable"}
+                    </button>
+                  );
+                })()}
               </td>
 
               <td className="p-4 text-right">

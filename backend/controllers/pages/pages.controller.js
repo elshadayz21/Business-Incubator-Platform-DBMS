@@ -45,6 +45,8 @@ export const getMentorsPage = async (req, res, next) => {
       company: m.company || "Incubator",
       image: m.profile_image || "/assets/images/default-avatar.svg",
       bio: m.bio || "No bio available.",
+      status: m.status || "active",
+      isAvailable: m.is_available !== false,
       color: ["#FFDE59", "#FF90E8", "#5465FF", "#0d9488"][
         Math.floor(Math.random() * 4)
       ],
