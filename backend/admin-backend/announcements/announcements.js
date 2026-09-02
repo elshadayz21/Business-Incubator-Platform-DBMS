@@ -1,6 +1,32 @@
 import pool from "../../config/db.js";
 import xss from "xss";
 
+// Turns a title into a URL-safe slug, e.g. "Summer 2026 Cohort!" -> "summer-2026-cohort"
+const slugify = (text) =>
+    String(text || "")
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 140) || "announcement";
+
+// Generates a slug for a new announcement and guarantees it's unique by
+// appending -2, -3, etc. if needed. The slug is only ever set at creation
+// time (see createAnnouncement/duplicateAnnouncement) — updateAnnouncement
+// deliberately leaves it untouched so previously shared links never break.
+const generateUniqueSlug = async (title) => {
+    const base = slugify(title);
+    let candidate = base;
+    let suffix = 2;
+
+    while (true) {
+        const existing = await pool.query("SELECT 1 FROM announcements WHERE slug = $1", [candidate]);
+        if (existing.rows.length === 0) return candidate;
+        candidate = `${base}-${suffix}`;
+        suffix += 1;
+    }
+};
+
 // GET ALL ANNOUNCEMENTS
 export const getAllAnnouncements = async () => {
     const result = await pool.query("SELECT * FROM announcements ORDER BY created_at DESC");
@@ -16,9 +42,10 @@ export const getAnnouncementById = async (id) => {
 // CREATE A NEW ANNOUNCEMENT
 export const createAnnouncement = async (data) => {
     const { title, content, deadline, document_url, is_open_call, capacity, is_published, category, applicant_type } = data;
+    const slug = await generateUniqueSlug(title);
     const result = await pool.query(
-        `INSERT INTO announcements (title, content, deadline, document_url, is_open_call, capacity, is_published, category, applicant_type) 
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
+        `INSERT INTO announcements (title, content, deadline, document_url, is_open_call, capacity, is_published, category, applicant_type, slug) 
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
      RETURNING *`,
         [
             title ? xss(title) : null,
@@ -29,7 +56,8 @@ export const createAnnouncement = async (data) => {
             capacity || null,
             is_published !== false,
             category || 'Call for Applications',
-            applicant_type || 'both'
+            applicant_type || 'both',
+            slug
         ]
     );
     return result.rows[0];
@@ -71,12 +99,14 @@ export const duplicateAnnouncement = async (id) => {
     if (source.rows.length === 0) return null;
 
     const original = source.rows[0];
+    const copyTitle = `${original.title} (Copy)`;
+    const slug = await generateUniqueSlug(copyTitle);
     const result = await pool.query(
-        `INSERT INTO announcements (title, content, deadline, document_url, is_open_call, capacity, is_published, category, applicant_type) 
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
+        `INSERT INTO announcements (title, content, deadline, document_url, is_open_call, capacity, is_published, category, applicant_type, slug) 
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
      RETURNING *`,
         [
-            `${original.title} (Copy)`,
+            copyTitle,
             original.content,
             original.deadline,
             original.document_url,
@@ -84,7 +114,8 @@ export const duplicateAnnouncement = async (id) => {
             original.capacity,
             original.is_published,
             original.category || 'Call for Applications',
-            original.applicant_type || 'both'
+            original.applicant_type || 'both',
+            slug
         ]
     );
     return result.rows[0];

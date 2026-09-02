@@ -34,23 +34,37 @@
                             <p class="mt-5 max-w-[620px] text-base leading-8 text-white/85"><%= workshop.description %></p>
 
                             <div class="mt-8 flex flex-wrap items-center gap-3">
-                                <% if (user) { %>
-                                    <% if (isEnrolled) { %>
-                                        <button id="enrollBtn" class="inline-flex items-center gap-2 rounded-md bg-red-500 px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 focus:ring-offset-cyan-deep">
-                                            <i class="fa-solid fa-xmark text-xs" aria-hidden="true"></i>
-                                            Unenroll
-                                        </button>
-                                    <% } else { %>
-                                        <button id="enrollBtn" class="inline-flex items-center gap-2 rounded-md bg-orange px-6 py-3 text-sm font-bold text-white shadow-[0_10px_24px_rgba(141,67,10,.24)] transition hover:-translate-y-0.5 hover:bg-orange-dark focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-cyan-deep">
-                                            <i class="fa-solid fa-check-circle text-xs" aria-hidden="true"></i>
-                                            Enroll Now
-                                        </button>
-                                    <% } %>
-                                <% } else { %>
-                                    <a href="<%= routes.loginRoute %>" class="inline-flex items-center gap-2 rounded-md bg-white px-6 py-3 text-sm font-bold text-cyan-dark shadow-sm transition hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-cyan-deep">
-                                        <i class="fa-solid fa-arrow-right-to-bracket text-xs" aria-hidden="true"></i>
-                                        Login to Enroll
-                                    </a>
+                                                                <% if (user) { %>
+                                                                    <% if (isEnrolled) { %>
+                                                                        <button id="enrollBtn" class="inline-flex items-center gap-2 rounded-md bg-red-500 px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 focus:ring-offset-cyan-deep">
+                                                                            <i class="fa-solid fa-xmark text-xs" aria-hidden="true"></i>
+                                                                            Unenroll
+                                                                        </button>
+                                                                    <% } else { %>
+                                                                        <button id="enrollBtn" class="inline-flex items-center gap-2 rounded-md bg-orange px-6 py-3 text-sm font-bold text-white shadow-[0_10px_24px_rgba(141,67,10,.24)] transition hover:-translate-y-0.5 hover:bg-orange-dark focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-cyan-deep">
+                                                                            <i class="fa-solid fa-check-circle text-xs" aria-hidden="true"></i>
+                                                                            Enroll Now
+                                                                        </button>
+                                                                    <% } %>
+                                                                <% } else { %>
+                                                                    <!-- Public (no account) enrollment form -->
+                                                                    <div id="publicEnrollBox" class="w-full max-w-[440px] rounded-2xl bg-white/95 p-5 text-ink shadow-sm">
+                                                                        <p class="text-[11px] font-extrabold uppercase tracking-widest text-cyan-dark">Reserve your seat</p>
+                                                                        <p class="mt-1 text-xs text-muted">No account needed — just tell us who's coming.</p>
+                                                                        <form id="publicEnrollForm" class="mt-4 space-y-3">
+                                                                            <input type="hidden" name="workshopId" value="<%= workshop.id %>" />
+                                                                            <input id="publicName" type="text" required placeholder="Full name" autocomplete="name"
+                                                                                class="h-11 w-full rounded-xl border border-line bg-white px-4 text-sm font-semibold text-ink outline-none transition placeholder:font-normal placeholder:text-slate-400 focus:border-cyan focus:ring-2 focus:ring-cyan/20" />
+                                                                            <input id="publicEmail" type="email" required placeholder="Email address" autocomplete="email"
+                                                                                class="h-11 w-full rounded-xl border border-line bg-white px-4 text-sm font-semibold text-ink outline-none transition placeholder:font-normal placeholder:text-slate-400 focus:border-cyan focus:ring-2 focus:ring-cyan/20" />
+                                                                            <button type="submit" id="publicEnrollBtn" class="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-orange px-6 text-sm font-extrabold uppercase tracking-wide text-white shadow-[0_10px_24px_rgba(141,67,10,.24)] transition hover:-translate-y-0.5 hover:bg-orange-dark focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2">
+                                                                                <i class="fa-solid fa-check-circle text-xs" aria-hidden="true"></i>
+                                                                                Reserve my seat
+                                                                            </button>
+                                                                            <p id="publicEnrollMsg" class="hidden rounded-xl px-4 py-2.5 text-xs font-bold" role="status"></p>
+                                                                        </form>
+                                                                    </div>
+
                                 <% } %>
                             </div>
                         </div>
@@ -172,6 +186,56 @@
                 location.reload();
             }
         });
+                // Public (anonymous) enrollment
+                document.getElementById('publicEnrollForm')?.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+
+                    const workshopId = this.querySelector('[name="workshopId"]').value;
+                    const name = document.getElementById('publicName').value.trim();
+                    const email = document.getElementById('publicEmail').value.trim();
+                    const btn = document.getElementById('publicEnrollBtn');
+                    const msg = document.getElementById('publicEnrollMsg');
+
+                    if (!name || !email) return;
+
+                    const originalText = btn.innerHTML;
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Reserving...';
+                    msg.classList.add('hidden');
+
+                    try {
+                        const response = await fetch(`/v1/workshop/${workshopId}/attend-public`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'x-csrf-token': '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>',
+                            },
+                            body: JSON.stringify({ full_name: name, email: email }),
+                        });
+
+                        const data = await response.json().catch(() => ({}));
+
+                        if (response.ok) {
+                            msg.className = 'block rounded-xl bg-green-50 border border-green-200 px-4 py-2.5 text-xs font-bold text-green-700';
+                            msg.textContent = data.message || 'Your seat has been reserved!';
+                            btn.disabled = true;
+                            btn.innerHTML = '<i class="fa-solid fa-check text-xs"></i> Seat reserved';
+                            // Reload after a short delay to refresh seat count + progress bar
+                            setTimeout(() => window.location.reload(), 1500);
+                        } else {
+                            msg.className = 'block rounded-xl bg-red-50 border border-red-200 px-4 py-2.5 text-xs font-bold text-red-700';
+                            msg.textContent = data.message || 'Something went wrong. Please try again.';
+                            btn.disabled = false;
+                            btn.innerHTML = originalText;
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        msg.className = 'block rounded-xl bg-red-50 border border-red-200 px-4 py-2.5 text-xs font-bold text-red-700';
+                        msg.textContent = 'An error occurred. Please try again.';
+                        btn.disabled = false;
+                        btn.innerHTML = originalText;
+                    }
+                });
     </script>
 </body>
 </html>

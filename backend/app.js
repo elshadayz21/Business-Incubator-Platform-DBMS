@@ -163,9 +163,18 @@ app.get("/", async (req, res) => {
 });
 
 // Dedicated Apply Page
-app.get("/apply/:id", async (req, res) => {
+// Looked up by slug ("/apply/summer-2026-founder-cohort"), the readable
+// public URL. Falls back to a bare numeric id ("/apply/7") so any old
+// links generated before slugs existed still work.
+app.get("/apply/:idOrSlug", async (req, res) => {
     try {
-        const result = await pool.query("SELECT * FROM announcements WHERE id = $1 AND is_open_call = true", [req.params.id]);
+        const { idOrSlug } = req.params;
+        const asId = /^\d+$/.test(idOrSlug) ? parseInt(idOrSlug, 10) : null;
+
+        const result = await pool.query(
+            "SELECT * FROM announcements WHERE (slug = $1 OR id = $2) AND is_open_call = true",
+            [idOrSlug, asId]
+        );
 
         if (result.rows.length === 0) {
             return res.status(404).send("Open call not found.");

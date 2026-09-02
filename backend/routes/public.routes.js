@@ -1,6 +1,7 @@
 import { Router } from "express";
 import pool from "../config/db.js";
 import { founderRespondToFunding } from "../admin-backend/funding/funding.js";
+import { getFormFields } from "../admin-backend/applications/applications.js";
 const router = Router();
 
 // POST: Contact Us Form
@@ -107,8 +108,10 @@ router.post("/apply", async (req, res) => {
             }
         }
 
-        // 2. SCAN DYNAMIC ANSWERS FOR EMAIL AND NAME!
-        const fieldsRes = await pool.query("SELECT id, field_type FROM form_fields WHERE announcement_id = $1", [announcement_id]);
+        // 2. Any question the admin linked to a normalized column (full name,
+        //    email, phone, startup idea, background) gets copied out of the
+        //    dynamic answers into that column, via form_fields.maps_to.
+        const fieldsRes = await pool.query("SELECT id, maps_to FROM form_fields WHERE announcement_id = $1 AND maps_to IS NOT NULL", [announcement_id]);
         const fields = fieldsRes.rows;
 
         let parsedAnswers = answers || {};
@@ -118,12 +121,16 @@ router.post("/apply", async (req, res) => {
             const userAnswer = parsedAnswers[answerKey];
 
             if (userAnswer) {
-                if (field.field_type === 'email') {
+                if (field.maps_to === 'email') {
                     email = userAnswer;
-                } else if (field.field_type === 'name') {
+                } else if (field.maps_to === 'full_name') {
                     full_name = userAnswer;
-                } else if (field.field_type === 'idea') {
+                } else if (field.maps_to === 'startup_idea') {
                     startup_idea = userAnswer;
+                } else if (field.maps_to === 'phone') {
+                    phone = userAnswer;
+                } else if (field.maps_to === 'background') {
+                    background = userAnswer;
                 }
             }
         }
@@ -176,10 +183,19 @@ router.get("/open-calls", async (req, res) => {
     }
 });
 // GET: Apply Page (Dedicated landing page for an Open Call)
-router.get("/apply/:id", async (req, res) => {
+// Looked up by slug ("/apply/summer-2026-founder-cohort"), the readable
+// public URL. Falls back to a bare numeric id ("/apply/7") so any old
+// links generated before slugs existed still work.
+router.get("/apply/:idOrSlug", async (req, res) => {
     try {
+        const { idOrSlug } = req.params;
+        const asId = /^\d+$/.test(idOrSlug) ? parseInt(idOrSlug, 10) : null;
+
         // 1. Fetch the specific announcement
-        const result = await pool.query("SELECT * FROM announcements WHERE id = $1 AND is_open_call = true", [req.params.id]);
+        const result = await pool.query(
+            "SELECT * FROM announcements WHERE (slug = $1 OR id = $2) AND is_open_call = true",
+            [idOrSlug, asId]
+        );
 
         // 2. If it doesn't exist, or isn't an open call, return 404
         if (result.rows.length === 0) {
@@ -197,8 +213,15 @@ router.get("/apply/:id", async (req, res) => {
 // GET: Fetch Custom Form Fields for an Announcement
 router.get("/form-fields/:announcementId", async (req, res) => {
     try {
-        const result = await pool.query("SELECT id, label, field_type, options, required FROM form_fields WHERE announcement_id = $1 ORDER BY created_at ASC", [req.params.announcementId]);
-        res.status(200).json(result.rows);
+        // getFormFields ensures form_fields has every column the app expects
+        // (maps_to, width, ...) before querying, so this endpoint keeps
+        // working even on a database that hasn't had every migration file
+        // run against it yet.
+        const fields = await getFormFields(req.params.announcementId);
+        const publicFields = fields.map(({ id, label, field_type, options, required, maps_to, width }) => (
+            { id, label, field_type, options, required, maps_to, width }
+        ));
+        res.status(200).json(publicFields);
     } catch (error) {
         console.error("Error fetching form fields:", error);
         res.status(500).json({ message: "Internal Server Error" });

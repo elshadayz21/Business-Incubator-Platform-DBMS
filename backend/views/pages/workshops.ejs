@@ -172,6 +172,14 @@
               </article>
             <% }); %>
           </div>
+                <!-- Load More (reveals 3 more cards) -->
+                <div id="loadMoreSection" class="mt-10 hidden flex-col items-center gap-2">
+                  <button id="loadMoreButton" type="button" class="inline-flex items-center gap-2 rounded-xl bg-cyan-dark px-7 py-3.5 text-sm font-extrabold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-cyan focus:outline-none focus:ring-2 focus:ring-cyan focus:ring-offset-2">
+                    Load more workshops
+                    <i class="fa-solid fa-chevron-down text-xs" aria-hidden="true"></i>
+                  </button>
+                  <p id="loadMoreSummary" class="text-xs font-semibold text-muted"></p>
+                </div>
 
           <div id="emptyState" class="mt-12 hidden rounded-2xl border border-line bg-surface px-6 py-20 text-center">
             <span class="mx-auto grid h-14 w-14 place-items-center rounded-full bg-orange-soft text-orange" aria-hidden="true"><i class="fa-solid fa-magnifying-glass text-xl"></i></span>
@@ -207,58 +215,92 @@
 
     <%- include('../partials/footer.ejs') %>
 
-    <script>
-      (() => {
-        const searchInput = document.getElementById('searchInput');
-        const categoryFilter = document.getElementById('categoryFilter');
-        const cards = Array.from(document.querySelectorAll('.workshop-card'));
-        const emptyState = document.getElementById('emptyState');
-        const visibleCount = document.getElementById('visibleWorkshopCount');
-        const resetButtons = [document.getElementById('resetFilters'), document.getElementById('emptyResetFilters')].filter(Boolean);
+        <script>
+          (() => {
+            const PAGE_SIZE = 3;
+            const searchInput = document.getElementById('searchInput');
+            const categoryFilter = document.getElementById('categoryFilter');
+            const cards = Array.from(document.querySelectorAll('.workshop-card'));
+            const emptyState = document.getElementById('emptyState');
+            const visibleCount = document.getElementById('visibleWorkshopCount');
+            const loadMoreSection = document.getElementById('loadMoreSection');
+            const loadMoreButton = document.getElementById('loadMoreButton');
+            const loadMoreSummary = document.getElementById('loadMoreSummary');
+            const resetButtons = [document.getElementById('resetFilters'), document.getElementById('emptyResetFilters')].filter(Boolean);
 
-        const filterWorkshops = () => {
-          const query = (searchInput?.value || '').trim().toLowerCase();
-          const category = (categoryFilter?.value || '').trim().toLowerCase();
-          let count = 0;
+            let visibleLimit = PAGE_SIZE;
 
-          cards.forEach((card) => {
-            const matchesQuery = !query || (card.dataset.search || '').includes(query);
-            const matchesCategory = !category || card.dataset.category === category;
-            const isVisible = matchesQuery && matchesCategory;
-            card.classList.toggle('hidden', !isVisible);
-            if (isVisible) count += 1;
-          });
+            // A card is "shown" only if it passes the filters AND is within the reveal limit
+            const applyFiltersAndLimit = () => {
+              const query = (searchInput?.value || '').trim().toLowerCase();
+              const category = (categoryFilter?.value || '').trim().toLowerCase();
 
-          if (visibleCount) visibleCount.textContent = String(count);
-          emptyState?.classList.toggle('hidden', count !== 0);
-        };
+              let matchingCount = 0;
 
-        const resetFilters = () => {
-          if (searchInput) searchInput.value = '';
-          if (categoryFilter) categoryFilter.value = '';
-          filterWorkshops();
-          searchInput?.focus();
-        };
+              cards.forEach((card) => {
+                const matchesQuery = !query || (card.dataset.search || '').includes(query);
+                const matchesCategory = !category || card.dataset.category === category;
+                if (matchesQuery && matchesCategory) matchingCount += 1;
+              });
 
-        searchInput?.addEventListener('input', filterWorkshops);
-        categoryFilter?.addEventListener('change', filterWorkshops);
-        resetButtons.forEach((button) => button.addEventListener('click', resetFilters));
+              let shownCount = 0;
+              cards.forEach((card) => {
+                const matchesQuery = !query || (card.dataset.search || '').includes(query);
+                const matchesCategory = !category || card.dataset.category === category;
+                const matches = matchesQuery && matchesCategory;
+                const withinLimit = matches && shownCount < visibleLimit;
+                card.classList.toggle('hidden', !withinLimit);
+                if (withinLimit) shownCount += 1;
+              });
 
-        const revealItems = document.querySelectorAll('.dv-reveal');
-        if ('IntersectionObserver' in window) {
-          const revealObserver = new IntersectionObserver((entries, observer) => {
-            entries.forEach((entry) => {
-              if (!entry.isIntersecting) return;
-              entry.target.style.animationDelay = `${entry.target.dataset.delay || 0}ms`;
-              entry.target.classList.add('dv-visible');
-              observer.unobserve(entry.target);
-            });
-          }, { threshold: 0.1 });
-          revealItems.forEach((item) => revealObserver.observe(item));
-        } else {
-          revealItems.forEach((item) => item.classList.add('dv-visible'));
-        }
-      })();
-    </script>
+              if (visibleCount) visibleCount.textContent = String(matchingCount);
+              emptyState?.classList.toggle('hidden', matchingCount !== 0);
+
+              // Load More button state
+              const hasHiddenMatching = matchingCount > visibleLimit;
+              loadMoreSection?.classList.toggle('hidden', !hasHiddenMatching);
+              loadMoreSection?.classList.toggle('flex', hasHiddenMatching);
+              if (hasHiddenMatching) {
+                loadMoreSummary.textContent = `Showing ${shownCount} of ${matchingCount} workshops`;
+              }
+            };
+
+            const loadMore = () => {
+              visibleLimit += PAGE_SIZE;
+              applyFiltersAndLimit();
+            };
+
+            const resetFilters = () => {
+              if (searchInput) searchInput.value = '';
+              if (categoryFilter) categoryFilter.value = '';
+              visibleLimit = PAGE_SIZE; // back to the first page
+              applyFiltersAndLimit();
+              searchInput?.focus();
+            };
+
+            searchInput?.addEventListener('input', () => { visibleLimit = PAGE_SIZE; applyFiltersAndLimit(); });
+            categoryFilter?.addEventListener('change', () => { visibleLimit = PAGE_SIZE; applyFiltersAndLimit(); });
+            loadMoreButton?.addEventListener('click', loadMore);
+            resetButtons.forEach((button) => button.addEventListener('click', resetFilters));
+
+            // Initial render: first 3 cards only
+            applyFiltersAndLimit();
+
+            const revealItems = document.querySelectorAll('.dv-reveal');
+            if ('IntersectionObserver' in window) {
+              const revealObserver = new IntersectionObserver((entries, observer) => {
+                entries.forEach((entry) => {
+                  if (!entry.isIntersecting) return;
+                  entry.target.style.animationDelay = `${entry.target.dataset.delay || 0}ms`;
+                  entry.target.classList.add('dv-visible');
+                  observer.unobserve(entry.target);
+                });
+              }, { threshold: 0.1 });
+              revealItems.forEach((item) => revealObserver.observe(item));
+            } else {
+              revealItems.forEach((item) => item.classList.add('dv-visible'));
+            }
+          })();
+        </script>
   </body>
 </html>

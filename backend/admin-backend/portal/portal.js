@@ -3,8 +3,8 @@ import { createNotification } from "../../utils/notificationHelper.js";
 
 export const markNotificationsAsRead = async (userId) => {
   await pool.query(
-    `UPDATE notifications SET read = true WHERE user_id = $1 AND read = false`,
-    [userId]
+      `UPDATE notifications SET read = true WHERE user_id = $1 AND read = false`,
+      [userId]
   );
 };
 
@@ -20,34 +20,34 @@ const safeQuery = async (label, queryFn) => {
 
 export const getEntrepreneurDashboard = async (userId, email) => {
   const [userRes, applicationRes, projectsRes, cohortsRes, mentorsRes, fundingRes, workshopsRes, notificationsRes, activityLogsRes, statsRes, mentorSessionsRes] =
-    await Promise.all([
-      safeQuery("user", () =>
-        pool.query(
-          `SELECT id, name, email, user_code, role, profile_image, expertise, company, bio, status, created_at
+      await Promise.all([
+        safeQuery("user", () =>
+            pool.query(
+                `SELECT id, name, email, user_code, role, profile_image, expertise, company, bio, status, created_at
            FROM users WHERE id = $1`,
-          [userId],
+                [userId],
+            ),
         ),
-      ),
-      safeQuery("application", () =>
-        pool.query(
-          `SELECT id, announcement_id, full_name, email, phone, status, startup_idea, created_at, updated_at
+        safeQuery("application", () =>
+            pool.query(
+                `SELECT id, announcement_id, full_name, email, phone, status, startup_idea, created_at, updated_at
            FROM applications WHERE email = $1 ORDER BY created_at DESC LIMIT 1`,
-          [email],
+                [email],
+            ),
         ),
-      ),
-      safeQuery("projects", () =>
-        pool.query(
-          `SELECT p.id, p.name, p.domain, p.stage, p.status, p.approved, p.created_at, pe.role_in_project
+        safeQuery("projects", () =>
+            pool.query(
+                `SELECT p.id, p.name, p.domain, p.stage, p.status, p.approved, p.created_at, pe.role_in_project
            FROM project_entrepreneurs pe
            JOIN projects p ON p.id = pe.project_id
            WHERE pe.user_id = $1
            ORDER BY p.created_at DESC`,
-          [userId],
+                [userId],
+            ),
         ),
-      ),
-      safeQuery("cohorts", () =>
-        pool.query(
-          `SELECT DISTINCT c.id, c.name, c.type, c.status, c.start_date, c.end_date,
+        safeQuery("cohorts", () =>
+            pool.query(
+                `SELECT DISTINCT c.id, c.name, c.type, c.status, c.start_date, c.end_date,
                  COALESCE(cm.current_stage, 'incubation') AS current_stage,
                  COALESCE(cm.joined_at, ma.assigned_at) AS joined_at
            FROM cohorts c
@@ -55,122 +55,76 @@ export const getEntrepreneurDashboard = async (userId, email) => {
            LEFT JOIN mentor_assignments ma ON ma.cohort_id = c.id AND ma.entrepreneur_id = $1
            WHERE cm.user_id = $1 OR ma.entrepreneur_id = $1
            ORDER BY joined_at DESC`,
-          [userId],
+                [userId],
+            ),
         ),
-      ),
-      safeQuery("mentors", () =>
-        pool.query(
-          `SELECT * FROM (
-            SELECT 
-              'cohort' AS assignment_type,
-              ma.id AS assignment_id, 
-              u.id AS mentor_id, 
-              u.name AS mentor_name,
-              u.email AS mentor_email, 
-              u.expertise AS mentor_expertise,
-              c.id AS cohort_id, 
-              c.name AS cohort_name, 
-              c.status AS cohort_status,
-              NULL::int AS project_id,
-              NULL::varchar AS project_name,
-              ma.assigned_at
-            FROM mentor_assignments ma
-            JOIN users u ON u.id = ma.mentor_id
-            JOIN cohorts c ON c.id = ma.cohort_id
-            WHERE ma.entrepreneur_id = $1
-
-            UNION ALL
-
-            SELECT 
-              'project' AS assignment_type,
-              pe_mentor.project_id AS assignment_id, 
-              u.id AS mentor_id, 
-              u.name AS mentor_name,
-              u.email AS mentor_email, 
-              u.expertise AS mentor_expertise,
-              NULL::int AS cohort_id, 
-              NULL::varchar AS cohort_name, 
-              NULL::varchar AS cohort_status,
-              p.id AS project_id,
-              p.name AS project_name,
-              p.created_at AS assigned_at
-            FROM project_entrepreneurs pe_owner
-            JOIN projects p ON p.id = pe_owner.project_id
-            JOIN project_entrepreneurs pe_mentor ON pe_mentor.project_id = p.id AND LOWER(pe_mentor.role_in_project) = 'mentor'
-            JOIN users u ON u.id = pe_mentor.user_id
-            WHERE pe_owner.user_id = $1 AND (pe_owner.role_in_project IS NULL OR LOWER(pe_owner.role_in_project) != 'mentor')
-
-            UNION ALL
-
-            SELECT 
-              'project' AS assignment_type,
-              mpa.id AS assignment_id, 
-              COALESCE(u.id, m.id) AS mentor_id, 
-              COALESCE(u.name, m.name) AS mentor_name,
-              COALESCE(u.email, m.email) AS mentor_email, 
-              COALESCE(u.expertise, m.expertise) AS mentor_expertise,
-              NULL::int AS cohort_id, 
-              NULL::varchar AS cohort_name, 
-              NULL::varchar AS cohort_status,
-              p.id AS project_id,
-              p.name AS project_name,
-              mpa.assigned_at
-            FROM project_entrepreneurs pe_owner
-            JOIN projects p ON p.id = pe_owner.project_id
-            JOIN mentor_project_assignments mpa ON mpa.project_id = p.id
-            JOIN mentors m ON m.id = mpa.mentor_id
-            LEFT JOIN users u ON u.id = m.user_id OR LOWER(u.email) = LOWER(m.email)
-            WHERE pe_owner.user_id = $1 AND (pe_owner.role_in_project IS NULL OR LOWER(pe_owner.role_in_project) != 'mentor')
-          ) combined_mentors
-          ORDER BY assigned_at DESC`,
-          [userId],
+        // FIXED: Fetch ALL mentors, and mark the ones assigned to this user via the mentors table
+        // Fetch ALL mentors, mark assigned if they mentor my project OR lead my workshop
+        safeQuery("mentors", () =>
+            pool.query(
+                `SELECT DISTINCT ON (u.id) u.id AS mentor_id, u.name AS mentor_name, u.email AS mentor_email, u.expertise AS domain,
+                  CASE
+                  WHEN pe.project_id IS NOT NULL THEN true
+                  WHEN w.id IS NOT NULL THEN true
+                  ELSE false
+                END AS is_assigned
+           FROM users u
+           LEFT JOIN project_entrepreneurs pe ON pe.user_id = u.id AND LOWER(pe.role_in_project) = 'mentor' 
+             AND pe.project_id IN (SELECT project_id FROM project_entrepreneurs WHERE user_id = $1 AND (role_in_project IS NULL OR LOWER(role_in_project) != 'mentor'))
+                LEFT JOIN workshops w ON w.trainer_id = u.id
+                AND w.id IN (SELECT workshop_id FROM workshop_enrollments WHERE entrepreneur_id = $1)
+                WHERE LOWER(u.role) = 'mentor' AND LOWER(u.status) = 'active'
+                ORDER BY u.id, is_assigned DESC`,
+                [userId]
+            )
         ),
-      ),
-      safeQuery("funding", () =>
-        pool.query(
-          `SELECT fr.id, fr.project_id, p.name AS project_name, fr.amount, fr.approved_amount, fr.founder_action, fr.status,
-                  fr.funding_stage, fr.description, fr.requested_at, fr.reviewed_at, fr.notes
-           FROM funding_requests fr
-           JOIN projects p ON p.id = fr.project_id
-           JOIN project_entrepreneurs pe ON pe.project_id = fr.project_id
-           WHERE pe.user_id = $1
-           ORDER BY fr.requested_at DESC`,
-          [userId],
+        safeQuery("funding", () =>
+            pool.query(
+                `SELECT fr.id, fr.project_id, p.name AS project_name, fr.amount, fr.approved_amount, fr.founder_action, fr.status,
+                        fr.funding_stage, fr.description, fr.requested_at, fr.reviewed_at, fr.notes
+                 FROM funding_requests fr
+                        JOIN projects p ON p.id = fr.project_id
+                        JOIN project_entrepreneurs pe ON pe.project_id = fr.project_id
+                 WHERE pe.user_id = $1
+                 ORDER BY fr.requested_at DESC
+                   LIMIT 5`, // Changed to 5
+                [userId],
+            ),
         ),
-      ),
-      safeQuery("workshops", () =>
-        pool.query(
-          `SELECT w.id, w.title, w.schedule, w.capacity, w.category, w.created_at,
+        safeQuery("workshops", () =>
+            pool.query(
+                `SELECT w.id, w.title, w.schedule, w.capacity, w.category, w.created_at,
                   we.enrollment_date, we.attended
            FROM workshops w
            JOIN workshop_enrollments we ON w.id = we.workshop_id
            WHERE we.entrepreneur_id = $1
            ORDER BY w.schedule DESC`,
-          [userId],
+                [userId],
+            ),
         ),
-      ),
-      safeQuery("notifications", () =>
-        pool.query(
-          `SELECT id, type, message, read, created_at
-           FROM notifications
-           WHERE user_id = $1
-           ORDER BY created_at DESC`,
-          [userId],
+        safeQuery("notifications", () =>
+            pool.query(
+                `SELECT id, type, message, read, created_at
+                 FROM notifications
+                 WHERE user_id = $1
+                 ORDER BY created_at DESC
+                   LIMIT 5`, // Changed from unlimited to 5
+                [userId],
+            ),
         ),
-      ),
-      safeQuery("activityLogs", () =>
-        pool.query(
-          `SELECT id, action_type, details, created_at
-           FROM activity_logs
-           WHERE user_id = $1
-           ORDER BY created_at DESC
-           LIMIT 50`,
-          [userId],
+        safeQuery("activityLogs", () =>
+            pool.query(
+                `SELECT id, action_type, details, created_at
+                 FROM activity_logs
+                 WHERE user_id = $1
+                 ORDER BY created_at DESC
+                   LIMIT 10`,
+                [userId],
+            ),
         ),
-      ),
-      safeQuery("stats", () =>
-        pool.query(
-          `SELECT 'total_users' AS metric_key, COUNT(*)::int AS metric_value, NOW() AS updated_at FROM users
+        safeQuery("stats", () =>
+            pool.query(
+                `SELECT 'total_users' AS metric_key, COUNT(*)::int AS metric_value, NOW() AS updated_at FROM users
            UNION ALL
            SELECT 'total_projects', COUNT(*)::int, NOW() FROM projects
            UNION ALL
@@ -180,21 +134,21 @@ export const getEntrepreneurDashboard = async (userId, email) => {
            UNION ALL
            SELECT 'total_funding_approved', COUNT(*)::int, NOW() FROM funding_requests WHERE LOWER(status) = 'approved'
            ORDER BY metric_key ASC`,
+            ),
         ),
-      ),
-      safeQuery("mentorSessions", () =>
-        pool.query(
-          `SELECT ms.id, ms.assignment_id, ms.session_date, ms.notes, ms.feedback, ms.entrepreneur_reply, ms.reply_at, ms.mentor_response, ms.mentor_response_at, ms.created_at,
+        safeQuery("mentorSessions", () =>
+            pool.query(
+                `SELECT ms.id, ms.assignment_id, ms.session_date, ms.notes, ms.feedback, ms.entrepreneur_reply, ms.reply_at, ms.mentor_response, ms.mentor_response_at, ms.created_at,
                   u.name AS mentor_name, u.email AS mentor_email
            FROM mentor_sessions ms
            JOIN mentor_assignments ma ON ma.id = ms.assignment_id
            JOIN users u ON u.id = ma.mentor_id
            WHERE ma.entrepreneur_id = $1
            ORDER BY ms.session_date DESC, ms.created_at DESC`,
-          [userId],
+                [userId],
+            ),
         ),
-      ),
-    ]);
+      ]);
 
   const u = userRes.ok ? userRes.data[0] : null;
 
@@ -251,8 +205,8 @@ export const getEntrepreneurDashboard = async (userId, email) => {
 export const getMentorDashboard = async (mentorId) => {
   const [assignmentsRes, notificationsRes, activityLogsRes, invitationsRes] = await Promise.all([
     safeQuery("mentor-assignments", () =>
-      pool.query(
-        `SELECT * FROM (
+        pool.query(
+            `SELECT * FROM (
           SELECT 
             'cohort' AS assignment_type,
             ma.id AS assignment_id, 
@@ -322,27 +276,28 @@ export const getMentorDashboard = async (mentorId) => {
           WHERE mu.id = $1
         ) combined_assignments
         ORDER BY assigned_at DESC`,
-        [mentorId],
-      ),
+            [mentorId],
+        ),
     ),
     safeQuery("notifications", () =>
-      pool.query(
-        `SELECT id, type, message, read, created_at
+        pool.query(
+            `SELECT id, type, message, read, created_at
          FROM notifications
          WHERE user_id = $1
          ORDER BY created_at DESC`,
-        [mentorId],
-      ),
+            [mentorId],
+        ),
     ),
+    // We will fetch the first 10 here. The "Load More" button will fetch the rest.
     safeQuery("activityLogs", () =>
-      pool.query(
-        `SELECT id, action_type, details, created_at
-         FROM activity_logs
-         WHERE user_id = $1
-         ORDER BY created_at DESC
-         LIMIT 50`,
-        [mentorId],
-      ),
+        pool.query(
+            `SELECT id, action_type, details, created_at
+           FROM activity_logs
+           WHERE user_id = $1
+           ORDER BY created_at DESC
+           LIMIT 10`,
+            [userId],
+        ),
     ),
     safeQuery("invitations", async () => {
       await pool.query(`
@@ -362,7 +317,7 @@ export const getMentorDashboard = async (mentorId) => {
       await pool.query("ALTER TABLE mentor_invitations ADD COLUMN IF NOT EXISTS decline_reason TEXT").catch(() => {});
 
       return pool.query(
-        `SELECT mi.*, p.name AS project_name, p.domain AS project_domain, p.stage AS project_stage,
+          `SELECT mi.*, p.name AS project_name, p.domain AS project_domain, p.stage AS project_stage,
                 string_agg(DISTINCT u.name, ', ') AS founder_name,
                 string_agg(DISTINCT u.email, ', ') AS founder_email
          FROM mentor_invitations mi
@@ -372,7 +327,7 @@ export const getMentorDashboard = async (mentorId) => {
          WHERE mi.mentor_id = $1 AND mi.status = 'pending'
          GROUP BY mi.id, p.id
          ORDER BY mi.invited_at DESC`,
-        [mentorId]
+          [mentorId]
       );
     }),
   ]);
@@ -389,26 +344,22 @@ export const respondToMentorInvitation = async (mentorId, invitationId, action, 
   const status = action === "accept" ? "accepted" : "declined";
   const trimmedReason = (reason || "").trim();
 
-  // A reason is mandatory when declining so admins know why and can pick another mentor.
   if (action === "decline" && !trimmedReason) {
     throw new Error("Please provide a reason for declining the invitation.");
   }
 
-  // Guard `status = 'pending'` ensures each invitation is processed exactly once,
-  // one by one — stale screens or duplicate clicks are rejected instead of
-  // re-accepting a declined invitation or re-triggering the assignment.
   const invRes = await pool.query(
-    `UPDATE mentor_invitations
+      `UPDATE mentor_invitations
      SET status = $1, responded_at = NOW(), decline_reason = $4
      WHERE id = $2 AND mentor_id = $3 AND status = 'pending'
      RETURNING *`,
-    [status, invitationId, mentorId, action === "decline" ? trimmedReason : null]
+      [status, invitationId, mentorId, action === "decline" ? trimmedReason : null]
   );
 
   if (invRes.rows.length === 0) {
     const exists = await pool.query(
-      "SELECT status FROM mentor_invitations WHERE id = $1 AND mentor_id = $2",
-      [invitationId, mentorId]
+        "SELECT status FROM mentor_invitations WHERE id = $1 AND mentor_id = $2",
+        [invitationId, mentorId]
     );
     if (exists.rows.length > 0) {
       throw new Error(`This invitation was already ${exists.rows[0].status}. Please refresh your dashboard.`);
@@ -429,32 +380,31 @@ export const respondToMentorInvitation = async (mentorId, invitationId, action, 
     await assignMentor(inv.project_id, mentorId);
 
     const ownerRes = await pool.query(
-      "SELECT user_id FROM project_entrepreneurs WHERE project_id = $1 AND (role_in_project IS NULL OR role_in_project != 'Mentor') LIMIT 1",
-      [inv.project_id]
+        "SELECT user_id FROM project_entrepreneurs WHERE project_id = $1 AND (role_in_project IS NULL OR role_in_project != 'Mentor') LIMIT 1",
+        [inv.project_id]
     );
     const founderId = ownerRes.rows[0]?.user_id;
 
     if (founderId) {
       await createNotification(
-        founderId,
-        "mentor_accepted",
-        `Great news! Mentor ${mentorName} has accepted your project invitation for "${projectName}"!`,
-        { projectId: inv.project_id, mentorId },
-        `/v1/auth/profile?tab=projects`
+          founderId,
+          "mentor_accepted",
+          `Great news! Mentor ${mentorName} has accepted your project invitation for "${projectName}"!`,
+          { projectId: inv.project_id, mentorId },
+          `/v1/auth/profile?tab=projects`
       );
     }
   }
 
-  // Notify the Admin who invited the mentor (or system admins)
   if (inv.invited_by) {
     const reasonSuffix =
-      action === "decline" && trimmedReason ? ` Reason: "${trimmedReason}"` : "";
+        action === "decline" && trimmedReason ? ` Reason: "${trimmedReason}"` : "";
     await createNotification(
-      inv.invited_by,
-      "mentor_invitation_response",
-      `Mentor ${mentorName} has ${status === "accepted" ? "accepted" : "declined"} the mentorship invitation for project "${projectName}".${reasonSuffix}`,
-      { projectId: inv.project_id, mentorId, status, reason: action === "decline" ? trimmedReason : undefined },
-      `/admin`
+        inv.invited_by,
+        "mentor_invitation_response",
+        `Mentor ${mentorName} has ${status === "accepted" ? "accepted" : "declined"} the mentorship invitation for project "${projectName}".${reasonSuffix}`,
+        { projectId: inv.project_id, mentorId, status, reason: action === "decline" ? trimmedReason : undefined },
+        `/admin`
     );
   }
 
@@ -463,21 +413,21 @@ export const respondToMentorInvitation = async (mentorId, invitationId, action, 
 
 const getOwnedAssignment = async (mentorId, assignmentId) => {
   const maRes = await pool.query(
-    `SELECT ma.id
+      `SELECT ma.id
      FROM mentor_assignments ma
      WHERE ma.id = $1 AND ma.mentor_id = $2`,
-    [assignmentId, mentorId],
+      [assignmentId, mentorId],
   );
   if (maRes.rows.length > 0) return maRes.rows[0];
 
   const peRes = await pool.query(
-    `SELECT pe_mentor.user_id AS mentor_id, pe_owner.user_id AS entrepreneur_id
+      `SELECT pe_mentor.user_id AS mentor_id, pe_owner.user_id AS entrepreneur_id
      FROM project_entrepreneurs pe_mentor
      JOIN project_entrepreneurs pe_owner 
        ON pe_owner.project_id = pe_mentor.project_id 
        AND (pe_owner.role_in_project IS NULL OR LOWER(pe_owner.role_in_project) != 'mentor')
      WHERE pe_mentor.project_id = $1 AND pe_mentor.user_id = $2 AND LOWER(pe_mentor.role_in_project) = 'mentor'`,
-    [assignmentId, mentorId],
+      [assignmentId, mentorId],
   );
   if (peRes.rows.length > 0) {
     const { mentor_id, entrepreneur_id } = peRes.rows[0];
@@ -489,11 +439,11 @@ const getOwnedAssignment = async (mentorId, assignmentId) => {
     }
     if (cohortId) {
       const insRes = await pool.query(
-        `INSERT INTO mentor_assignments (mentor_id, entrepreneur_id, cohort_id)
+          `INSERT INTO mentor_assignments (mentor_id, entrepreneur_id, cohort_id)
          VALUES ($1, $2, $3)
          ON CONFLICT (mentor_id, entrepreneur_id, cohort_id) DO UPDATE SET mentor_id = EXCLUDED.mentor_id
          RETURNING id`,
-        [mentor_id, entrepreneur_id, cohortId]
+          [mentor_id, entrepreneur_id, cohortId]
       );
       return insRes.rows[0];
     }
@@ -507,11 +457,11 @@ export const getMentorAssignmentSessions = async (mentorId, assignmentId) => {
   if (!owned) return null;
 
   const result = await pool.query(
-    `SELECT ms.*
+      `SELECT ms.*
      FROM mentor_sessions ms
      WHERE ms.assignment_id = $1
      ORDER BY ms.session_date DESC, ms.created_at DESC`,
-    [assignmentId],
+      [assignmentId],
   );
   return result.rows;
 };
@@ -522,20 +472,20 @@ export const createMentorSession = async (mentorId, data) => {
   if (!owned) return null;
 
   const result = await pool.query(
-    `INSERT INTO mentor_sessions(assignment_id, session_date, notes, feedback)
+      `INSERT INTO mentor_sessions(assignment_id, session_date, notes, feedback)
      VALUES ($1, $2, $3, $4) RETURNING *`,
-    [assignment_id, session_date, notes, feedback],
+      [assignment_id, session_date, notes, feedback],
   );
   return result.rows[0];
 };
 
 export const deleteMentorSession = async (mentorId, sessionId) => {
   const result = await pool.query(
-    `DELETE FROM mentor_sessions ms
+      `DELETE FROM mentor_sessions ms
      USING mentor_assignments ma
      WHERE ms.id = $1 AND ma.id = ms.assignment_id AND ma.mentor_id = $2
      RETURNING ms.id`,
-    [sessionId, mentorId],
+      [sessionId, mentorId],
   );
   if (result.rows.length === 0) return null;
   return { success: true };
@@ -549,12 +499,12 @@ export const replyToMentorSession = async (entrepreneurUserId, sessionId, replyT
   }
 
   const checkRes = await pool.query(
-    `SELECT ms.id, ms.session_date, ma.mentor_id, u.name AS entrepreneur_name
+      `SELECT ms.id, ms.session_date, ma.mentor_id, u.name AS entrepreneur_name
      FROM mentor_sessions ms
      JOIN mentor_assignments ma ON ma.id = ms.assignment_id
      JOIN users u ON u.id = ma.entrepreneur_id
      WHERE ms.id = $1 AND ma.entrepreneur_id = $2`,
-    [sessionId, entrepreneurUserId]
+      [sessionId, entrepreneurUserId]
   );
 
   if (checkRes.rows.length === 0) {
@@ -566,22 +516,22 @@ export const replyToMentorSession = async (entrepreneurUserId, sessionId, replyT
   const { mentor_id, entrepreneur_name, session_date } = checkRes.rows[0];
 
   const updateRes = await pool.query(
-    `UPDATE mentor_sessions
+      `UPDATE mentor_sessions
      SET entrepreneur_reply = $1, reply_at = CURRENT_TIMESTAMP
      WHERE id = $2
      RETURNING *`,
-    [replyText.trim(), sessionId]
+      [replyText.trim(), sessionId]
   );
 
   const formattedDate = new Date(session_date).toLocaleDateString();
   const truncatedReply = replyText.trim().slice(0, 60) + (replyText.trim().length > 60 ? "..." : "");
 
   await createNotification(
-    mentor_id,
-    "mentor_session_reply",
-    `${entrepreneur_name} replied to your feedback for session on ${formattedDate}: "${truncatedReply}"`,
-    { sessionId, entrepreneurUserId },
-    `/v1/auth/profile?tab=mentorship`
+      mentor_id,
+      "mentor_session_reply",
+      `${entrepreneur_name} replied to your feedback for session on ${formattedDate}: "${truncatedReply}"`,
+      { sessionId, entrepreneurUserId },
+      `/v1/auth/profile?tab=mentorship`
   ).catch((e) => console.error("Error creating notification for mentor:", e));
 
   return updateRes.rows[0];
@@ -595,12 +545,12 @@ export const mentorReplyToEntrepreneurSession = async (mentorUserId, sessionId, 
   }
 
   const checkRes = await pool.query(
-    `SELECT ms.id, ms.session_date, ma.entrepreneur_id, u.name AS mentor_name
+      `SELECT ms.id, ms.session_date, ma.entrepreneur_id, u.name AS mentor_name
      FROM mentor_sessions ms
      JOIN mentor_assignments ma ON ma.id = ms.assignment_id
      JOIN users u ON u.id = ma.mentor_id
      WHERE ms.id = $1 AND ma.mentor_id = $2`,
-    [sessionId, mentorUserId]
+      [sessionId, mentorUserId]
   );
 
   if (checkRes.rows.length === 0) {
@@ -612,23 +562,61 @@ export const mentorReplyToEntrepreneurSession = async (mentorUserId, sessionId, 
   const { entrepreneur_id, mentor_name, session_date } = checkRes.rows[0];
 
   const updateRes = await pool.query(
-    `UPDATE mentor_sessions
+      `UPDATE mentor_sessions
      SET mentor_response = $1, mentor_response_at = CURRENT_TIMESTAMP
      WHERE id = $2
      RETURNING *`,
-    [responseText.trim(), sessionId]
+      [responseText.trim(), sessionId]
   );
 
   const formattedDate = new Date(session_date).toLocaleDateString();
   const truncatedResp = responseText.trim().slice(0, 60) + (responseText.trim().length > 60 ? "..." : "");
 
   await createNotification(
-    entrepreneur_id,
-    "mentor_session_response",
-    `${mentor_name} responded to your reply for session on ${formattedDate}: "${truncatedResp}"`,
-    { sessionId, mentorUserId },
-    `/v1/auth/profile?tab=mentorship`
+      entrepreneur_id,
+      "mentor_session_response",
+      `${mentor_name} responded to your reply for session on ${formattedDate}: "${truncatedResp}"`,
+      { sessionId, mentorUserId },
+      `/v1/auth/profile?tab=mentorship`
   ).catch((e) => console.error("Error creating notification for entrepreneur:", e));
 
   return updateRes.rows[0];
+};
+// Get one project's details for the entrepreneur portal (member-only)
+export const getProjectDetailsForPortal = async (projectId, userId) => {
+  try {
+    const res = await pool.query(
+        `SELECT p.id, p.name, p.domain, p.short_description, p.problem, p.solution,
+              p.tech_stack, p.stage, p.status, p.approved, p.funding_stage,
+              p.looking_for_cofounders, p.github_url, p.demo_url, p.created_at
+       FROM projects p
+       WHERE p.id = $1
+         AND EXISTS (
+           SELECT 1 FROM project_entrepreneurs pe
+           WHERE pe.project_id = p.id AND pe.user_id = $2
+         )`,
+        [projectId, userId]
+    );
+
+    if (res.rows.length === 0) return null;
+
+    const project = res.rows[0];
+    const teamRes = await pool.query(
+        `SELECT u.name, pe.role_in_project
+       FROM project_entrepreneurs pe
+       JOIN users u ON u.id = pe.user_id
+       WHERE pe.project_id = $1
+       ORDER BY pe.role_in_project = 'founder' DESC, u.name ASC`,
+        [projectId]
+    );
+
+    return {
+      ...project,
+      techStack: project.tech_stack ? project.tech_stack.split(",").map((t) => t.trim()) : [],
+      team: teamRes.rows,
+    };
+  } catch (error) {
+    console.error("Error in getProjectDetailsForPortal:", error);
+    throw error;
+  }
 };

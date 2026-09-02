@@ -6,21 +6,18 @@
 
     <main class="flex-1 px-6 py-12 lg:px-10">
         <div class="max-w-4xl mx-auto">
-            <a href="/" class="inline-flex items-center gap-2 text-sm font-bold text-cyan-dark hover:text-orange transition mb-8">
-                <i class="fa-solid fa-arrow-left text-xs"></i> Back to Home
-            </a>
+            <div class="flex items-center justify-between gap-4 flex-wrap mb-8">
+                <a href="/" class="inline-flex items-center gap-2 text-sm font-bold text-cyan-dark hover:text-orange transition">
+                    <i class="fa-solid fa-arrow-left text-xs"></i> Back to Home
+                </a>
+
+                <div class="bg-cyan text-white rounded-xl px-4 py-2.5 flex items-center gap-3 shadow-sm">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-white/70">Closes in:</span>
+                    <div id="countdown" class="flex gap-3 text-sm font-extrabold"></div>
+                </div>
+            </div>
 
             <div id="announcement-details-box">
-                <!-- Top Row: Solid Cyan Box for Badge + Countdown -->
-                <div class="bg-cyan rounded-2xl p-6 text-white shadow-lg mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <span class="inline-block bg-white/20 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Open Call</span>
-
-                    <div class="bg-white/10 p-3 rounded-xl w-full sm:w-auto">
-                        <p class="text-[10px] font-bold uppercase tracking-wider text-white/70 mb-1 text-center">Applications close in:</p>
-                        <div id="countdown" class="flex gap-4 text-white text-xl font-extrabold justify-center"></div>
-                    </div>
-                </div>
-
                 <!-- White Box for Title and Content (Easier to read) -->
                 <div class="bg-white border border-[#D6E4EA] rounded-2xl p-8 shadow-sm mb-8 break-words whitespace-normal overflow-hidden">
                     <h1 class="text-3xl sm:text-4xl font-extrabold mb-4 text-cyan-dark"><%= announcement.title %></h1>
@@ -41,9 +38,7 @@
             </div>
 
             <!-- Start Application Button -->
-            <div id="start-application-box" class="text-center bg-white border border-[#D6E4EA] rounded-2xl p-8 shadow-sm">
-                <h2 class="text-xl font-bold text-ink mb-2">Ready to Apply?</h2>
-                <p class="text-sm text-muted mb-6">Click the button below to start your application. It takes about 5 minutes.</p>
+            <div id="start-application-box" class="text-center">
                 <button onclick="showApplicationForm()" class="inline-flex items-center justify-center gap-2 rounded-xl bg-orange px-8 py-4 text-sm font-extrabold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-orange-dark">
                     Start Application <i class="fa-solid fa-arrow-right text-xs"></i>
                 </button>
@@ -54,7 +49,7 @@
                 <h2 class="text-xl font-bold text-ink border-b border-[#D6E4EA] pb-4 mb-6">Application Form</h2>
                 <form id="application-form" class="space-y-5">
                     <input type="hidden" id="modal-announcement-id" value="<%= announcement.id %>">
-                    <div id="custom-form-fields" class="space-y-5">
+                    <div id="custom-form-fields" class="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-5">
                         <p class="text-sm text-[#526274] font-bold">Loading questions...</p>
                     </div>
                     <div>
@@ -77,7 +72,7 @@
             const distance = deadline - now;
             if (distance < 0) {
                 clearInterval(interval);
-                document.getElementById("countdown").innerHTML = "<span class='text-red-400'>APPLICATION CLOSED</span>";
+                document.getElementById("countdown").innerHTML = "<span class='text-red-200'>CLOSED</span>";
                 document.getElementById("start-application-box").innerHTML = "<p class='text-red-500 font-bold'>This application is now closed.</p>";
                 return;
             }
@@ -85,9 +80,9 @@
             const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
             const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
             document.getElementById("countdown").innerHTML = `
-                <div class="text-center"><div>${days}</div><div class="text-xs text-white/70 uppercase">Days</div></div>
-                <div class="text-center"><div>${hours}</div><div class="text-xs text-white/70 uppercase">Hours</div></div>
-                <div class="text-center"><div>${minutes}</div><div class="text-xs text-white/70 uppercase">Mins</div></div>
+                <span>${days}<span class="text-[10px] font-semibold text-white/70">d</span></span>
+                <span>${hours}<span class="text-[10px] font-semibold text-white/70">h</span></span>
+                <span>${minutes}<span class="text-[10px] font-semibold text-white/70">m</span></span>
             `;
         }, 1000);
 
@@ -150,6 +145,27 @@
                 .then(fields => {
                     if (!fields || fields.length === 0) { customFieldsDiv.innerHTML = ''; return; }
                     let optsStr = '';
+
+                    // Long-form fields (textarea) always take the full row.
+                    // Choice fields with more than 3 options also get the
+                    // full row so their option list has room to breathe.
+                    // Everything else (single-line inputs, selects, short
+                    // choice lists) shares a row two-up so we don't waste
+                    // horizontal space on a one-line answer.
+                    //
+                    // An admin can override this per-question via
+                    // field.width ('half' | 'full'). 'auto' (or anything
+                    // else/missing) falls back to the heuristic above.
+                    const fullRowClass = 'sm:col-span-2';
+
+                    // Returns the span class for a field, given the width
+                    // the type-based heuristic would pick by default.
+                    const resolveSpan = (field, autoIsFull) => {
+                        if (field.width === 'full') return fullRowClass;
+                        if (field.width === 'half') return '';
+                        return autoIsFull ? fullRowClass : '';
+                    };
+
                     customFieldsDiv.innerHTML = fields.map(field => {
                         const isRequired = field.required ? 'required' : '';
                         const reqMark = field.required ? '<span class="text-red-500">*</span>' : '';
@@ -160,34 +176,51 @@
                             try { optsStr = JSON.parse(optsStr).join(', '); } catch (e) {}
                         }
 
-                        if (field.field_type === 'textarea' || field.field_type === 'idea') {
-                            return `<div><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><textarea name="custom_${field.id}" ${isRequired} class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]"></textarea></div>`;
+                        if (field.field_type === 'textarea') {
+                            const spanClass = resolveSpan(field, true);
+                            return `<div class="${spanClass}"><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><textarea name="custom_${field.id}" ${isRequired} class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]"></textarea></div>`;
                         }
                         if (field.field_type === 'select') {
+                            const spanClass = resolveSpan(field, false);
                             const opts = optsStr.split(',').map(opt => `<option value="${opt.trim()}">${opt.trim()}</option>`).join('');
-                            return `<div><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><select name="custom_${field.id}" ${isRequired} class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]"><option value="">Select...</option>${opts}</select></div>`;
+                            return `<div class="${spanClass}"><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><select name="custom_${field.id}" ${isRequired} class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]"><option value="">Select...</option>${opts}</select></div>`;
                         }
                         if (field.field_type === 'radio') {
                             const opts = optsStr.split(',').map(opt => opt.trim()).filter(Boolean);
+                            const spanClass = resolveSpan(field, opts.length > 3);
                             const radioInputs = opts.map(opt => `<label class="flex items-center gap-2 py-1.5 cursor-pointer"><input type="radio" name="custom_${field.id}" value="${opt}" ${isRequired} class="h-4 w-4 border-gray-300 text-[#00ADEF] focus:ring-[#00ADEF]"><span class="text-sm font-medium text-[#111827]">${opt}</span></label>`).join('');
-                            return `<div><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><div class="flex flex-col gap-1 mt-1 p-3 bg-[#F6FAFC] border border-[#D6E4EA] rounded-xl">${radioInputs}</div></div>`;
+                            return `<div class="${spanClass}"><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><div class="flex flex-col gap-1 mt-1 p-3 bg-[#F6FAFC] border border-[#D6E4EA] rounded-xl">${radioInputs}</div></div>`;
                         }
                         if (field.field_type === 'checkbox') {
                             const opts = optsStr.split(',').map(opt => opt.trim()).filter(Boolean);
                             if (opts.length > 0) {
+                                const spanClass = resolveSpan(field, opts.length > 3);
                                 const checkboxInputs = opts.map(opt => `<label class="flex items-center gap-2 py-1.5 cursor-pointer"><input type="checkbox" name="custom_${field.id}[]" value="${opt}" class="h-4 w-4 border-gray-300 text-[#00ADEF] focus:ring-[#00ADEF]"><span class="text-sm font-medium text-[#111827]">${opt}</span></label>`).join('');
-                                return `<div><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><div class="flex flex-col gap-1 mt-1 p-3 bg-[#F6FAFC] border border-[#D6E4EA] rounded-xl">${checkboxInputs}</div></div>`;
+                                return `<div class="${spanClass}"><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><div class="flex flex-col gap-1 mt-1 p-3 bg-[#F6FAFC] border border-[#D6E4EA] rounded-xl">${checkboxInputs}</div></div>`;
                             } else {
-                                return `<div class="flex items-center gap-3 py-2"><input type="checkbox" name="custom_${field.id}" ${isRequired} class="h-4 w-4 rounded border-gray-300 text-[#00ADEF] focus:ring-[#00ADEF]"><label class="text-sm font-bold text-[#526274]">${field.label} ${reqMark}</label></div>`;
+                                const spanClass = resolveSpan(field, false);
+                                return `<div class="flex items-center gap-3 py-2 self-end ${spanClass}"><input type="checkbox" name="custom_${field.id}" ${isRequired} class="h-4 w-4 rounded border-gray-300 text-[#00ADEF] focus:ring-[#00ADEF]"><label class="text-sm font-bold text-[#526274]">${field.label} ${reqMark}</label></div>`;
                             }
                         }
-                        if (field.field_type === 'number' || field.field_type === 'Phone number') {
-                            return `<div><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><input type="text" name="custom_${field.id}" ${isRequired} oninput="this.value = this.value.replace(/[^0-9+]/g, '')" class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]"></div>`;
+                        if (field.field_type === 'number') {
+                            const spanClass = resolveSpan(field, false);
+                            return `<div class="${spanClass}"><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><input type="number" name="custom_${field.id}" ${isRequired} class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]"></div>`;
+                        }
+                        if (field.field_type === 'date') {
+                            const spanClass = resolveSpan(field, false);
+                            return `<div class="${spanClass}"><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><input type="date" name="custom_${field.id}" ${isRequired} class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]"></div>`;
                         }
                         if (field.field_type === 'email') {
-                            return `<div><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><input type="email" name="custom_${field.id}" ${isRequired} class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]"></div>`;
+                            const spanClass = resolveSpan(field, false);
+                            return `<div class="${spanClass}"><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><input type="email" name="custom_${field.id}" ${isRequired} class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]"></div>`;
                         }
-                        return `<div><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><input type="text" name="custom_${field.id}" ${isRequired} class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]"></div>`;
+                        if (field.field_type === 'tel') {
+                            const spanClass = resolveSpan(field, false);
+                            return `<div class="${spanClass}"><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><input type="tel" name="custom_${field.id}" ${isRequired} class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]"></div>`;
+                        }
+                        // Default: Short Text
+                        const spanClass = resolveSpan(field, false);
+                        return `<div class="${spanClass}"><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><input type="text" name="custom_${field.id}" ${isRequired} class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]"></div>`;
                     }).join('');
                     loadFormData();
                 }).catch(err => {

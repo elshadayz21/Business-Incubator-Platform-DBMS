@@ -1,7 +1,7 @@
 import multer from "multer";
 import path from "path";
 import { getFundingHistory } from "../admin-backend/funding/funding.js";
-import { getProjectHistory, getAssignedMentors } from "../admin-backend/projects/projects.js"; // Add to imports
+import { getProjectHistory, getAssignedMentors } from "../admin-backend/projects/projects.js";
 
 // Configure Multer for file uploads
 const storage = multer.diskStorage({
@@ -30,7 +30,6 @@ const upload = multer({
   }
 });
 
-
 import { getFormFields, saveFormFields } from "../admin-backend/applications/applications.js";
 
 import {
@@ -38,11 +37,11 @@ import {
   updateApplicationStatus,
 } from "../admin-backend/applications/applications.js";
 
-
 import { Router } from "express";
 import pool from "../config/db.js";
 import {
   getAllWorkshops,
+  getWorkshopTotals,
   getWorkshop,
   createWorkshop,
   updateWorkshop,
@@ -56,6 +55,7 @@ import {
 
 import {
   getAllResources,
+  getResourceTotals,
   addResource,
   updateResource,
   deleteResource,
@@ -66,6 +66,7 @@ import {
 
 import {
   getAllMentors,
+  getMentorTotals,
   addMentor,
   deleteMentor,
   updateMentor,
@@ -93,6 +94,7 @@ import {
 //.............
 import {
   getAllFundingRequests,
+  getFundingTotals,
   getFundingDashboard,
   getFundingByStage,
   getFundingRequestById,
@@ -279,11 +281,18 @@ router.delete(
   }),
 );
 
-// Workshops
-router.get(
-  "/workshops",
-  asyncHandler(async (req, res) => res.json(await getAllWorkshops())),
-);
+// GET: All Workshops (Paginated)
+router.get("/workshops", asyncHandler(async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = 10;
+  const offset = (page - 1) * limit;
+  res.json(await getAllWorkshops(limit, offset));
+}));
+
+// GET: Workshop Totals (stats) — ⚠️ MUST be BEFORE router.get("/workshops/:id", ...)
+router.get("/workshops/totals", asyncHandler(async (req, res) => {
+  res.json(await getWorkshopTotals());
+}));
 router.get(
   "/workshops/:id",
   asyncHandler(async (req, res) => res.json(await getWorkshop(req.params.id))),
@@ -333,11 +342,6 @@ router.get(
   asyncHandler(async (req, res) => res.json(await getFeedbackReport())),
 );
 
-// Resources & Bookings
-router.get(
-  "/resources",
-  asyncHandler(async (req, res) => res.json(await getAllResources())),
-);
 router.post(
   "/resources",
   asyncHandler(async (req, res) => res.json(await addResource(req.body))),
@@ -354,10 +358,20 @@ router.delete(
     res.json(await deleteResource(req.params.id)),
   ),
 );
-router.get(
-  "/resources/stats",
-  asyncHandler(async (req, res) => res.json(await getResourceStats())),
-);
+
+// GET: All Resources (Paginated)
+router.get("/resources", asyncHandler(async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = 10;
+  const offset = (page - 1) * limit;
+  res.json(await getAllResources(limit, offset));
+}));
+router.get("/resources/totals", asyncHandler(async (req, res) => {
+  res.json(await getResourceTotals());
+}));
+router.get("/mentors/totals", asyncHandler(async (req, res) => {
+  res.json(await getMentorTotals());
+}));
 router.get(
   "/bookings/pending",
   asyncHandler(async (req, res) => res.json(await getPendingBookings())),
@@ -369,11 +383,13 @@ router.put(
   ),
 );
 
-// Mentors
-router.get(
-  "/mentors",
-  asyncHandler(async (req, res) => res.json(await getAllMentors())),
-);
+// GET: All Mentors (Paginated)
+router.get("/mentors", asyncHandler(async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = 10;
+  const offset = (page - 1) * limit;
+  res.json(await getAllMentors(limit, offset));
+}));
 router.post(
   "/mentors",
   asyncHandler(async (req, res) => res.json(await addMentor(req.body))),
@@ -390,9 +406,20 @@ router.put(
 );
 
 // Projects
+// GET: All Projects (Paginated)
 router.get(
-  "/projects",
-  asyncHandler(async (req, res) => res.json(await getAllProjects())),
+    "/projects",
+    asyncHandler(async (req, res) => {
+      try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = 10;
+        const offset = (page - 1) * limit;
+        const projects = await getAllProjects(limit, offset);
+        res.json(projects);
+      } catch (error) {
+        res.status(500).json({ message: "Failed to fetch projects" });
+      }
+    })
 );
 router.get(
   "/projects/stats",
@@ -438,11 +465,20 @@ router.put(
 );
 
 // Funding
+// GET: All Funding Requests (Paginated)
 router.get(
-  "/funding",
-  asyncHandler(async (req, res) =>
-    res.json(await getAllFundingRequests(req.query)),
-  ),
+    "/funding",
+    asyncHandler(async (req, res) => {
+      try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = 10;
+        const offset = (page - 1) * limit;
+        const result = await getAllFundingRequests(req.query, limit, offset);
+        res.json(result.data || []);
+      } catch (error) {
+        res.status(500).json({ message: "Failed to fetch funding" });
+      }
+    })
 );
 router.get(
   "/funding/dashboard",
@@ -452,6 +488,9 @@ router.get(
   "/funding/stage",
   asyncHandler(async (req, res) => res.json(await getFundingByStage())),
 );
+router.get("/funding/totals", asyncHandler(async (req, res) => {
+  res.json(await getFundingTotals());
+}));
 router.get(
   "/funding/:id",
   asyncHandler(async (req, res) =>
@@ -490,10 +529,13 @@ router.delete(
 );
 
 // Inbox (Contact & Newsletter)
-router.get(
-  "/inbox",
-  asyncHandler(async (req, res) => res.json(await getAllSubmissions())),
-);
+// GET: Inbox Submissions (Paginated)
+router.get("/inbox", asyncHandler(async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = 10;
+  const offset = (page - 1) * limit;
+  res.json(await getAllSubmissions(limit, offset));
+}));
 router.delete(
   "/inbox/:id",
   asyncHandler(async (req, res) =>
@@ -518,13 +560,20 @@ router.get(
 );
 
 // Create Announcement with File Upload
+// Create Announcement with File Upload
+// If it's an open call, the application form's fields are submitted together
+// with the announcement (built client-side first) and saved right after the
+// announcement row is created, BEFORE the response goes out — so an open
+// call is never published without its form already in place. If saving the
+// form fails, the just-created announcement is rolled back rather than left
+// published with no way to apply.
 router.post(
     "/announcements",
     upload.single("document"),
     asyncHandler(async (req, res) => {
       try {
         // 1. Destructure ALL fields from req.body!
-        const { title, content, deadline, is_open_call, capacity, category, applicant_type } = req.body;
+        const { title, content, deadline, is_open_call, capacity, category, applicant_type, fields } = req.body;
 
         let document_url = null;
         if (req.file) {
@@ -534,6 +583,27 @@ router.post(
         // 2. Parse the checkbox and capacity values
         const parsedIsOpenCall = is_open_call === "true" || is_open_call === true;
         const parsedCapacity = capacity ? parseInt(capacity, 10) : null;
+
+        let parsedFields = [];
+        if (fields) {
+          try {
+            parsedFields = JSON.parse(fields);
+          } catch (e) {
+            return res.status(400).json({ message: "Invalid form fields data." });
+          }
+        }
+        const hasRealField = parsedFields.some(f => f && f.label && f.label.trim());
+        if (parsedIsOpenCall && !hasRealField) {
+          return res.status(400).json({ message: "Build the application form (at least one question) before publishing an open call." });
+        }
+        // With no hardcoded name/email inputs on the public form, a linked
+        // question is the only way an applicant gets identified — require it.
+        if (parsedIsOpenCall) {
+          const mappedFields = new Set(parsedFields.filter(f => f && f.label && f.label.trim()).map(f => f.maps_to).filter(Boolean));
+          if (!mappedFields.has("full_name") || !mappedFields.has("email")) {
+            return res.status(400).json({ message: 'Link one question to "Applicant Full Name" and one to "Applicant Email" before publishing an open call.' });
+          }
+        }
 
         // 3. Pass them to the database function!
         const newAnnouncement = await createAnnouncement({
@@ -547,6 +617,16 @@ router.post(
           applicant_type: applicant_type || "both",
           is_published: true
         });
+
+        if (parsedIsOpenCall && hasRealField) {
+          try {
+            await saveFormFields(newAnnouncement.id, parsedFields);
+          } catch (fieldError) {
+            // Don't leave a published open call with a broken/missing form.
+            await deleteAnnouncement(newAnnouncement.id);
+            return res.status(400).json({ message: fieldError.message || "Failed to save the application form." });
+          }
+        }
 
         res.json(newAnnouncement);
       } catch (error) {
@@ -1028,17 +1108,20 @@ router.get("/reports/summary", async (req, res) => {
   }
 });
 
-// Applications (Open Call Submissions)
+// GET: All Applications (Paginated)
 router.get(
     "/applications",
-    asyncHandler(async (req, res) => res.json(await getAllApplications()))
-);
-
-router.put(
-    "/applications/:id/status",
-    asyncHandler(async (req, res) =>
-        res.json(await updateApplicationStatus(req.params.id, req.body.status))
-    )
+    asyncHandler(async (req, res) => {
+      try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = 10;
+        const offset = (page - 1) * limit;
+        const apps = await getAllApplications(limit, offset);
+        res.json(apps);
+      } catch (error) {
+        res.status(500).json({ message: "Failed to fetch applications" });
+      }
+    })
 );
 
 
@@ -1061,11 +1144,25 @@ router.post(
     asyncHandler(async (req, res) => {
       try {
         console.log("Saving form fields for announcement:", req.params.id, "fields:", JSON.stringify(req.body.fields));
-        const result = await saveFormFields(req.params.id, req.body.fields);
+        const fieldsToSave = Array.isArray(req.body.fields) ? req.body.fields : [];
+
+        const announcement = await getAnnouncementById(req.params.id);
+        if (announcement && announcement.is_open_call) {
+          // With no hardcoded name/email inputs on the public form, a linked
+          // question is the only way an applicant gets identified — require it.
+          const mapped = new Set(
+              fieldsToSave.filter(f => f && f.label && f.label.trim()).map(f => f.maps_to).filter(Boolean)
+          );
+          if (!mapped.has("full_name") || !mapped.has("email")) {
+            return res.status(400).json({ message: 'Link one question to "Applicant Full Name" and one to "Applicant Email" — this is an open call and needs a way to identify applicants.' });
+          }
+        }
+
+        const result = await saveFormFields(req.params.id, fieldsToSave);
         res.json(result);
       } catch (error) {
         console.error("Error saving form fields:", error);
-        res.status(500).json({ message: error.message });
+        res.status(400).json({ message: error.message });
       }
     })
 );

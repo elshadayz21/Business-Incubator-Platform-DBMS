@@ -4,6 +4,22 @@ import eventBus from "../../utils/eventBus.js";
 
 const generateInviteToken = () => crypto.randomBytes(32).toString("hex");
 
+// The set of normalized `applications` columns a question can be linked to.
+// A field with maps_to = null is a plain custom question — its answer only
+// ever lives in applications.answers (jsonb), keyed by the field id.
+export const MAPPABLE_FIELDS = ["full_name", "email", "phone", "startup_idea", "background"];
+
+// The set of actual input widgets the form builder supports. Kept small and
+// generic on purpose — "what this question means" is handled by maps_to
+// (see above), not by inventing a new field_type per concept.
+export const FIELD_WIDGET_TYPES = ["text", "email", "tel", "number", "date", "textarea", "select", "radio", "checkbox"];
+
+// How much of the row a question takes on the public apply form. 'auto'
+// (the default) lets the form pick a sensible width from field_type;
+// 'half'/'full' let an admin override that for a specific question (e.g. a
+// short-text field with a long label or a select with long option text).
+export const FIELD_WIDTHS = ["auto", "half", "full"];
+
 // Ensure form_fields table exists with correct schema
 let formFieldsTableReady = false;
 const ensureFormFieldsTable = async () => {
@@ -28,9 +44,14 @@ const ensureFormFieldsTable = async () => {
                 field_type TEXT NOT NULL DEFAULT 'text',
                 options JSONB,
                 required BOOLEAN DEFAULT false,
+                maps_to VARCHAR(30),
+                width VARCHAR(10) NOT NULL DEFAULT 'auto',
                 created_at TIMESTAMP DEFAULT NOW()
             )
         `);
+        // Backfill maps_to/width for tables that already existed pre-migration-026/027.
+        await pool.query(`ALTER TABLE form_fields ADD COLUMN IF NOT EXISTS maps_to VARCHAR(30)`);
+        await pool.query(`ALTER TABLE form_fields ADD COLUMN IF NOT EXISTS width VARCHAR(10) NOT NULL DEFAULT 'auto'`);
         formFieldsTableReady = true;
         console.log("form_fields table is ready");
     } catch (err) {
@@ -40,13 +61,15 @@ const ensureFormFieldsTable = async () => {
 };
 
 // GET ALL APPLICATIONS (with Announcement Title)
-export const getAllApplications = async () => {
+
+export const getAllApplications = async (limit = 10, offset = 0) => {
     const result = await pool.query(`
     SELECT a.*, an.title as announcement_title 
     FROM applications a
     LEFT JOIN announcements an ON a.announcement_id = an.id
     ORDER BY a.created_at DESC
-  `);
+    LIMIT $1 OFFSET $2
+  `, [limit, offset]);
     return result.rows;
 };
 
@@ -90,12 +113,26 @@ export const saveFormFields = async (announcementId, fields) => {
         throw new Error("Invalid fields data: expected an array");
     }
 
-    // First, delete old fields so we don't duplicate when updating
-    await pool.query("DELETE FROM form_fields WHERE announcement_id = $1", [announcementId]);
+    // A given database column (full name, email, ...) should only be filled
+    // by one question on the form — otherwise later fields would silently
+    // overwrite earlier ones on submit.
+    const seenMappings = new Set();
 
-    // Then, insert the new fields
+    const rowsToInsert = [];
     for (const field of fields) {
         if (!field.label || !field.label.trim()) continue;
+
+        const fieldType = FIELD_WIDGET_TYPES.includes(field.field_type) ? field.field_type : "text";
+
+        let mapsTo = field.maps_to || null;
+        if (mapsTo && !MAPPABLE_FIELDS.includes(mapsTo)) mapsTo = null;
+        if (mapsTo) {
+            if (seenMappings.has(mapsTo)) {
+                throw new Error(`Only one question can be linked to "${mapsTo}" — remove the duplicate link.`);
+            }
+            seenMappings.add(mapsTo);
+        }
+
         let optionsJson = null;
         if (field.options && typeof field.options === 'string') {
             const parsed = field.options.split(',').map(o => o.trim()).filter(Boolean);
@@ -103,10 +140,21 @@ export const saveFormFields = async (announcementId, fields) => {
         } else if (Array.isArray(field.options)) {
             optionsJson = JSON.stringify(field.options);
         }
+
+        const width = FIELD_WIDTHS.includes(field.width) ? field.width : "auto";
+
+        rowsToInsert.push([announcementId, field.label.trim(), fieldType, optionsJson, field.required || false, mapsTo, width]);
+    }
+
+    // Replace old fields with the new set. Delete + insert only happens once
+    // everything above has validated cleanly, so a bad save never wipes out
+    // a working form.
+    await pool.query("DELETE FROM form_fields WHERE announcement_id = $1", [announcementId]);
+    for (const row of rowsToInsert) {
         await pool.query(
-            `INSERT INTO form_fields (announcement_id, label, field_type, options, required) 
-       VALUES ($1, $2, $3, $4::jsonb, $5)`,
-            [announcementId, field.label.trim(), field.field_type, optionsJson, field.required || false]
+            `INSERT INTO form_fields (announcement_id, label, field_type, options, required, maps_to, width) 
+       VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7)`,
+            row
         );
     }
     return { success: true, message: "Form fields saved successfully" };

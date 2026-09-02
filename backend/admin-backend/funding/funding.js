@@ -5,9 +5,9 @@ import { createNotification } from "../../utils/notificationHelper.js";
 // Ensure the funding_status_history table exists for audit trail
 let fundingHistoryTableReady = false;
 const ensureFundingStatusHistoryTable = async () => {
-  if (fundingHistoryTableReady) return;
-  try {
-    await pool.query(`
+    if (fundingHistoryTableReady) return;
+    try {
+        await pool.query(`
       CREATE TABLE IF NOT EXISTS funding_status_history (
         id SERIAL PRIMARY KEY,
         funding_id INT NOT NULL REFERENCES funding_requests(id) ON DELETE CASCADE,
@@ -18,51 +18,18 @@ const ensureFundingStatusHistoryTable = async () => {
         created_at TIMESTAMP DEFAULT NOW()
       )
     `);
-    fundingHistoryTableReady = true;
-  } catch (err) {
-    console.error("Failed to ensure funding_status_history table:", err.message);
-  }
+        fundingHistoryTableReady = true;
+    } catch (err) {
+        console.error("Failed to ensure funding_status_history table:", err.message);
+    }
 };
 
-// Get all funding requests
-export const getAllFundingRequests = async (query = "") => {
+// Get all funding requests (filtering + pagination on the REQUEST, not joined rows)
+export const getAllFundingRequests = async (query = {}, limit = null, offset = 0) => {
     try {
-        let querySQL = `
-      SELECT 
-        fr.id,
-        fr.project_id,
-        fr.amount,
-        fr.approved_amount,
-        fr.founder_action,
-        fr.status,
-        fr.funding_stage,
-        fr.description,
-        fr.requested_at,
-        fr.reviewed_at,
-        fr.reviewed_by,
-        fr.notes,
-        fr.created_at,
-        fr.updated_at,
-        p.id as project_id_info,
-        p.name as project_name,
-        p.domain as project_domain,
-        p.stage as project_stage,
-        p.status as project_status,
-        u.id as founder_id,
-        u.name as founder_name,
-        u.email as founder_email,
-        u.profile_image as founder_image
-      FROM funding_requests fr
-      JOIN projects p ON fr.project_id = p.id
-      LEFT JOIN project_entrepreneurs pe ON p.id = pe.project_id
-      LEFT JOIN users u ON pe.user_id = u.id
-    `;
-
-        // Parse query parameters for filtering (supports string or object)
-        const params = [];
+        // 1. Parse filters (string "status=X..." or object {status, funding_stage})
         let statusVal = null;
         let stageVal = null;
-
         if (typeof query === "string") {
             if (query.includes("status=")) {
                 const match = query.match(/status=([^&]+)/);
@@ -77,61 +44,69 @@ export const getAllFundingRequests = async (query = "") => {
             if (query.funding_stage && query.funding_stage !== "all") stageVal = query.funding_stage;
         }
 
+        const filterParams = [];
+        let whereSQL = "";
         if (statusVal) {
-            querySQL += ` WHERE LOWER(fr.status) = LOWER($${params.length + 1})`;
-            params.push(statusVal);
+            whereSQL += ` WHERE LOWER(fr.status) = LOWER($${filterParams.length + 1})`;
+            filterParams.push(statusVal);
         }
-
         if (stageVal) {
-            querySQL += querySQL.includes("WHERE") ? " AND" : " WHERE";
-            querySQL += ` LOWER(fr.funding_stage) = LOWER($${params.length + 1})`;
-            params.push(stageVal);
+            whereSQL += whereSQL ? " AND" : " WHERE";
+            whereSQL += ` (LOWER(p.stage) = LOWER($${filterParams.length + 1}) OR LOWER(fr.funding_stage) = LOWER($${filterParams.length + 1}))`;
+            filterParams.push(stageVal);
         }
 
-        querySQL += ` ORDER BY fr.requested_at DESC`;
+        // 2. Get one page of DISTINCT funding request IDs
+        const idsParams = [...filterParams];
+        let idsSQL = `
+            SELECT DISTINCT fr.id, fr.requested_at
+            FROM funding_requests fr
+            JOIN projects p ON fr.project_id = p.id
+            ${whereSQL}
+            ORDER BY fr.requested_at DESC
+        `;
+        if (limit != null) {
+            idsSQL += ` LIMIT $${idsParams.length + 1} OFFSET $${idsParams.length + 2}`;
+            idsParams.push(limit, offset);
+        }
+        const idsRes = await pool.query(idsSQL, idsParams);
+        const ids = idsRes.rows.map((r) => r.id);
+        if (ids.length === 0) return { success: true, data: [] };
 
-        const res = await pool.query(querySQL, params);
+        // 3. Fetch full details only for those IDs
+        const res = await pool.query(
+            `SELECT 
+              fr.id, fr.project_id, fr.amount, fr.approved_amount, fr.founder_action, fr.status,
+              fr.funding_stage, fr.description, fr.requested_at, fr.reviewed_at, fr.reviewed_by, fr.notes,
+              fr.created_at, fr.updated_at,
+              p.id as project_id_info, p.name as project_name, p.domain as project_domain,
+              p.stage as project_stage, p.status as project_status,
+              u.id as founder_id, u.name as founder_name, u.email as founder_email, u.profile_image as founder_image
+            FROM funding_requests fr
+            JOIN projects p ON fr.project_id = p.id
+            LEFT JOIN project_entrepreneurs pe ON p.id = pe.project_id
+            LEFT JOIN users u ON pe.user_id = u.id
+            WHERE fr.id = ANY($1)
+            ORDER BY fr.requested_at DESC`,
+            [ids],
+        );
 
-        // Group by funding request to avoid duplicates from multiple founders
+        // 4. Group founders
         const grouped = {};
         res.rows.forEach((row) => {
             if (!grouped[row.id]) {
                 grouped[row.id] = {
-                    id: row.id,
-                    project_id: row.project_id,
-                    amount: row.amount,
-                    approved_amount: row.approved_amount, // ADDED THIS!
-                    founder_action: row.founder_action,   // ADDED THIS!
-                    status: row.status,
-                    funding_stage: row.funding_stage,
-                    description: row.description,
-                    requested_at: row.requested_at,
-                    reviewed_at: row.reviewed_at,
-                    reviewed_by: row.reviewed_by,
-                    notes: row.notes,
-                    created_at: row.created_at,
-                    updated_at: row.updated_at,
-                    project: {
-                        id: row.project_id_info,
-                        name: row.project_name,
-                        domain: row.project_domain,
-                        stage: row.project_stage,
-                        status: row.project_status,
-                    },
+                    id: row.id, project_id: row.project_id, amount: row.amount,
+                    approved_amount: row.approved_amount, founder_action: row.founder_action,
+                    status: row.status, funding_stage: row.funding_stage, description: row.description,
+                    requested_at: row.requested_at, reviewed_at: row.reviewed_at, reviewed_by: row.reviewed_by,
+                    notes: row.notes, created_at: row.created_at, updated_at: row.updated_at,
+                    project: { id: row.project_id_info, name: row.project_name, domain: row.project_domain, stage: row.project_stage, status: row.project_status },
                     founders: [],
                 };
             }
-
-            if (
-                row.founder_id &&
-                !grouped[row.id].founders.some((f) => f.id === row.founder_id)
-            ) {
-                grouped[row.id].founders.push({
-                    id: row.founder_id,
-                    name: row.founder_name,
-                    email: row.founder_email,
-                    profile_image: row.founder_image,
-                });
+            if (row.founder_id && !grouped[row.id].founders.some((f) => f.id === row.founder_id)) {
+                grouped[row.id].founders.push({ id: row.founder_id, name: row.founder_name, email: row.founder_email, profile_image: row.founder_image });
             }
         });
 
@@ -220,14 +195,13 @@ export const getFundingRequestById = async (id) => {
             return { success: true, data: null };
         }
 
-        // Group founders
         const firstRow = res.rows[0];
         const fundingRequest = {
             id: firstRow.id,
             project_id: firstRow.project_id,
             amount: firstRow.amount,
-            approved_amount: firstRow.approved_amount, // ADDED THIS!
-            founder_action: firstRow.founder_action,   // ADDED THIS!
+            approved_amount: firstRow.approved_amount,
+            founder_action: firstRow.founder_action,
             status: firstRow.status,
             funding_stage: firstRow.funding_stage,
             description: firstRow.description,
@@ -289,7 +263,7 @@ export const updateFundingRequestStatus = async (id, status, notes, approvedAmou
         await pool.query(
             `INSERT INTO funding_status_history (funding_id, acted_by_user_id, actor_role, status, notes) 
        VALUES ($1, $2, 'Admin', $3, $4)`,
-            [request.id, 1, finalStatus, notes] // Assuming Admin ID 1 for now
+            [request.id, 1, finalStatus, notes] // TODO: use the actual logged-in admin's ID
         );
 
         // Find the project owner to notify them!
@@ -318,7 +292,6 @@ export const updateFundingRequestStatus = async (id, status, notes, approvedAmou
 };
 
 // Founder respond to funding offer
-// ENTREPRENEUR ACCEPTS OR REJECTS FUNDING
 export const founderRespondToFunding = async (fundingId, userId, action) => {
     try {
         const fundRes = await pool.query("SELECT * FROM funding_requests WHERE id = $1", [fundingId]);
@@ -407,6 +380,24 @@ export const deleteFundingRequest = async (id) => {
         return { success: true, data: res.rows[0] };
     } catch (error) {
         console.error("Error deleting funding request:", error);
+        throw error;
+    }
+};
+// Get funding totals (for stats cards — independent of pagination)
+export const getFundingTotals = async () => {
+    try {
+        const res = await pool.query(`
+      SELECT
+        COUNT(*)::integer AS total,
+        COUNT(*) FILTER (WHERE LOWER(status) = 'pending')::integer AS pending,
+        COUNT(*) FILTER (WHERE LOWER(status) IN ('approved', 'offer under review'))::integer AS approved,
+        COUNT(*) FILTER (WHERE LOWER(status) = 'rejected')::integer AS rejected,
+        COALESCE(SUM(amount), 0)::float AS total_amount
+      FROM funding_requests
+    `);
+        return res.rows[0];
+    } catch (error) {
+        console.error("Error in getFundingTotals:", error);
         throw error;
     }
 };
