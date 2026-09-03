@@ -94,6 +94,11 @@ export default function SuggestedMentorsPanel({ projectId, onAssignSuccess }) {
       alert("❌ This project already has an accepted mentor assigned.");
       return;
     }
+    const mentor = mentors.find((m) => m.id === mentorId);
+    const confirmed = window.confirm(
+      `⚠️ Confirm Direct Assignment\n\nAre you sure you want to directly assign "${mentor?.name || "this mentor"}" to this project?\n\nThis will bypass the invitation flow and assign the mentor immediately.`
+    );
+    if (!confirmed) return;
     setAssigningId(mentorId);
     try {
       const response = await fetch(`/api/admin/projects/${projectId}/assign-mentor`, {
