@@ -10,6 +10,7 @@ import connectPgSimpleImport from "connect-pg-simple";
 import pool from "./config/db.js";
 import { GlobalRouter } from "./routes/index.js";
 import { csrfProtection } from "./middleware/csrf.middleware.js";
+import { corsOptions } from "./config/corsOptions.js";
 import logger from "./utils/logger.js";
 import adminApiRoutes from "./routes/admin-api.js";
 import portalApiRoutes from "./routes/portal-api.js";
@@ -33,7 +34,36 @@ app.set("trust proxy", 1);
 
 app.set("view engine", "ejs");
 
-app.use(helmet({ contentSecurityPolicy: false }));
+// CSP is scoped to the external resources this app actually loads (Google
+// Fonts, Font Awesome via cdnjs, Alpine.js via jsdelivr). `unsafe-inline` is
+// kept for script/style because the EJS views still use inline onclick
+// handlers and <style> blocks in several places; tightening that further
+// requires migrating those to external listeners/nonces as a follow-up.
+app.use(
+    helmet({
+        contentSecurityPolicy: {
+            directives: {
+                defaultSrc: ["'self'"],
+                scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.jsdelivr.net"],
+                scriptSrcAttr: ["'unsafe-inline'"],
+                styleSrc: [
+                    "'self'",
+                    "'unsafe-inline'",
+                    "https://fonts.googleapis.com",
+                    "https://cdnjs.cloudflare.com",
+                ],
+                fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com"],
+                imgSrc: ["'self'", "data:", "https:"],
+                connectSrc: ["'self'"],
+                objectSrc: ["'none'"],
+                baseUri: ["'self'"],
+                frameAncestors: ["'self'"],
+                formAction: ["'self'"],
+                upgradeInsecureRequests: [],
+            },
+        },
+    }),
+);
 
 app.use(morgan("dev"));
 
@@ -52,7 +82,7 @@ if (process.env.NODE_ENV !== "development") {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use(cors({ origin: true, credentials: true }));
+app.use(cors(corsOptions));
 
 app.use(express.static("public"));
 app.use("/admin", express.static(path.resolve("public/admin"), {

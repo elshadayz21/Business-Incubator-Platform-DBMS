@@ -47,17 +47,37 @@
             <!-- Application Form (Hidden until clicked) -->
             <div id="application-form-container" class="hidden bg-white border border-[#D6E4EA] rounded-2xl p-8 shadow-sm mt-8">
                 <h2 class="text-xl font-bold text-ink border-b border-[#D6E4EA] pb-4 mb-6">Application Form</h2>
+
+                <!-- Milestone progress bar. Only shown once we know how many
+                     steps the form actually has (a single-section form stays
+                     a single page, exactly like before). -->
+                <div id="apply-progress" class="mb-8"></div>
+
                 <form id="application-form" class="space-y-5">
                     <input type="hidden" id="modal-announcement-id" value="<%= announcement.id %>">
-                    <div id="custom-form-fields" class="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-5">
+
+                    <!-- One .apply-page per section; only the current page is visible. -->
+                    <div id="apply-pages">
                         <p class="text-sm text-[#526274] font-bold">Loading questions...</p>
                     </div>
-                    <div>
+
+                    <!-- Document attachment lives on the final step, right before submit. -->
+                    <div id="final-page-extra" class="hidden">
                         <label class="block text-xs font-bold text-[#526274] mb-2 uppercase">Attach Document (PDF, DOC, PNG, JPG - Max 5MB)</label>
                         <input type="file" id="document_upload" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" class="w-full text-sm text-[#526274] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[#EAF8FC] file:text-[#006F9E] file:font-bold hover:file:bg-[#D6E4EA]">
                     </div>
+
                     <div id="form-message" class="hidden p-4 rounded-xl text-sm font-bold text-center"></div>
-                    <button type="submit" class="w-full py-4 bg-[#00ADEF] text-white rounded-xl font-bold hover:bg-[#006F9E] transition">Submit Application</button>
+
+                    <div class="flex items-center gap-3 pt-2">
+                        <button type="button" id="apply-back-btn" class="hidden px-6 py-4 rounded-xl font-bold text-[#526274] border border-[#D6E4EA] hover:bg-[#F6FAFC] transition">
+                            <i class="fa-solid fa-arrow-left text-xs mr-1"></i> Back
+                        </button>
+                        <button type="button" id="apply-next-btn" class="flex-1 py-4 bg-[#00ADEF] text-white rounded-xl font-bold hover:bg-[#006F9E] transition">
+                            Next <i class="fa-solid fa-arrow-right text-xs ml-1"></i>
+                        </button>
+                        <button type="submit" id="apply-submit-btn" class="hidden flex-1 py-4 bg-[#00ADEF] text-white rounded-xl font-bold hover:bg-[#006F9E] transition">Submit Application</button>
+                    </div>
                 </form>
             </div>
         </div>
@@ -129,6 +149,204 @@
             } catch (e) { console.error("Error loading saved form data:", e); }
         }
 
+        // --- Pagination state ---
+        // `applyPages` is an array of { name, fields } — one entry per
+        // section, in the order sections first appear on the form.
+        // `currentPage` is the step currently shown; `maxReachedPage` is the
+        // furthest step the applicant has validated their way to, which is
+        // also how far back the milestone bar lets them click.
+        let applyPages = [];
+        let currentPage = 0;
+        let maxReachedPage = 0;
+
+        const escapeHtml = (str) => {
+            const div = document.createElement('div');
+            div.textContent = str == null ? '' : String(str);
+            return div.innerHTML;
+        };
+
+        // Groups the flat field list returned by the API into pages by
+        // `field.section`, preserving first-appearance order. A form whose
+        // questions were never split into sections (or that only has one)
+        // collapses back to a single page — same as before this feature.
+        const groupIntoSections = (fields) => {
+            const pages = [];
+            const byName = new Map();
+            fields.forEach(field => {
+                const name = (field.section && String(field.section).trim()) || 'General Information';
+                if (!byName.has(name)) {
+                    const page = { name, fields: [] };
+                    byName.set(name, page);
+                    pages.push(page);
+                }
+                byName.get(name).fields.push(field);
+            });
+            return pages;
+        };
+
+        // Long-form fields (textarea) always take the full row. Choice
+        // fields with more than 3 options also get the full row so their
+        // option list has room to breathe. Everything else (single-line
+        // inputs, selects, short choice lists) shares a row two-up so we
+        // don't waste horizontal space on a one-line answer.
+        //
+        // An admin can override this per-question via field.width ('half' |
+        // 'full'). 'auto' (or anything else/missing) falls back to the
+        // heuristic above.
+        const resolveSpan = (field, autoIsFull) => {
+            if (field.width === 'full') return 'sm:col-span-2';
+            if (field.width === 'half') return '';
+            return autoIsFull ? 'sm:col-span-2' : '';
+        };
+
+        const renderFieldHtml = (field) => {
+            const isRequired = field.required ? 'required' : '';
+            const reqMark = field.required ? '<span class="text-red-500">*</span>' : '';
+
+            let optsStr = field.options || '';
+            if (Array.isArray(optsStr)) { optsStr = optsStr.join(', '); }
+            else if (typeof optsStr === 'string' && optsStr.startsWith('[')) {
+                try { optsStr = JSON.parse(optsStr).join(', '); } catch (e) {}
+            }
+
+            if (field.field_type === 'textarea') {
+                const spanClass = resolveSpan(field, true);
+                return `<div class="${spanClass}"><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><textarea name="custom_${field.id}" ${isRequired} class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]"></textarea></div>`;
+            }
+            if (field.field_type === 'select') {
+                const spanClass = resolveSpan(field, false);
+                const opts = optsStr.split(',').map(opt => `<option value="${opt.trim()}">${opt.trim()}</option>`).join('');
+                return `<div class="${spanClass}"><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><select name="custom_${field.id}" ${isRequired} class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]"><option value="">Select...</option>${opts}</select></div>`;
+            }
+            if (field.field_type === 'radio') {
+                const opts = optsStr.split(',').map(opt => opt.trim()).filter(Boolean);
+                const spanClass = resolveSpan(field, opts.length > 3);
+                const radioInputs = opts.map(opt => `<label class="flex items-center gap-2 py-1.5 cursor-pointer"><input type="radio" name="custom_${field.id}" value="${opt}" ${isRequired} class="h-4 w-4 border-gray-300 text-[#00ADEF] focus:ring-[#00ADEF]"><span class="text-sm font-medium text-[#111827]">${opt}</span></label>`).join('');
+                return `<div class="${spanClass}"><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><div class="flex flex-col gap-1 mt-1 p-3 bg-[#F6FAFC] border border-[#D6E4EA] rounded-xl">${radioInputs}</div></div>`;
+            }
+            if (field.field_type === 'checkbox') {
+                const opts = optsStr.split(',').map(opt => opt.trim()).filter(Boolean);
+                if (opts.length > 0) {
+                    const spanClass = resolveSpan(field, opts.length > 3);
+                    const checkboxInputs = opts.map(opt => `<label class="flex items-center gap-2 py-1.5 cursor-pointer"><input type="checkbox" name="custom_${field.id}[]" value="${opt}" class="h-4 w-4 border-gray-300 text-[#00ADEF] focus:ring-[#00ADEF]"><span class="text-sm font-medium text-[#111827]">${opt}</span></label>`).join('');
+                    return `<div class="${spanClass}"><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><div class="flex flex-col gap-1 mt-1 p-3 bg-[#F6FAFC] border border-[#D6E4EA] rounded-xl">${checkboxInputs}</div></div>`;
+                } else {
+                    const spanClass = resolveSpan(field, false);
+                    return `<div class="flex items-center gap-3 py-2 self-end ${spanClass}"><input type="checkbox" name="custom_${field.id}" ${isRequired} class="h-4 w-4 rounded border-gray-300 text-[#00ADEF] focus:ring-[#00ADEF]"><label class="text-sm font-bold text-[#526274]">${field.label} ${reqMark}</label></div>`;
+                }
+            }
+            if (field.field_type === 'number') {
+                const spanClass = resolveSpan(field, false);
+                return `<div class="${spanClass}"><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><input type="number" name="custom_${field.id}" ${isRequired} class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]"></div>`;
+            }
+            if (field.field_type === 'date') {
+                const spanClass = resolveSpan(field, false);
+                return `<div class="${spanClass}"><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><input type="date" name="custom_${field.id}" ${isRequired} class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]"></div>`;
+            }
+            if (field.field_type === 'email') {
+                const spanClass = resolveSpan(field, false);
+                return `<div class="${spanClass}"><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><input type="email" name="custom_${field.id}" ${isRequired} class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]"></div>`;
+            }
+            if (field.field_type === 'tel') {
+                const spanClass = resolveSpan(field, false);
+                return `<div class="${spanClass}"><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><input type="tel" name="custom_${field.id}" ${isRequired} class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]"></div>`;
+            }
+            // Default: Short Text
+            const spanClass = resolveSpan(field, false);
+            return `<div class="${spanClass}"><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><input type="text" name="custom_${field.id}" ${isRequired} class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]"></div>`;
+        };
+
+        const renderPages = () => {
+            const pagesDiv = document.getElementById('apply-pages');
+            pagesDiv.innerHTML = applyPages.map((page, i) => `
+                <div class="apply-page grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-5" data-page="${i}" style="${i === 0 ? '' : 'display:none;'}">
+                    ${applyPages.length > 1 ? `<h3 class="sm:col-span-2 text-sm font-extrabold text-[#111827] uppercase tracking-wider border-b border-[#D6E4EA] pb-3">${escapeHtml(page.name)}</h3>` : ''}
+                    ${page.fields.map(renderFieldHtml).join('')}
+                </div>
+            `).join('');
+        };
+
+        // Renders the milestone bar. Completed steps show a check and are
+        // clickable to jump back; the current step is highlighted; steps
+        // the applicant hasn't reached yet are shown but disabled, so they
+        // always know how much is left without being able to skip ahead of
+        // fields that haven't been validated yet.
+        const renderProgress = () => {
+            const bar = document.getElementById('apply-progress');
+            if (applyPages.length <= 1) { bar.innerHTML = ''; return; }
+
+            bar.innerHTML = `<div class="flex items-start">${applyPages.map((page, i) => {
+                const isDone = i < currentPage;
+                const isActive = i === currentPage;
+                const clickable = i <= maxReachedPage;
+                const circleClasses = isDone
+                    ? 'bg-[#00ADEF] text-white'
+                    : isActive
+                        ? 'bg-orange text-white'
+                        : 'bg-[#EAF8FC] text-[#8896A6] border border-[#D6E4EA]';
+                return `
+                    <div class="flex items-start ${i < applyPages.length - 1 ? 'flex-1' : ''}">
+                        <button type="button" data-goto="${i}" ${clickable ? '' : 'disabled'} class="flex flex-col items-center gap-1.5 ${clickable ? 'cursor-pointer' : 'cursor-not-allowed'} bg-transparent border-0 p-0">
+                            <span class="w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-xs font-extrabold ${circleClasses}">${isDone ? '<i class="fa-solid fa-check text-[10px]"></i>' : i + 1}</span>
+                            <span class="text-[10px] font-bold uppercase tracking-wide text-center max-w-[90px] ${isActive ? 'text-[#111827]' : 'text-[#8896A6]'}">${escapeHtml(page.name)}</span>
+                        </button>
+                        ${i < applyPages.length - 1 ? `<div class="flex-1 h-0.5 mt-4 mx-2 ${isDone ? 'bg-[#00ADEF]' : 'bg-[#D6E4EA]'}"></div>` : ''}
+                    </div>`;
+            }).join('')}</div>`;
+
+            bar.querySelectorAll('[data-goto]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const idx = parseInt(btn.dataset.goto, 10);
+                    if (idx <= maxReachedPage) goToPage(idx);
+                });
+            });
+        };
+
+        const showPage = (i) => {
+            document.querySelectorAll('.apply-page').forEach(p => {
+                p.style.display = (parseInt(p.dataset.page, 10) === i) ? '' : 'none';
+            });
+            const isLastPage = i === applyPages.length - 1 || applyPages.length === 0;
+            document.getElementById('apply-back-btn').classList.toggle('hidden', i === 0);
+            document.getElementById('apply-next-btn').classList.toggle('hidden', isLastPage);
+            document.getElementById('apply-submit-btn').classList.toggle('hidden', !isLastPage);
+            document.getElementById('final-page-extra').classList.toggle('hidden', !isLastPage);
+            renderProgress();
+            document.getElementById('application-form-container').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        };
+
+        const goToPage = (i) => { currentPage = i; showPage(i); };
+
+        // Only checks the fields on the page currently in view — required
+        // fields on pages the applicant hasn't gotten to yet shouldn't block
+        // them from moving forward through the ones before it.
+        const validateCurrentPage = () => {
+            const page = document.querySelector(`.apply-page[data-page="${currentPage}"]`);
+            if (!page) return true;
+            const inputs = page.querySelectorAll('input, select, textarea');
+            for (const input of inputs) {
+                if (!input.reportValidity()) return false;
+            }
+            return true;
+        };
+
+        document.getElementById('apply-next-btn').addEventListener('click', () => {
+            if (!validateCurrentPage()) return;
+            saveFormData();
+            if (currentPage < applyPages.length - 1) {
+                currentPage++;
+                maxReachedPage = Math.max(maxReachedPage, currentPage);
+                showPage(currentPage);
+            }
+        });
+
+        document.getElementById('apply-back-btn').addEventListener('click', () => {
+            if (currentPage > 0) {
+                currentPage--;
+                showPage(currentPage);
+            }
+        });
+
         // --- Show Form Logic ---
         window.showApplicationForm = () => {
             document.getElementById("announcement-details-box").classList.add("hidden");
@@ -137,95 +355,21 @@
             formContainer.classList.remove("hidden");
             window.scrollTo({ top: 0, behavior: 'smooth' });
 
-            const customFieldsDiv = document.getElementById("custom-form-fields");
-            customFieldsDiv.innerHTML = '<p class="text-sm text-[#526274] font-bold">Loading questions...</p>';
+            const pagesDiv = document.getElementById("apply-pages");
+            pagesDiv.innerHTML = '<p class="text-sm text-[#526274] font-bold">Loading questions...</p>';
 
             fetch(`/api/public/form-fields/<%= announcement.id %>`)
                 .then(res => res.json())
                 .then(fields => {
-                    if (!fields || fields.length === 0) { customFieldsDiv.innerHTML = ''; return; }
-                    let optsStr = '';
-
-                    // Long-form fields (textarea) always take the full row.
-                    // Choice fields with more than 3 options also get the
-                    // full row so their option list has room to breathe.
-                    // Everything else (single-line inputs, selects, short
-                    // choice lists) shares a row two-up so we don't waste
-                    // horizontal space on a one-line answer.
-                    //
-                    // An admin can override this per-question via
-                    // field.width ('half' | 'full'). 'auto' (or anything
-                    // else/missing) falls back to the heuristic above.
-                    const fullRowClass = 'sm:col-span-2';
-
-                    // Returns the span class for a field, given the width
-                    // the type-based heuristic would pick by default.
-                    const resolveSpan = (field, autoIsFull) => {
-                        if (field.width === 'full') return fullRowClass;
-                        if (field.width === 'half') return '';
-                        return autoIsFull ? fullRowClass : '';
-                    };
-
-                    customFieldsDiv.innerHTML = fields.map(field => {
-                        const isRequired = field.required ? 'required' : '';
-                        const reqMark = field.required ? '<span class="text-red-500">*</span>' : '';
-
-                        optsStr = field.options || '';
-                        if (Array.isArray(optsStr)) { optsStr = optsStr.join(', '); }
-                        else if (typeof optsStr === 'string' && optsStr.startsWith('[')) {
-                            try { optsStr = JSON.parse(optsStr).join(', '); } catch (e) {}
-                        }
-
-                        if (field.field_type === 'textarea') {
-                            const spanClass = resolveSpan(field, true);
-                            return `<div class="${spanClass}"><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><textarea name="custom_${field.id}" ${isRequired} class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]"></textarea></div>`;
-                        }
-                        if (field.field_type === 'select') {
-                            const spanClass = resolveSpan(field, false);
-                            const opts = optsStr.split(',').map(opt => `<option value="${opt.trim()}">${opt.trim()}</option>`).join('');
-                            return `<div class="${spanClass}"><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><select name="custom_${field.id}" ${isRequired} class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]"><option value="">Select...</option>${opts}</select></div>`;
-                        }
-                        if (field.field_type === 'radio') {
-                            const opts = optsStr.split(',').map(opt => opt.trim()).filter(Boolean);
-                            const spanClass = resolveSpan(field, opts.length > 3);
-                            const radioInputs = opts.map(opt => `<label class="flex items-center gap-2 py-1.5 cursor-pointer"><input type="radio" name="custom_${field.id}" value="${opt}" ${isRequired} class="h-4 w-4 border-gray-300 text-[#00ADEF] focus:ring-[#00ADEF]"><span class="text-sm font-medium text-[#111827]">${opt}</span></label>`).join('');
-                            return `<div class="${spanClass}"><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><div class="flex flex-col gap-1 mt-1 p-3 bg-[#F6FAFC] border border-[#D6E4EA] rounded-xl">${radioInputs}</div></div>`;
-                        }
-                        if (field.field_type === 'checkbox') {
-                            const opts = optsStr.split(',').map(opt => opt.trim()).filter(Boolean);
-                            if (opts.length > 0) {
-                                const spanClass = resolveSpan(field, opts.length > 3);
-                                const checkboxInputs = opts.map(opt => `<label class="flex items-center gap-2 py-1.5 cursor-pointer"><input type="checkbox" name="custom_${field.id}[]" value="${opt}" class="h-4 w-4 border-gray-300 text-[#00ADEF] focus:ring-[#00ADEF]"><span class="text-sm font-medium text-[#111827]">${opt}</span></label>`).join('');
-                                return `<div class="${spanClass}"><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><div class="flex flex-col gap-1 mt-1 p-3 bg-[#F6FAFC] border border-[#D6E4EA] rounded-xl">${checkboxInputs}</div></div>`;
-                            } else {
-                                const spanClass = resolveSpan(field, false);
-                                return `<div class="flex items-center gap-3 py-2 self-end ${spanClass}"><input type="checkbox" name="custom_${field.id}" ${isRequired} class="h-4 w-4 rounded border-gray-300 text-[#00ADEF] focus:ring-[#00ADEF]"><label class="text-sm font-bold text-[#526274]">${field.label} ${reqMark}</label></div>`;
-                            }
-                        }
-                        if (field.field_type === 'number') {
-                            const spanClass = resolveSpan(field, false);
-                            return `<div class="${spanClass}"><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><input type="number" name="custom_${field.id}" ${isRequired} class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]"></div>`;
-                        }
-                        if (field.field_type === 'date') {
-                            const spanClass = resolveSpan(field, false);
-                            return `<div class="${spanClass}"><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><input type="date" name="custom_${field.id}" ${isRequired} class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]"></div>`;
-                        }
-                        if (field.field_type === 'email') {
-                            const spanClass = resolveSpan(field, false);
-                            return `<div class="${spanClass}"><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><input type="email" name="custom_${field.id}" ${isRequired} class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]"></div>`;
-                        }
-                        if (field.field_type === 'tel') {
-                            const spanClass = resolveSpan(field, false);
-                            return `<div class="${spanClass}"><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><input type="tel" name="custom_${field.id}" ${isRequired} class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]"></div>`;
-                        }
-                        // Default: Short Text
-                        const spanClass = resolveSpan(field, false);
-                        return `<div class="${spanClass}"><label class="block text-xs font-bold text-[#526274] mb-2 uppercase">${field.label} ${reqMark}</label><input type="text" name="custom_${field.id}" ${isRequired} class="w-full px-4 py-3 border border-[#D6E4EA] rounded-xl bg-[#F6FAFC] focus:outline-none focus:ring-2 focus:ring-[#00ADEF]"></div>`;
-                    }).join('');
+                    applyPages = (fields && fields.length > 0) ? groupIntoSections(fields) : [];
+                    currentPage = 0;
+                    maxReachedPage = 0;
+                    renderPages();
+                    showPage(0);
                     loadFormData();
                 }).catch(err => {
                     console.error("Error loading custom fields:", err);
-                    customFieldsDiv.innerHTML = '<p class="text-red-500 text-sm">Failed to load form questions.</p>';
+                    pagesDiv.innerHTML = '<p class="text-red-500 text-sm">Failed to load form questions.</p>';
                 });
         };
 
