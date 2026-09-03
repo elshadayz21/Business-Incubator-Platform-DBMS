@@ -38,13 +38,7 @@
         <section class="bg-surface">
             <div class="mx-auto max-w-3xl px-6 py-16 lg:px-10 lg:py-24">
 
-                <!-- Back Link -->
-                <a href="/v1/projects" class="mb-10 inline-flex items-center gap-2 text-sm font-bold text-cyan-dark transition hover:text-cyan">
-                    <i class="fa-solid fa-arrow-left text-xs" aria-hidden="true"></i>
-                    Back to Projects
-                </a>
-
-                <form action="/v1/funding/create" method="POST" class="space-y-8" id="fundingForm">
+                <form action="/v1/funding/create" method="POST" class="space-y-8" id="fundingForm" onsubmit="return confirmFundingRequest(event)">
                     <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>" />
 
                     <!-- Section 1: Select Project -->
@@ -107,9 +101,6 @@
                                     <option value="">-- Select funding stage --</option>
                                     <option value="Pre-Seed">Pre-Seed</option>
                                     <option value="Seed">Seed Round</option>
-                                    <option value="Series A">Series A</option>
-                                    <option value="Series B">Series B</option>
-                                    <option value="Series C">Series C</option>
                                     <option value="Growth">Growth Stage</option>
                                 </select>
                                 <p class="mt-2 text-xs font-medium text-muted">Select the funding round your project is in.</p>
@@ -143,5 +134,27 @@
     </main>
 
 
+<script>
+        function confirmFundingRequest(event) {
+            const project = document.getElementById('project_id');
+            const amount = document.getElementById('amount');
+            const stage = document.getElementById('funding_stage');
+            const description = document.getElementById('description');
+
+            if (!project || !amount || !stage) {
+                return window.confirm('Submit this funding request?');
+            }
+
+            const message =
+                'Please confirm your funding request:\n\n' +
+                'Project: ' + (project.selectedOptions[0] ? project.selectedOptions[0].textContent : '') + '\n' +
+                'Amount: ETB ' + (amount.value || '') + '\n' +
+                'Funding Stage: ' + (stage.selectedOptions[0] ? stage.selectedOptions[0].textContent : '') + '\n' +
+                (description && description.value ? '\nNote: ' + description.value + '\n' : '') +
+                '\nClick OK to submit, or Cancel to go back.';
+
+            return window.confirm(message);
+        }
+    </script>
 </body>
 </html>

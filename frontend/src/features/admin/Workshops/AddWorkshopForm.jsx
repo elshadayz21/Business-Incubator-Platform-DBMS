@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Type,
   FileText,
@@ -26,6 +26,23 @@ const AddWorkshopForm = ({ onSubmit, onCancel }) => {
   });
 
   const [errors, setErrors] = useState({});
+  const [mentors, setMentors] = useState([]);
+
+  useEffect(() => {
+    const fetchMentors = async () => {
+      try {
+        const response = await fetch("/api/admin/mentors", {
+          credentials: "include",
+        });
+        const data = await response.json();
+        const list = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
+        setMentors(list);
+      } catch (err) {
+        console.error("Failed to load mentors:", err);
+      }
+    };
+    fetchMentors();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -107,13 +124,25 @@ const AddWorkshopForm = ({ onSubmit, onCancel }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-bold text-[#526274] mb-1">Assigned Mentor</label>
-            <input
+            <select
               name="mentor"
               value={formData.mentor}
               onChange={handleChange}
-              placeholder="e.g. Dr. Abebe Bikila"
-              className="w-full px-4 py-2.5 bg-white border border-[#D6E4EA] rounded-xl text-xs font-medium text-[#111827] outline-none focus:border-[#00ADEF]"
-            />
+              className="w-full px-4 py-2.5 bg-white border border-[#D6E4EA] rounded-xl text-xs font-medium text-[#111827] outline-none focus:border-[#00ADEF] cursor-pointer"
+            >
+              <option value="">Select a mentor...</option>
+              {mentors.map((mentor) => (
+                <option key={mentor.id} value={mentor.name}>
+                  {mentor.name}
+                  {mentor.expertise ? ` — ${mentor.expertise}` : ""}
+                </option>
+              ))}
+            </select>
+            {mentors.length === 0 && (
+              <p className="text-[11px] text-[#526274] font-medium mt-1">
+                No mentors found. Add mentors in the Mentors section first.
+              </p>
+            )}
             {errors.mentor && <p className="text-rose-600 text-[11px] font-bold mt-1">{errors.mentor}</p>}
           </div>
 

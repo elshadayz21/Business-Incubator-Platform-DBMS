@@ -159,7 +159,8 @@ const AddMentorForm = ({ onSuccess, onClose, initialData }) => {
                 value={formData.password}
                 onChange={(e) => handleChange("password", e.target.value)}
                 placeholder={isEditing ? "••••••••" : "Mentor123!"}
-                disabled={loading}
+                disabled={loading || isEditing}
+                readOnly={isEditing}
                 className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#D6E4EA] rounded-xl text-xs font-medium text-[#111827] outline-none focus:border-[#00ADEF]"
               />
             </div>
