@@ -296,7 +296,7 @@ export const getMentorDashboard = async (mentorId) => {
            WHERE user_id = $1
            ORDER BY created_at DESC
            LIMIT 10`,
-            [userId],
+            [mentorId],
         ),
     ),
     safeQuery("invitations", async () => {
