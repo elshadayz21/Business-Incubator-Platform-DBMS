@@ -63,16 +63,51 @@ const ensureFormFieldsTable = async () => {
 };
 
 // GET ALL APPLICATIONS (with Announcement Title)
+// `announcementId` optionally filters to a single batch/form. Every row is also
+// enriched with its announcement's `form_fields` so the UI can resolve an
+// applicant's real name / email / phone / idea from the JSONB `answers` even
+// when the form's fields weren't mapped to the normalized columns.
+export const getAllApplications = async (limit = 10, offset = 0, announcementId = null) => {
+    const params = [];
+    let whereClause = "";
 
-export const getAllApplications = async (limit = 10, offset = 0) => {
-    const result = await pool.query(`
+    if (announcementId) {
+        params.push(parseInt(announcementId, 10));
+        whereClause = `WHERE a.announcement_id = $${params.length}`;
+    }
+
+    const rowsResult = await pool.query(`
     SELECT a.*, an.title as announcement_title 
     FROM applications a
     LEFT JOIN announcements an ON a.announcement_id = an.id
+    ${whereClause}
     ORDER BY a.created_at DESC
-    LIMIT $1 OFFSET $2
-  `, [limit, offset]);
-    return result.rows;
+    LIMIT $${params.length + 1} OFFSET $${params.length + 2}
+  `, [...params, limit, offset]);
+
+    const rows = rowsResult.rows;
+    if (rows.length === 0) return rows;
+
+    // Resolve the form field labels + mappings for every announcement involved,
+    // so callers can render meaningful column values straight from `answers`.
+    const annIds = [...new Set(rows.map((r) => r.announcement_id))];
+    const fieldsResult = await pool.query(
+        `SELECT announcement_id, id, label, maps_to, field_type
+         FROM form_fields
+         WHERE announcement_id = ANY($1)
+         ORDER BY announcement_id, id`,
+        [annIds]
+    );
+    const fieldsByAnn = {};
+    for (const f of fieldsResult.rows) {
+        if (!fieldsByAnn[f.announcement_id]) fieldsByAnn[f.announcement_id] = [];
+        fieldsByAnn[f.announcement_id].push(f);
+    }
+
+    return rows.map((row) => ({
+        ...row,
+        form_fields: fieldsByAnn[row.announcement_id] || [],
+    }));
 };
 
 // UPDATE APPLICATION STATUS (Accept/Reject)

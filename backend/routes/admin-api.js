@@ -1116,7 +1116,7 @@ router.get(
         const page = parseInt(req.query.page) || 1;
         const limit = 10;
         const offset = (page - 1) * limit;
-        const apps = await getAllApplications(limit, offset);
+        const apps = await getAllApplications(limit, offset, req.query.announcementId);
         res.json(apps);
       } catch (error) {
         res.status(500).json({ message: "Failed to fetch applications" });

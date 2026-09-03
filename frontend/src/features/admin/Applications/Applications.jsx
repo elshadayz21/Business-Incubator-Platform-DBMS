@@ -1,5 +1,26 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Eye, X, Loader2, Inbox, CheckCircle2 } from "lucide-react";
+
+// Maps a form field to the normalized column it fills. Used to pull an
+// applicant's real name/email/phone/idea straight from their submitted
+// `answers` even when the form wasn't configured with a maps_to link.
+const FIELD_TO_COLUMN = {
+    full_name: "full_name",
+    email: "email",
+    phone: "phone",
+    startup_idea: "startup_idea",
+    background: "background",
+};
+
+// Guess which normalized column a field represents from its label, so forms
+// that were never mapped (like Batch 08's "FN" / "LN") still display right.
+// First/last name parts both feed the "full name" column so split fields join.
+const guessColumnFromLabel = (label = "") => {
+    const l = label.toLowerCase();
+    if (/(first\s*name|f\.?\s*n|given\s*name|last\s*name|sur(name|4)|l\.?\s*n|full\s*name|^name$|name\b|surname)/.test(l)) return "full_name";
+    if (/(startup\s*idea|business\s*idea|idea)/.test(l)) return "startup_idea";
+    return null;
+};
 
 export default function Applications() {
     const [applications, setApplications] = useState([]);
@@ -11,11 +32,28 @@ export default function Applications() {
     const [mappedAnswerKeys, setMappedAnswerKeys] = useState(new Set()); // keys already shown via full_name/email/phone/background/startup_idea
     const [appPage, setAppPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
+    const [announcements, setAnnouncements] = useState([]);
+    const [selectedAnnouncement, setSelectedAnnouncement] = useState("");
 
-    const fetchApplications = useCallback(async (page = 1) => {
+    useEffect(() => {
+        const fetchAnnouncements = async () => {
+            try {
+                const response = await fetch("/api/admin/announcements", { credentials: "include" });
+                const data = await response.json();
+                setAnnouncements(Array.isArray(data) ? data : []);
+            } catch (error) {
+                console.error("Error fetching announcements:", error);
+            }
+        };
+        fetchAnnouncements();
+    }, []);
+
+    const fetchApplications = useCallback(async (page = 1, announcementId = selectedAnnouncement) => {
         try {
             if (page === 1) { setLoading(true); } else { setLoadMoreLoading(true); }
-            const response = await fetch(`/api/admin/applications?page=${page}`, { credentials: 'include' });
+            const query = new URLSearchParams({ page: String(page) });
+            if (announcementId) query.set("announcementId", announcementId);
+            const response = await fetch(`/api/admin/applications?${query}`, { credentials: 'include' });
             const data = await response.json();
             const newApps = Array.isArray(data) ? data : [];
 
@@ -34,9 +72,64 @@ export default function Applications() {
             setLoading(false);
             setLoadMoreLoading(false);
         }
-    }, []);
+    }, [selectedAnnouncement]);
 
     useEffect(() => { fetchApplications(1); }, [fetchApplications]);
+
+    const handleFilterChange = (announcementId) => {
+        setSelectedAnnouncement(announcementId);
+        setAppPage(1);
+        setApplications([]);
+        fetchApplications(1, announcementId);
+    };
+
+    // Resolve the actual applicant name / idea / email / phone from the
+    // submitted answers when the normalized columns are empty.
+    const resolveApplicant = useMemo(() => (app) => {
+        let answersObj = app.answers;
+        if (typeof answersObj === "string") {
+            try { answersObj = JSON.parse(answersObj); } catch (e) { answersObj = null; }
+        }
+        answersObj = answersObj && typeof answersObj === "object" ? answersObj : {};
+
+        const fields = Array.isArray(app.form_fields) ? app.form_fields : [];
+        const resolved = {
+            full_name: app.full_name,
+            email: app.email,
+            phone: app.phone,
+            startup_idea: app.startup_idea,
+            background: app.background,
+        };
+
+        // Determine which custom_<id> answer feeds each normalized column.
+        const columnToKey = {};
+        for (const field of fields) {
+            const key = `custom_${field.id}`;
+            const column = FIELD_TO_COLUMN[field.maps_to] || guessColumnFromLabel(field.label);
+            if (column && !columnToKey[column]) columnToKey[column] = key;
+        }
+        // Multi-part names: "FN" and "LN" both resolve to full_name -> join them.
+        const nameKeys = fields.filter((f) => (FIELD_TO_COLUMN[f.maps_to] || guessColumnFromLabel(f.label)) === "full_name")
+            .map((f) => `custom_${f.id}`);
+
+        const pickString = (keys) => {
+            const parts = [];
+            for (const k of keys) {
+                const v = answersObj[k];
+                if (v !== undefined && v !== null && String(v).trim() !== "") parts.push(String(v).trim());
+            }
+            return parts.length ? parts.join(" ") : null;
+        };
+        const emailKey = Object.entries(columnToKey).find(([, k]) => k.includes("email"))?.[1];
+        const phoneKey = Object.entries(columnToKey).find(([, k]) => k.includes("phone"))?.[1];
+        const ideaKey = columnToKey.startup_idea;
+
+        resolved.full_name = app.full_name || pickString(nameKeys) || pickString(Object.values(columnToKey).filter((k) => k.includes("name"))) || null;
+        resolved.email = app.email || (emailKey ? pickString([emailKey]) : null);
+        resolved.phone = app.phone || (phoneKey ? pickString([phoneKey]) : null);
+        resolved.startup_idea = app.startup_idea || (ideaKey ? pickString([ideaKey]) : null);
+        return resolved;
+    }, []);
 
     const handleLoadMore = () => {
         const nextPage = appPage + 1;
@@ -97,6 +190,27 @@ export default function Applications() {
                     <h1 className="text-3xl font-extrabold tracking-[-.04em] text-cyan-dark">Applications</h1>
                 </div>
 
+                <div className="mb-5 flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <label className="text-xs font-bold text-[#526274] shrink-0">Filter by Batch / Form:</label>
+                        <select
+                            value={selectedAnnouncement}
+                            onChange={(e) => handleFilterChange(e.target.value)}
+                            className="px-3.5 py-2.5 bg-white border border-[#D6E4EA] rounded-xl text-xs font-bold text-[#111827] outline-none focus:border-[#00ADEF] cursor-pointer"
+                        >
+                            <option value="">All Batches</option>
+                            {announcements.map((ann) => (
+                                <option key={ann.id} value={ann.id}>{ann.title || `Batch / Form #${ann.id}`}</option>
+                            ))}
+                        </select>
+                    </div>
+                    {announcements.length > 0 && selectedAnnouncement && (
+                        <span className="text-xs text-[#526274] font-semibold">
+                            Showing applications for the selected batch/form
+                        </span>
+                    )}
+                </div>
+
                 {loading ? (
                     <div className="flex flex-col items-center justify-center py-24 bg-white border border-[#D6E4EA] rounded-2xl">
                         <Loader2 className="animate-spin text-[#00ADEF]" size={32} />
@@ -115,20 +229,22 @@ export default function Applications() {
                             </tr>
                             </thead>
                             <tbody className="divide-y divide-[#D6E4EA]">
-                            {applications.map((app) => (
+                            {applications.map((app) => {
+                                const applicant = resolveApplicant(app);
+                                return (
                                 <tr key={app.id} className="hover:bg-[#F6FAFC] transition align-top">
                                     <td className="p-4 align-top">
-                                        <div className="font-bold text-sm text-[#111827]">{app.full_name || 'Unknown'}</div>
-                                        <a href={`mailto:${app.email}`} className="text-xs text-[#006F9E] hover:underline block mt-1">{app.email || 'No Email'}</a>
+                                        <div className="font-bold text-sm text-[#111827]">{applicant.full_name || 'Unknown'}</div>
+                                        <a href={`mailto:${applicant.email}`} className="text-xs text-[#006F9E] hover:underline block mt-1">{applicant.email || 'No Email'}</a>
                                     </td>
                                     <td className="p-4 hidden lg:table-cell align-top">
-                                        <p className="text-sm text-[#111827] italic">"{app.startup_idea || 'Not provided'}"</p>
+                                        <p className="text-sm text-[#111827] italic">"{applicant.startup_idea || 'Not provided'}"</p>
                                     </td>
                                     <td className="p-4 hidden md:table-cell text-sm text-[#526274] font-medium align-top">
                                         {app.announcement_title || 'N/A'}
                                     </td>
                                     <td className="p-4 hidden md:table-cell text-sm text-[#526274] align-top">
-                                        {app.phone || '—'}
+                                        {applicant.phone || '—'}
                                     </td>
                                     <td className="p-4 align-top">
                                         <span className={`inline-block px-2 py-1 rounded-full text-[10px] font-bold border ${
@@ -148,7 +264,8 @@ export default function Applications() {
                                         </button>
                                     </td>
                                 </tr>
-                            ))}
+                                );
+                            })}
                             </tbody>
                         </table>
                     </div>
@@ -179,28 +296,30 @@ export default function Applications() {
                 )}
             </div>
 
-            {selectedApp && (
+            {selectedApp && (() => {
+                const detail = resolveApplicant(selectedApp);
+                return (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
                     <div className="bg-white w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-xl">
                         <div className="sticky top-0 bg-white border-b border-[#D6E4EA] p-6 flex justify-between items-center z-10">
                             <div>
-                                <h2 className="text-xl font-extrabold text-[#111827]">{selectedApp.full_name || 'Unknown Applicant'}</h2>
-                                <a href={`mailto:${selectedApp.email}`} className="text-xs text-[#006F9E] hover:underline">{selectedApp.email}</a>
+                                <h2 className="text-xl font-extrabold text-[#111827]">{detail.full_name || 'Unknown Applicant'}</h2>
+                                <a href={`mailto:${detail.email}`} className="text-xs text-[#006F9E] hover:underline">{detail.email}</a>
                             </div>
                             <button onClick={() => setSelectedApp(null)} className="p-2 rounded-lg text-[#526274] hover:bg-gray-100 transition"><X size={20} /></button>
                         </div>
                         <div className="p-6 space-y-6">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                {selectedApp.phone && (
+                                {detail.phone && (
                                     <div className="bg-[#F6FAFC] p-3 rounded-lg border border-[#D6E4EA]">
                                         <p className="text-[10px] font-bold uppercase text-[#526274] mb-1">Phone</p>
-                                        <p className="text-sm font-medium text-[#111827]">{selectedApp.phone}</p>
+                                        <p className="text-sm font-medium text-[#111827]">{detail.phone}</p>
                                     </div>
                                 )}
-                                {selectedApp.background && (
+                                {detail.background && (
                                     <div className="bg-[#F6FAFC] p-3 rounded-lg border border-[#D6E4EA]">
                                         <p className="text-[10px] font-bold uppercase text-[#526274] mb-1">Background</p>
-                                        <p className="text-sm font-medium text-[#111827]">{selectedApp.background}</p>
+                                        <p className="text-sm font-medium text-[#111827]">{detail.background}</p>
                                     </div>
                                 )}
                                 <div className="bg-[#F6FAFC] p-3 rounded-lg border border-[#D6E4EA]">
@@ -209,10 +328,10 @@ export default function Applications() {
                                 </div>
                             </div>
 
-                            {selectedApp.startup_idea && (
+                            {detail.startup_idea && (
                                 <div>
                                     <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#006F9E] mb-2">Startup Idea</h3>
-                                    <div className="p-4 bg-[#F6FAFC] rounded-xl border border-[#D6E4EA] text-sm text-[#111827] italic">"{selectedApp.startup_idea}"</div>
+                                    <div className="p-4 bg-[#F6FAFC] rounded-xl border border-[#D6E4EA] text-sm text-[#111827] italic">"{detail.startup_idea}"</div>
                                 </div>
                             )}
 
@@ -276,7 +395,8 @@ export default function Applications() {
                         </div>
                     </div>
                 </div>
-            )}
+                );
+            })()}
         </div>
     );
 }
