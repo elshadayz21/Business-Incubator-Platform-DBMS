@@ -34,11 +34,6 @@
           <a class="transition hover:text-cyan-dark" href="<%= routes.projects %>">Projects</a>
           <a class="transition hover:text-cyan-dark" href="<%= routes.about %>">About</a>
           <a class="transition hover:text-cyan-dark" href="/#partners">Partners</a>
-
-          <button id="nav-apply-button" type="button" onclick="handleGlobalApply()" class="hidden items-center gap-1.5 rounded-full bg-orange px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-orange-dark focus:outline-none focus:ring-2 focus:ring-orange focus:ring-offset-2">
-            Apply now
-            <i class="fa-solid fa-arrow-up-right-from-square text-[10px]" aria-hidden="true"></i>
-          </button>
         </nav>
 
         <div class="flex items-center gap-3 border-l border-line pl-6">
@@ -69,7 +64,7 @@
               </div>
             </div>
           <% } else { %>
-            <button type="button" onclick="handleGlobalApply()" class="inline-flex items-center gap-2 rounded-full bg-orange px-5 py-2 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-orange-dark focus:outline-none focus:ring-2 focus:ring-orange focus:ring-offset-2">
+            <button id="nav-apply-button-desktop" type="button" onclick="handleGlobalApply()" class="hidden items-center gap-2 rounded-full bg-orange px-5 py-2 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-orange-dark focus:outline-none focus:ring-2 focus:ring-orange focus:ring-offset-2">
               Apply now
               <i class="fa-solid fa-arrow-up-right-from-square text-xs" aria-hidden="true"></i>
             </button>
@@ -94,7 +89,6 @@
           <div class="pl-4 mt-1 flex flex-col gap-1">
             <a class="rounded-md px-3 py-2 text-sm transition hover:bg-cyan-soft hover:text-cyan-dark" href="<%= routes.mentors %>">Mentorship</a>
             <a class="rounded-md px-3 py-2 text-sm transition hover:bg-cyan-soft hover:text-cyan-dark" href="<%= routes.workshops %>">Workshops</a>
-            <a class="rounded-md px-3 py-2 text-sm transition hover:bg-cyan-soft hover:text-cyan-dark" href="/v1/workshop">Events</a>
           </div>
         </details>
 
@@ -182,8 +176,9 @@
 
   window.updateHeaderApplyBar = async (announcements) => {
     const navButtonMobile = document.getElementById('nav-apply-button-mobile');
+    const navButtonDesktop = document.getElementById('nav-apply-button-desktop');
 
-    if (!navButtonMobile) return;
+    if (!navButtonMobile && !navButtonDesktop) return;
 
     try {
       let data = announcements;
@@ -191,6 +186,8 @@
         const response = await fetch('/api/public/announcements');
         if (!response.ok) {
           navButtonMobile?.classList.add('hidden');
+          navButtonDesktop?.classList.add('hidden');
+          navButtonDesktop?.classList.remove('inline-flex');
           return;
         }
         data = await response.json();
@@ -200,9 +197,13 @@
       const hasActiveOpenCall = data.some(window.isActiveOpenCall);
       navButtonMobile?.classList.toggle('hidden', !hasActiveOpenCall);
       navButtonMobile?.classList.toggle('flex', hasActiveOpenCall);
+      navButtonDesktop?.classList.toggle('hidden', !hasActiveOpenCall);
+      navButtonDesktop?.classList.toggle('inline-flex', hasActiveOpenCall);
     } catch (error) {
       console.error('Error updating header apply bar:', error);
       navButtonMobile?.classList.add('hidden');
+      navButtonDesktop?.classList.add('hidden');
+      navButtonDesktop?.classList.remove('inline-flex');
     }
   };
 

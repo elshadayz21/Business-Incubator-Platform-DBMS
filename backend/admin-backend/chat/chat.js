@@ -1,5 +1,6 @@
 import pool from "../../config/db.js";
 import { createNotification } from "../../utils/notificationHelper.js";
+import { sendChatMessageEmail } from "../../utils/mailer.js";
 
 // Who a given user is allowed to chat with:
 //   - admin / superadmin can message anyone
@@ -157,6 +158,44 @@ export const sendChatMessage = async (senderId, senderRole, receiverId, content)
       `New message from ${senderName}: ${preview}`,
       { senderId },
   );
+
+  // Email the receiver too, like LinkedIn does, so they know to log in and
+  // reply even if they aren't currently on the site. To avoid spamming
+  // someone's inbox during a fast back-and-forth, we only email them when
+  // this is the start of a fresh batch of unread messages from this sender
+  // (i.e. they don't already have other unread messages from the same
+  // sender sitting in their inbox that would already have triggered one).
+  try {
+    const { rows: unreadRows } = await pool.query(
+        `SELECT EXISTS (
+         SELECT 1 FROM messages
+         WHERE sender_id = $1 AND receiver_id = $2 AND read_at IS NULL AND id != $3
+       ) AS already_unread`,
+        [senderId, receiverId, message.id],
+    );
+    const alreadyNotified = unreadRows[0]?.already_unread === true;
+
+    if (!alreadyNotified) {
+      const receiverRes = await pool.query(
+          `SELECT name, email, role FROM users WHERE id = $1`,
+          [receiverId],
+      );
+      const receiver = receiverRes.rows[0];
+
+      if (receiver?.email) {
+        await sendChatMessageEmail(receiver.email, {
+          recipientName: receiver.name,
+          senderName,
+          senderId,
+          preview,
+          recipientRole: receiver.role,
+        });
+      }
+    }
+  } catch (emailErr) {
+    // Never let an email failure break message sending.
+    console.error("❌ Error sending chat notification email:", emailErr);
+  }
 
   return message;
 };

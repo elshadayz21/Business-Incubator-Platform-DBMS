@@ -13,10 +13,12 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   MessageCircle,
+  TrendingUp,
 } from "lucide-react";
 import { getMentorDashboard } from "../../services/portalService";
 import UserMenu from "../../components/UserMenu";
 import ChatPanel from "../../components/ChatPanel";
+import ProgressReview from "./ProgressReview";
 
 const MentorPortal = () => {
   const [assignments, setAssignments] = useState([]);
@@ -52,6 +54,31 @@ const MentorPortal = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 10;
   const [chatContact, setChatContact] = useState(null);
+
+  // Deep-link support: an email "new message" notification links back with
+  // ?openChat=<userId>. App.jsx stashes that id in sessionStorage (it
+  // survives the login redirect for signed-out visitors); once this portal
+  // mounts we consume it once, jump to the Chat tab, and hand the id to
+  // ChatPanel so it can open that conversation.
+  const [openChatId, setOpenChatId] = useState(null);
+  useEffect(() => {
+    const pending = sessionStorage.getItem("pending_open_chat");
+    if (pending) {
+      sessionStorage.removeItem("pending_open_chat");
+      setOpenChatId(pending);
+      setActiveTab("Chat");
+    }
+  }, []);
+
+  // Same idea for other notification emails (mentor invitation/session
+  // updates), which deep-link to a specific tab rather than a chat contact.
+  useEffect(() => {
+    const pendingTab = sessionStorage.getItem("pending_open_tab");
+    if (pendingTab) {
+      sessionStorage.removeItem("pending_open_tab");
+      setActiveTab(pendingTab);
+    }
+  }, []);
 
   const currentUser = JSON.parse(sessionStorage.getItem("user") || "{}");
 
@@ -140,6 +167,7 @@ const MentorPortal = () => {
 
   const navItems = [
     { id: 1, icon: Users, label: "My Mentees" },
+    { id: 5, icon: TrendingUp, label: "Progress" },
     { id: 2, icon: Bell, label: "Notifications", badge: unreadNotifications || null },
     { id: 3, icon: Scroll, label: "Activity Timeline" },
     { id: 4, icon: MessageCircle, label: "Chat" },
@@ -371,7 +399,10 @@ const MentorPortal = () => {
           </div>
         ) : activeTab === "Chat" ? (
           /* -------- Chat view -------- */
-          <ChatPanel currentUser={currentUser} initialContact={chatContact} />
+          <ChatPanel currentUser={currentUser} initialContact={chatContact} openContactId={openChatId} />
+        ) : activeTab === "Progress" ? (
+          /* -------- Progress Review view -------- */
+          <ProgressReview />
         ) : (
           /* -------- Assigned entrepreneurs list -------- */
           <div className="space-y-6">

@@ -20,7 +20,7 @@ const formatTime = (iso) => {
       : d.toLocaleDateString([], { month: "short", day: "numeric" });
 };
 
-const ChatPanel = ({ currentUser, initialContact }) => {
+const ChatPanel = ({ currentUser, initialContact, openContactId }) => {
   const [contacts, setContacts] = useState([]);
   const [loadingContacts, setLoadingContacts] = useState(true);
   const [selected, setSelected] = useState(null);
@@ -31,6 +31,7 @@ const ChatPanel = ({ currentUser, initialContact }) => {
   const [search, setSearch] = useState("");
   const scrollRef = useRef(null);
   const selectedIdRef = useRef(null);
+  const appliedOpenContactRef = useRef(false);
 
   const fetchContacts = useCallback(async () => {
     try {
@@ -103,6 +104,20 @@ const ChatPanel = ({ currentUser, initialContact }) => {
     const interval = setInterval(() => fetchMessages(selected.id, { silent: true }), 3000);
     return () => clearInterval(interval);
   }, [selected, fetchMessages]);
+
+  // Deep-link from an email notification: once the contact list has loaded,
+  // open the conversation with that user id (if they're still an eligible
+  // contact). Guarded by a ref so it only auto-opens once — later contact
+  // list refreshes (polling) won't yank the user back to it if they've since
+  // picked a different conversation.
+  useEffect(() => {
+    if (!openContactId || appliedOpenContactRef.current || loadingContacts) return;
+    appliedOpenContactRef.current = true;
+    const match = contacts.find((c) => Number(c.id) === Number(openContactId));
+    if (match) {
+      openContact(match);
+    }
+  }, [openContactId, contacts, loadingContacts]);
 
   useEffect(() => {
     if (scrollRef.current) {

@@ -69,8 +69,9 @@
              questions when the admin has linked them) -->
         <div id="custom-form-fields" class="space-y-5"></div>
         <div>
-          <label class="block text-xs font-bold text-[#526274] mb-2 uppercase">Attach Document (PDF, DOC, PNG, JPG - Max 5MB)</label>
-          <input type="file" id="document_upload" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" class="w-full text-sm text-[#526274] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[#EAF8FC] file:text-[#006F9E] file:font-bold hover:file:bg-[#D6E4EA]">
+          <label class="block text-xs font-bold text-[#526274] mb-2 uppercase">Attach Documents (PDF, DOC, PNG, JPG - up to 5 files, 5MB each)</label>
+          <input type="file" id="document_upload" multiple accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" class="w-full text-sm text-[#526274] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[#EAF8FC] file:text-[#006F9E] file:font-bold hover:file:bg-[#D6E4EA]">
+          <ul id="document-upload-list" class="mt-2 space-y-1 text-xs text-[#526274]"></ul>
         </div>
 
         <div id="form-message" class="hidden p-4 rounded-xl text-sm font-bold text-center"></div>
@@ -206,10 +207,11 @@
       window.toggleTeamFields('individual');
     }
 
-    // Show Document Link if it exists
+    // Show Document Link(s) if any exist
     const docDiv = document.getElementById('modal-document');
-    if (ann.document_url) {
-      docDiv.innerHTML = `<a href="${ann.document_url}" target="_blank" class="inline-flex items-center gap-2 text-white hover:underline bg-white/10 px-4 py-2 rounded-lg mt-2 text-xs font-bold"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> View Attached Document</a>`;
+    const modalDocs = Array.isArray(ann.documents) ? ann.documents : [];
+    if (modalDocs.length > 0) {
+      docDiv.innerHTML = modalDocs.map((doc, i) => `<a href="${doc.slug ? `/documents/${doc.slug}` : doc.url}" target="_blank" class="inline-flex items-center gap-2 text-white hover:underline bg-white/10 px-4 py-2 rounded-lg mt-2 mr-2 text-xs font-bold"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> ${doc.filename || (modalDocs.length > 1 ? `View Document ${i + 1}` : 'View Attached Document')}</a>`).join('');
     } else {
       docDiv.innerHTML = '';
     }
@@ -269,8 +271,9 @@
     document.getElementById('modal-content').innerHTML = window.formatAnnouncementContent(ann.content);
 
     const docDiv = document.getElementById('modal-document');
-    if (ann.document_url) {
-      docDiv.innerHTML = `<a href="${ann.document_url}" target="_blank" class="inline-flex items-center gap-2 text-white hover:underline bg-white/10 px-4 py-2 rounded-lg mt-2 text-xs font-bold"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> View Attached Document</a>`;
+    const detailDocs = Array.isArray(ann.documents) ? ann.documents : [];
+    if (detailDocs.length > 0) {
+      docDiv.innerHTML = detailDocs.map((doc, i) => `<a href="${doc.slug ? `/documents/${doc.slug}` : doc.url}" target="_blank" class="inline-flex items-center gap-2 text-white hover:underline bg-white/10 px-4 py-2 rounded-lg mt-2 mr-2 text-xs font-bold"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> ${doc.filename || (detailDocs.length > 1 ? `View Document ${i + 1}` : 'View Attached Document')}</a>`).join('');
     } else {
       docDiv.innerHTML = '';
     }
@@ -466,7 +469,79 @@
     clearInterval(countdownInterval);
   };
 
-  // 6. Form Submission Logic
+  // 6. Multi-file attachment picker
+  // Native <input type="file" multiple> replaces its whole FileList on every
+  // selection, so files are tracked in `selectedDocuments` and the input's
+  // FileList is rebuilt from it via DataTransfer after every add/remove —
+  // that's what lets each file show up with its own "remove" button.
+  const MAX_DOCUMENTS = 5;
+  const MAX_DOCUMENT_SIZE = 5 * 1024 * 1024; // 5MB
+  const ALLOWED_DOCUMENT_EXTENSIONS = ['.pdf', '.doc', '.docx', '.png', '.jpg', '.jpeg'];
+  let selectedDocuments = [];
+
+  const escapeHtml = (str) => {
+    const div = document.createElement('div');
+    div.textContent = str == null ? '' : String(str);
+    return div.innerHTML;
+  };
+
+  const syncDocumentInput = () => {
+    const input = document.getElementById('document_upload');
+    const dt = new DataTransfer();
+    selectedDocuments.forEach(f => dt.items.add(f));
+    input.files = dt.files;
+  };
+
+  const renderDocumentList = () => {
+    const list = document.getElementById('document-upload-list');
+    if (!list) return;
+    list.innerHTML = selectedDocuments.map((f, i) => `
+      <li class="flex items-center justify-between gap-2 bg-[#F6FAFC] border border-[#D6E4EA] rounded-lg px-3 py-1.5">
+        <span class="truncate"><i class="fa-solid fa-paperclip mr-1"></i>${escapeHtml(f.name)}</span>
+        <button type="button" data-remove-doc="${i}" class="text-red-500 hover:text-red-700 font-bold shrink-0">&times;</button>
+      </li>
+    `).join('');
+    list.querySelectorAll('[data-remove-doc]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        selectedDocuments.splice(parseInt(btn.dataset.removeDoc, 10), 1);
+        syncDocumentInput();
+        renderDocumentList();
+      });
+    });
+  };
+
+  document.getElementById('document_upload')?.addEventListener('change', (e) => {
+    const msgBox = document.getElementById('form-message');
+    const incoming = Array.from(e.target.files || []);
+
+    for (const file of incoming) {
+      if (selectedDocuments.length >= MAX_DOCUMENTS) {
+        msgBox.className = 'p-4 rounded-xl text-sm font-bold text-center bg-red-100 text-red-800';
+        msgBox.textContent = `❌ You can attach up to ${MAX_DOCUMENTS} documents.`;
+        msgBox.classList.remove('hidden');
+        break;
+      }
+      if (file.size > MAX_DOCUMENT_SIZE) {
+        msgBox.className = 'p-4 rounded-xl text-sm font-bold text-center bg-red-100 text-red-800';
+        msgBox.textContent = `❌ "${file.name}" is too large. Max 5MB per file.`;
+        msgBox.classList.remove('hidden');
+        continue;
+      }
+      const isValid = ALLOWED_DOCUMENT_EXTENSIONS.some(ext => file.name.toLowerCase().endsWith(ext));
+      if (!isValid) {
+        msgBox.className = 'p-4 rounded-xl text-sm font-bold text-center bg-red-100 text-red-800';
+        msgBox.textContent = `❌ "${file.name}" isn't an allowed file type.`;
+        msgBox.classList.remove('hidden');
+        continue;
+      }
+      selectedDocuments.push(file);
+    }
+
+    syncDocumentInput();
+    renderDocumentList();
+  });
+
+  // 7. Form Submission Logic
   document.getElementById('application-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const msgBox = document.getElementById('form-message');
@@ -476,41 +551,11 @@
     button.textContent = 'Submitting...';
     msgBox.className = 'hidden';
 
-    const fileInput = document.getElementById('document_upload');
-    const file = fileInput.files[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        msgBox.className = 'p-4 rounded-xl text-sm font-bold text-center bg-red-100 text-red-800';
-        msgBox.textContent = '❌ File is too large. Max 5MB.';
-        msgBox.classList.remove('hidden');
-        button.disabled = false;
-        button.textContent = 'Submit Application';
-        return;
-      }
-      const allowedExtensions = ['.pdf', '.doc', '.docx', '.png', '.jpg', '.jpeg'];
-      const fileName = file.name.toLowerCase();
-      const isValid = allowedExtensions.some(ext => fileName.endsWith(ext));
-      if (!isValid) {
-        msgBox.className = 'p-4 rounded-xl text-sm font-bold text-center bg-red-100 text-red-800';
-        msgBox.textContent = '❌ Invalid file type. Only PDF, DOC, PNG, JPG allowed.';
-        msgBox.classList.remove('hidden');
-        button.disabled = false;
-        button.textContent = 'Submit Application';
-        return;
-      }
-    }
-
     const selectedApplicantType = document.querySelector('input[name="modal_applicant_type"]:checked')?.value || 'individual';
     const teamNameVal = document.getElementById('team_name')?.value || null;
     const teamSizeVal = document.getElementById('team_size')?.value || 1;
 
-    const data = {
-      announcement_id: document.getElementById('modal-announcement-id').value,
-      applicant_type: selectedApplicantType,
-      team_name: selectedApplicantType === 'team' ? teamNameVal : null,
-      team_size: selectedApplicantType === 'team' ? parseInt(teamSizeVal, 10) : 1,
-      answers: {}
-    };
+    const answers = {};
 
             // Capture the dynamic questions, keyed by `custom_<field id>` — the
             // same key format the fields were rendered with. This is what lets
@@ -524,32 +569,32 @@
                 if (field.field_type === 'checkbox') {
                   const checkboxes = document.querySelectorAll(`[name="${fieldName}"]:checked`);
                   if (checkboxes.length === 0) {
-                    data.answers[fieldName] = "No";
+                    answers[fieldName] = "No";
                   } else if (checkboxes.length === 1 && !checkboxes[0].value) {
-                    data.answers[fieldName] = "Yes";
+                    answers[fieldName] = "Yes";
                   } else {
                     const vals = Array.from(checkboxes).map(cb => cb.value || "Yes");
-                    data.answers[fieldName] = vals.join(', ');
+                    answers[fieldName] = vals.join(', ');
                   }
                 } else if (field.field_type === 'radio') {
                   const checked = document.querySelector(`[name="${fieldName}"]:checked`);
-                  data.answers[fieldName] = checked ? checked.value : '';
+                  answers[fieldName] = checked ? checked.value : '';
                 } else if (field.field_type === 'select') {
                   const select = document.querySelector(`[name="${fieldName}"]`);
                   if (select) {
                     if (select.value.toLowerCase() === 'others') {
                       const otherInput = document.querySelector(`[name="${fieldName}_other"]`);
-                      data.answers[fieldName] = `Others: ${otherInput ? otherInput.value : ''}`;
+                      answers[fieldName] = `Others: ${otherInput ? otherInput.value : ''}`;
                     } else {
-                      data.answers[fieldName] = select.value;
+                      answers[fieldName] = select.value;
                     }
                   }
                 } else if (field.field_type === 'file') {
                   const fileEl = document.querySelector(`[name="${fieldName}"]`);
-                  data.answers[fieldName] = fileEl && fileEl.files[0] ? fileEl.files[0].name : '';
+                  answers[fieldName] = fileEl && fileEl.files[0] ? fileEl.files[0].name : '';
                 } else {
                   const input = document.querySelector(`[name="${fieldName}"]`);
-                  data.answers[fieldName] = input ? input.value : '';
+                  answers[fieldName] = input ? input.value : '';
                 }
               });
             } else {
@@ -558,21 +603,28 @@
               customInputs.forEach(input => {
                 if (input.name.endsWith('_other')) return;
                 if (input.type === 'checkbox') {
-                  data.answers[input.name] = input.checked;
+                  answers[input.name] = input.checked;
                 } else if (input.tagName === 'SELECT' && input.value.toLowerCase() === 'others') {
                   const otherInput = document.querySelector(`[name="${input.name}_other"]`);
-                  data.answers[input.name] = `Others: ${otherInput ? otherInput.value : ''}`;
+                  answers[input.name] = `Others: ${otherInput ? otherInput.value : ''}`;
                 } else {
-                  data.answers[input.name] = input.value;
+                  answers[input.name] = input.value;
                 }
               });
             }
 
+    const formData = new FormData();
+    formData.append('announcement_id', document.getElementById('modal-announcement-id').value);
+    formData.append('applicant_type', selectedApplicantType);
+    formData.append('team_name', selectedApplicantType === 'team' ? (teamNameVal || '') : '');
+    formData.append('team_size', selectedApplicantType === 'team' ? parseInt(teamSizeVal, 10) : 1);
+    formData.append('answers', JSON.stringify(answers));
+    selectedDocuments.forEach(file => formData.append('documents', file));
+
     try {
       const response = await fetch('/api/public/apply', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
+        body: formData
       });
       const result = await response.json();
 
@@ -581,6 +633,8 @@
         msgBox.textContent = '✅ ' + result.message;
         msgBox.classList.remove('hidden');
         document.getElementById('application-form').reset();
+        selectedDocuments = [];
+        renderDocumentList();
       } else {
         throw new Error(result.message || 'Failed to submit');
       }

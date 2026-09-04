@@ -4,6 +4,34 @@ import eventBus from "../../utils/eventBus.js";
 
 const generateInviteToken = () => crypto.randomBytes(32).toString("hex");
 
+// ATTACH DOCUMENTS TO AN APPLICATION (bulk insert)
+// Mirrors addAnnouncementDocuments — an applicant can submit any number of
+// files with their application (resume, pitch deck, ID, ...), each stored
+// as its own row rather than a single column.
+export const addApplicationDocuments = async (applicationId, files) => {
+    if (!files || files.length === 0) return [];
+    const inserted = [];
+    for (const file of files) {
+        const result = await pool.query(
+            `INSERT INTO application_documents (application_id, url, filename)
+       VALUES ($1, $2, $3)
+       RETURNING id, url, filename, created_at`,
+            [applicationId, file.url, file.filename || null]
+        );
+        inserted.push(result.rows[0]);
+    }
+    return inserted;
+};
+
+// GET DOCUMENTS FOR AN APPLICATION
+export const getApplicationDocuments = async (applicationId) => {
+    const result = await pool.query(
+        "SELECT id, url, filename, created_at FROM application_documents WHERE application_id = $1 ORDER BY id",
+        [applicationId]
+    );
+    return result.rows;
+};
+
 // The set of normalized `applications` columns a question can be linked to.
 // A field with maps_to = null is a plain custom question — its answer only
 // ever lives in applications.answers (jsonb), keyed by the field id.
@@ -77,7 +105,12 @@ export const getAllApplications = async (limit = 10, offset = 0, announcementId 
     }
 
     const rowsResult = await pool.query(`
-    SELECT a.*, an.title as announcement_title 
+    SELECT a.*, an.title as announcement_title,
+           COALESCE(
+             (SELECT json_agg(json_build_object('id', d.id, 'url', d.url, 'filename', d.filename) ORDER BY d.id)
+              FROM application_documents d WHERE d.application_id = a.id),
+             '[]'
+           ) AS documents
     FROM applications a
     LEFT JOIN announcements an ON a.announcement_id = an.id
     ${whereClause}
@@ -140,6 +173,28 @@ export const getFormFields = async (announcementId) => {
         [announcementId]
     );
     return result.rows;
+};
+
+// Any question the admin linked to a normalized column (full name, email,
+// phone, startup idea, background) gets copied out of the dynamic answers
+// object into that column, via form_fields.maps_to. Shared by both the
+// final submission (/apply) and the in-progress draft save (/apply/draft)
+// so the two never drift out of sync.
+export const extractMappedValues = async (announcementId, answers = {}) => {
+    await ensureFormFieldsTable();
+    const fieldsRes = await pool.query(
+        "SELECT id, maps_to FROM form_fields WHERE announcement_id = $1 AND maps_to IS NOT NULL",
+        [announcementId]
+    );
+
+    const mapped = { full_name: null, email: null, phone: null, background: null, startup_idea: null };
+    for (const field of fieldsRes.rows) {
+        const userAnswer = answers[`custom_${field.id}`];
+        if (userAnswer && MAPPABLE_FIELDS.includes(field.maps_to)) {
+            mapped[field.maps_to] = userAnswer;
+        }
+    }
+    return mapped;
 };
 
 // SAVE CUSTOM FORM FIELDS FOR AN ANNOUNCEMENT

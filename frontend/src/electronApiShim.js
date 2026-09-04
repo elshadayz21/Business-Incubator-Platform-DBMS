@@ -285,6 +285,19 @@ window.electron = {
       case "system:get-overview":
         url = "/api/admin/system/overview";
         break;
+      case "dashboard:get-overview":
+        url = "/api/admin/dashboard/overview";
+        break;
+      case "audit-log:get": {
+        const params = new URLSearchParams();
+        const opts = args[0] || {};
+        if (opts.page) params.set("page", opts.page);
+        if (opts.limit) params.set("limit", opts.limit);
+        if (opts.role) params.set("role", opts.role);
+        if (opts.q) params.set("q", opts.q);
+        url = `/api/admin/audit-log?${params.toString()}`;
+        break;
+      }
 
       // Portal (Entrepreneur & Mentor)
       case "portal:entrepreneur-dashboard":

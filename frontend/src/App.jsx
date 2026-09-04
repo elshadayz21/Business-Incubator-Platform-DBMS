@@ -22,6 +22,23 @@ function App() {
   const [userRole, setUserRole] = useState("");
   const [, setUserVersion] = useState(0);
 
+  // Capture ?openChat=<userId> or ?openTab=<tabName> from an email
+  // notification link before the auth gate below rewrites the URL. Stashed
+  // in sessionStorage so it survives being bounced to /admin/login
+  // (unauthenticated visitors must log in first); the destination portal
+  // reads and clears it once mounted.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const openChat = params.get("openChat");
+    const openTab = params.get("openTab");
+    if (openChat) {
+      sessionStorage.setItem("pending_open_chat", openChat);
+    }
+    if (openTab) {
+      sessionStorage.setItem("pending_open_tab", openTab);
+    }
+  }, []);
+
   const checkAuth = useCallback(() => {
     const isLoggedIn = sessionStorage.getItem("isLoggedIn");
     const user = sessionStorage.getItem("user");
@@ -40,6 +57,18 @@ function App() {
         console.error("Error parsing user data:", error);
         sessionStorage.clear();
       }
+    }
+
+    // On the login page itself, there's no point silently probing for a
+    // server session: if a valid session existed, the user wouldn't have
+    // been sent here in the first place (or they can just log in again).
+    // Skipping this avoids a confusing, expected-but-noisy 401 in the
+    // console every time someone opens /admin/login.
+    const currentPath = window.location.pathname.replace(/\/+$/, "") || "/admin";
+    if (currentPath === LOGIN_PATH) {
+      setIsAuthenticated(false);
+      setIsLoading(false);
+      return;
     }
 
     // Check server session when navigating directly to /admin

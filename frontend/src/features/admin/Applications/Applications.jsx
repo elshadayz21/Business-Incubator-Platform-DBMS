@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { Eye, X, Loader2, Inbox, CheckCircle2 } from "lucide-react";
+import { Eye, X, Loader2, Inbox, CheckCircle2, Paperclip } from "lucide-react";
 
 // Maps a form field to the normalized column it fills. Used to pull an
 // applicant's real name/email/phone/idea straight from their submitted
@@ -332,6 +332,27 @@ export default function Applications() {
                                 <div>
                                     <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#006F9E] mb-2">Startup Idea</h3>
                                     <div className="p-4 bg-[#F6FAFC] rounded-xl border border-[#D6E4EA] text-sm text-[#111827] italic">"{detail.startup_idea}"</div>
+                                </div>
+                            )}
+
+                            {Array.isArray(selectedApp.documents) && selectedApp.documents.length > 0 && (
+                                <div>
+                                    <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#006F9E] mb-2">
+                                        Attached Document{selectedApp.documents.length > 1 ? 's' : ''}
+                                    </h3>
+                                    <div className="flex flex-wrap gap-2">
+                                        {selectedApp.documents.map((doc, i) => (
+                                            <a
+                                                key={doc.id ?? i}
+                                                href={doc.url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="inline-flex items-center gap-2 px-3 py-2 bg-[#EAF8FC] text-[#006F9E] rounded-lg text-xs font-bold border border-[#00ADEF]/20 hover:bg-[#D6E4EA] transition"
+                                            >
+                                                <Paperclip size={14} /> {doc.filename || `Document ${i + 1}`}
+                                            </a>
+                                        ))}
+                                    </div>
                                 </div>
                             )}
 
