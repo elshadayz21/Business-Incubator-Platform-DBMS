@@ -26,13 +26,17 @@
                     </div>
                 </div>
 
-                <!-- Document Link (If any) -->
-                <% if (announcement.document_url) { %>
-                <div class="bg-white border border-[#D6E4EA] rounded-xl p-4 mb-8 flex items-center justify-between">
-                    <p class="text-sm font-bold text-ink">Please review the attached document before applying.</p>
-                    <a href="<%= announcement.document_url %>" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 bg-[#EAF8FC] text-[#006F9E] rounded-lg text-xs font-bold border border-[#00ADEF]/20 hover:bg-[#D6E4EA] transition">
-                        <i class="fa-solid fa-file-pdf"></i> View Document
-                    </a>
+                <!-- Document Links (If any) -->
+                <% if (announcement.documents && announcement.documents.length > 0) { %>
+                <div class="bg-white border border-[#D6E4EA] rounded-xl p-4 mb-8">
+                    <p class="text-sm font-bold text-ink mb-3">Please review the attached document<%= announcement.documents.length > 1 ? 's' : '' %> before applying.</p>
+                    <div class="flex flex-wrap gap-2">
+                        <% announcement.documents.forEach(function(doc, i) { %>
+                        <a href="<%= doc.slug ? `/documents/${doc.slug}` : doc.url %>" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 bg-[#EAF8FC] text-[#006F9E] rounded-lg text-xs font-bold border border-[#00ADEF]/20 hover:bg-[#D6E4EA] transition">
+                            <i class="fa-solid fa-file-pdf"></i> <%= doc.filename || (announcement.documents.length > 1 ? `View Document ${i + 1}` : 'View Document') %>
+                        </a>
+                        <% }); %>
+                    </div>
                 </div>
                 <% } %>
             </div>
@@ -63,11 +67,16 @@
 
                     <!-- Document attachment lives on the final step, right before submit. -->
                     <div id="final-page-extra" class="hidden">
-                        <label class="block text-xs font-bold text-[#526274] mb-2 uppercase">Attach Document (PDF, DOC, PNG, JPG - Max 5MB)</label>
-                        <input type="file" id="document_upload" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" class="w-full text-sm text-[#526274] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[#EAF8FC] file:text-[#006F9E] file:font-bold hover:file:bg-[#D6E4EA]">
+                        <label class="block text-xs font-bold text-[#526274] mb-2 uppercase">Attach Documents (PDF, DOC, PNG, JPG - up to 5 files, 5MB each)</label>
+                        <input type="file" id="document_upload" multiple accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" class="w-full text-sm text-[#526274] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[#EAF8FC] file:text-[#006F9E] file:font-bold hover:file:bg-[#D6E4EA]">
+                        <ul id="document-upload-list" class="mt-2 space-y-1 text-xs text-[#526274]"></ul>
                     </div>
 
                     <div id="form-message" class="hidden p-4 rounded-xl text-sm font-bold text-center"></div>
+
+                    <p id="draft-save-indicator" class="opacity-0 transition-opacity duration-500 text-xs font-bold text-[#00ADEF] text-right">
+                        <i class="fa-solid fa-check"></i> Progress saved
+                    </p>
 
                     <div class="flex items-center gap-3 pt-2">
                         <button type="button" id="apply-back-btn" class="hidden px-6 py-4 rounded-xl font-bold text-[#526274] border border-[#D6E4EA] hover:bg-[#F6FAFC] transition">
@@ -109,9 +118,9 @@
         // --- FORM STATE PERSISTENCE (Auto-Save) ---
         const formStorageKey = `dx_apply_form_<%= announcement.id %>`;
 
-        function saveFormData() {
+        function collectFormData() {
             const form = document.getElementById('application-form');
-            if (!form) return;
+            if (!form) return null;
             const inputs = form.querySelectorAll('input, textarea, select');
             const dataObj = {};
             inputs.forEach(input => {
@@ -125,28 +134,82 @@
                     if (input.checked) dataObj[input.name] = input.value;
                 } else { dataObj[input.name] = input.value; }
             });
+            return dataObj;
+        }
+
+        function applyFormData(dataObj) {
+            if (!dataObj) return;
+            const form = document.getElementById('application-form');
+            if (!form) return;
+            const inputs = form.querySelectorAll('input, textarea, select');
+            inputs.forEach(input => {
+                if (!input.name || dataObj[input.name] === undefined) return;
+                if (input.type === 'checkbox') {
+                    if (input.name.endsWith('[]')) {
+                        input.checked = Array.isArray(dataObj[input.name]) && dataObj[input.name].includes(input.value);
+                    } else { input.checked = Boolean(dataObj[input.name]); }
+                } else if (input.type === 'radio') {
+                    input.checked = (dataObj[input.name] === input.value);
+                } else { input.value = dataObj[input.name]; }
+            });
+        }
+
+        // Small, unobtrusive "Progress saved" flash near the nav buttons —
+        // just enough feedback that the applicant trusts leaving and coming
+        // back will actually work.
+        function flashDraftSavedIndicator() {
+            const el = document.getElementById('draft-save-indicator');
+            if (!el) return;
+            el.classList.remove('opacity-0');
+            clearTimeout(flashDraftSavedIndicator._t);
+            flashDraftSavedIndicator._t = setTimeout(() => el.classList.add('opacity-0'), 2000);
+        }
+
+        // Debounced so we're not hitting the server on every keystroke — only
+        // once the applicant pauses. Only fires once we can identify them by
+        // email (an admin-configured question mapped to "email"); without
+        // that we have no way to find this draft again later, so it just
+        // stays in localStorage as before.
+        let draftSaveTimer = null;
+        function scheduleDraftSave(dataObj) {
+            clearTimeout(draftSaveTimer);
+            draftSaveTimer = setTimeout(() => saveDraftToServer(dataObj), 1200);
+        }
+
+        async function saveDraftToServer(dataObj) {
+            const emailField = applyPages.flatMap(p => p.fields).find(f => f.maps_to === 'email');
+            if (!emailField) return;
+            const email = (dataObj[`custom_${emailField.id}`] || '').trim();
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return;
+
+            try {
+                const response = await fetch('/api/public/apply/draft', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        announcement_id: <%= announcement.id %>,
+                        email,
+                        answers: dataObj,
+                        current_page: currentPage,
+                    }),
+                });
+                if (response.ok) flashDraftSavedIndicator();
+            } catch (e) {
+                console.error('Error saving draft:', e);
+            }
+        }
+
+        function saveFormData() {
+            const dataObj = collectFormData();
+            if (!dataObj) return;
             localStorage.setItem(formStorageKey, JSON.stringify(dataObj));
+            scheduleDraftSave(dataObj);
         }
 
         function loadFormData() {
             const savedData = localStorage.getItem(formStorageKey);
             if (!savedData) return;
-            try {
-                const dataObj = JSON.parse(savedData);
-                const form = document.getElementById('application-form');
-                if (!form) return;
-                const inputs = form.querySelectorAll('input, textarea, select');
-                inputs.forEach(input => {
-                    if (!input.name || dataObj[input.name] === undefined) return;
-                    if (input.type === 'checkbox') {
-                        if (input.name.endsWith('[]')) {
-                            input.checked = Array.isArray(dataObj[input.name]) && dataObj[input.name].includes(input.value);
-                        } else { input.checked = Boolean(dataObj[input.name]); }
-                    } else if (input.type === 'radio') {
-                        input.checked = (dataObj[input.name] === input.value);
-                    } else { input.value = dataObj[input.name]; }
-                });
-            } catch (e) { console.error("Error loading saved form data:", e); }
+            try { applyFormData(JSON.parse(savedData)); } catch (e) { console.error("Error loading saved form data:", e); }
         }
 
         // --- Pagination state ---
@@ -348,7 +411,9 @@
         });
 
         // --- Show Form Logic ---
-        window.showApplicationForm = () => {
+        // opts.prefill / opts.startPage let a resume link jump straight to a
+        // server-saved draft instead of the normal localStorage restore.
+        window.showApplicationForm = (opts = {}) => {
             document.getElementById("announcement-details-box").classList.add("hidden");
             document.getElementById("start-application-box").classList.add("hidden");
             const formContainer = document.getElementById("application-form-container");
@@ -362,16 +427,88 @@
                 .then(res => res.json())
                 .then(fields => {
                     applyPages = (fields && fields.length > 0) ? groupIntoSections(fields) : [];
-                    currentPage = 0;
-                    maxReachedPage = 0;
                     renderPages();
-                    showPage(0);
-                    loadFormData();
+                    if (opts.prefill) {
+                        applyFormData(opts.prefill);
+                        currentPage = maxReachedPage = Math.min(opts.startPage || 0, Math.max(applyPages.length - 1, 0));
+                    } else {
+                        currentPage = 0;
+                        maxReachedPage = 0;
+                        loadFormData();
+                    }
+                    showPage(currentPage);
                 }).catch(err => {
                     console.error("Error loading custom fields:", err);
                     pagesDiv.innerHTML = '<p class="text-red-500 text-sm">Failed to load form questions.</p>';
                 });
         };
+
+        // --- Multi-file attachment picker ---
+        // Native <input type="file" multiple> replaces its whole FileList on
+        // every selection, so a plain re-render would lose files picked in
+        // an earlier pass. Selected files are tracked in `selectedDocuments`
+        // instead, and the input's FileList is rebuilt from it via
+        // DataTransfer after every add/remove — that's what lets each file
+        // show up with its own "remove" button below the picker.
+        const MAX_DOCUMENTS = 5;
+        const MAX_DOCUMENT_SIZE = 5 * 1024 * 1024; // 5MB
+        const ALLOWED_DOCUMENT_EXTENSIONS = ['.pdf', '.doc', '.docx', '.png', '.jpg', '.jpeg'];
+        let selectedDocuments = [];
+
+        const syncDocumentInput = () => {
+            const input = document.getElementById('document_upload');
+            const dt = new DataTransfer();
+            selectedDocuments.forEach(f => dt.items.add(f));
+            input.files = dt.files;
+        };
+
+        const renderDocumentList = () => {
+            const list = document.getElementById('document-upload-list');
+            list.innerHTML = selectedDocuments.map((f, i) => `
+                <li class="flex items-center justify-between gap-2 bg-[#F6FAFC] border border-[#D6E4EA] rounded-lg px-3 py-1.5">
+                    <span class="truncate"><i class="fa-solid fa-paperclip mr-1"></i>${escapeHtml(f.name)}</span>
+                    <button type="button" data-remove-doc="${i}" class="text-red-500 hover:text-red-700 font-bold shrink-0">&times;</button>
+                </li>
+            `).join('');
+            list.querySelectorAll('[data-remove-doc]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    selectedDocuments.splice(parseInt(btn.dataset.removeDoc, 10), 1);
+                    syncDocumentInput();
+                    renderDocumentList();
+                });
+            });
+        };
+
+        document.getElementById('document_upload')?.addEventListener('change', (e) => {
+            const msgBox = document.getElementById('form-message');
+            const incoming = Array.from(e.target.files || []);
+
+            for (const file of incoming) {
+                if (selectedDocuments.length >= MAX_DOCUMENTS) {
+                    msgBox.className = 'p-4 rounded-xl text-sm font-bold text-center bg-red-100 text-red-800';
+                    msgBox.textContent = `❌ You can attach up to ${MAX_DOCUMENTS} documents.`;
+                    msgBox.classList.remove('hidden');
+                    break;
+                }
+                if (file.size > MAX_DOCUMENT_SIZE) {
+                    msgBox.className = 'p-4 rounded-xl text-sm font-bold text-center bg-red-100 text-red-800';
+                    msgBox.textContent = `❌ "${file.name}" is too large. Max 5MB per file.`;
+                    msgBox.classList.remove('hidden');
+                    continue;
+                }
+                const isValidType = ALLOWED_DOCUMENT_EXTENSIONS.some(ext => file.name.toLowerCase().endsWith(ext));
+                if (!isValidType) {
+                    msgBox.className = 'p-4 rounded-xl text-sm font-bold text-center bg-red-100 text-red-800';
+                    msgBox.textContent = `❌ "${file.name}" isn't an allowed file type.`;
+                    msgBox.classList.remove('hidden');
+                    continue;
+                }
+                selectedDocuments.push(file);
+            }
+
+            syncDocumentInput();
+            renderDocumentList();
+        });
 
         // --- Form Submission Logic ---
         document.getElementById('application-form')?.addEventListener('submit', async (e) => {
@@ -382,37 +519,37 @@
             button.textContent = 'Submitting...';
             msgBox.className = 'hidden';
 
-            const data = {
-                announcement_id: document.getElementById('modal-announcement-id').value,
-                full_name: '', email: '', phone: '', background: '', startup_idea: '',
-                answers: {}
-            };
-
+            const answers = {};
             const customInputs = document.querySelectorAll('[name^="custom_"]');
             const handledNames = new Set();
             customInputs.forEach(input => {
                 if (input.type === 'radio') {
                     if (!handledNames.has(input.name)) {
                         const checkedRadio = document.querySelector(`input[name="${input.name}"]:checked`);
-                        data.answers[input.name] = checkedRadio ? checkedRadio.value : '';
+                        answers[input.name] = checkedRadio ? checkedRadio.value : '';
                         handledNames.add(input.name);
                     }
                 } else if (input.type === 'checkbox' && input.name.endsWith('[]')) {
                     if (!handledNames.has(input.name)) {
                         const checkedBoxes = document.querySelectorAll(`input[name="${input.name}"]:checked`);
-                        data.answers[input.name] = Array.from(checkedBoxes).map(cb => cb.value);
+                        answers[input.name] = Array.from(checkedBoxes).map(cb => cb.value);
                         handledNames.add(input.name);
                     }
                 } else if (input.type === 'checkbox') {
-                    data.answers[input.name] = input.checked;
+                    answers[input.name] = input.checked;
                 } else {
-                    data.answers[input.name] = input.value;
+                    answers[input.name] = input.value;
                 }
             });
 
+            const formData = new FormData();
+            formData.append('announcement_id', document.getElementById('modal-announcement-id').value);
+            formData.append('answers', JSON.stringify(answers));
+            selectedDocuments.forEach(file => formData.append('documents', file));
+
             try {
                 const response = await fetch('/api/public/apply', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
+                    method: 'POST', body: formData
                 });
                 const result = await response.json();
                 if (response.ok) {
@@ -421,6 +558,8 @@
                     msgBox.textContent = '✅ ' + result.message;
                     msgBox.classList.remove('hidden');
                     document.getElementById('application-form').reset();
+                    selectedDocuments = [];
+                    renderDocumentList();
                     document.getElementById('application-form-container').scrollIntoView({ behavior: 'smooth', block: 'start' });
                 } else {
                     throw new Error(result.message || 'Failed to submit');
@@ -441,6 +580,27 @@
             appForm.addEventListener('input', saveFormData);
             appForm.addEventListener('change', saveFormData);
         }
+
+        // --- RESUME FROM EMAILED LINK ---
+        // A reminder email (or a link the applicant saved themselves) points
+        // back here as .../apply/<slug>?resume=<token>. If that token still
+        // resolves to an in-progress draft, skip straight to the form,
+        // pre-filled and on the right page. An invalid/expired/already-
+        // submitted token just falls back to the normal "Start Application"
+        // flow — no error shown, since the applicant may just be visiting
+        // the page normally.
+        (function resumeFromLink() {
+            const token = new URLSearchParams(window.location.search).get('resume');
+            if (!token) return;
+            fetch(`/api/public/apply/resume/${encodeURIComponent(token)}`)
+                .then(res => { if (!res.ok) throw new Error('not resumable'); return res.json(); })
+                .then(data => {
+                    if (data && data.draft) {
+                        showApplicationForm({ prefill: data.draft.answers, startPage: data.draft.current_page });
+                    }
+                })
+                .catch(() => { /* Silently fall back to the normal start-application flow. */ });
+        })();
     </script>
 </body>
 </html>

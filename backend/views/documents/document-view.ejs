@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<%- include('../partials/head', { title: (document.filename || 'Document') + ' - DxValley' }) %>
+<body class="flex min-h-screen flex-col bg-white font-sans text-ink">
+  <%- include('../partials/header') %>
+
+  <%
+    const displayName = document.filename || document.slug || 'Document';
+    const extMatch = /\.([a-z0-9]+)(?:\?.*)?$/i.exec(document.filename || document.url || '');
+    const ext = extMatch ? extMatch[1].toLowerCase() : '';
+    const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext);
+    const isPdf = ext === 'pdf';
+    const backHref = document.is_open_call && document.announcement_slug
+      ? `/apply/${document.announcement_slug}`
+      : '/';
+    const backLabel = document.is_open_call && document.announcement_slug
+      ? `Back to ${document.announcement_title}`
+      : 'Back to Home';
+  %>
+
+  <main class="flex-grow">
+    <section class="relative overflow-hidden bg-gradient-to-br from-cyan via-cyan-mid to-cyan-deep text-white">
+      <div class="pointer-events-none absolute -left-28 -top-32 h-[520px] w-[700px] rounded-[48%] border-[76px] border-white/10" aria-hidden="true"></div>
+      <div class="pointer-events-none absolute -right-44 bottom-[-260px] h-[620px] w-[760px] rounded-[50%] border-[88px] border-white/10" aria-hidden="true"></div>
+      <div class="relative mx-auto max-w-5xl px-6 py-14 lg:px-10 lg:py-16">
+        <a href="<%= backHref %>" class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[.18em] text-white/80 hover:text-white transition mb-5">
+          <i class="fa-solid fa-arrow-left text-[10px]"></i> <%= backLabel %>
+        </a>
+        <% if (document.announcement_title) { %>
+          <p class="mb-3 inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[.24em] text-white/80">
+            <span class="h-2 w-2 rounded-full bg-orange" aria-hidden="true"></span>
+            Attachment from <%= document.announcement_title %>
+          </p>
+        <% } %>
+        <h1 class="max-w-[720px] break-words text-3xl font-extrabold leading-[1.1] tracking-[-.04em] sm:text-4xl">
+          <%= displayName %>
+        </h1>
+      </div>
+    </section>
+
+    <section class="bg-white">
+      <div class="mx-auto max-w-5xl px-6 py-12 lg:px-10 lg:py-14">
+        <div class="mb-8 flex flex-wrap items-center gap-3">
+          <a href="<%= document.url %>" target="_blank" rel="noopener" class="inline-flex items-center gap-2 rounded-xl bg-orange px-6 py-3 text-xs font-extrabold uppercase tracking-wide text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-orange-dark">
+            <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i> Open Original
+          </a>
+          <a href="<%= document.url %>" download class="inline-flex items-center gap-2 rounded-xl border border-line bg-white px-6 py-3 text-xs font-extrabold uppercase tracking-wide text-cyan-dark shadow-sm transition hover:bg-[#F6FAFC]">
+            <i class="fa-solid fa-download text-xs"></i> Download
+          </a>
+        </div>
+
+        <div class="overflow-hidden rounded-2xl border border-line bg-[#F6FAFC] shadow-sm">
+          <% if (isPdf) { %>
+            <object data="<%= document.url %>" type="application/pdf" class="h-[75vh] w-full">
+              <div class="flex flex-col items-center justify-center gap-4 p-16 text-center">
+                <i class="fa-solid fa-file-pdf text-4xl text-cyan-dark"></i>
+                <p class="text-sm font-semibold text-muted">
+                  This PDF can't be previewed in your browser. Use "Open Original" above to view it.
+                </p>
+              </div>
+            </object>
+          <% } else if (isImage) { %>
+            <div class="flex items-center justify-center p-6">
+              <img src="<%= document.url %>" alt="<%= displayName %>" class="max-h-[75vh] w-auto rounded-xl object-contain" />
+            </div>
+          <% } else { %>
+            <div class="flex flex-col items-center justify-center gap-4 p-16 text-center">
+              <i class="fa-solid fa-file-lines text-4xl text-cyan-dark"></i>
+              <p class="text-sm font-semibold text-muted">
+                A preview isn't available for this file type. Use "Open Original" or "Download" above.
+              </p>
+            </div>
+          <% } %>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <%- include('../partials/footer') %>
+</body>
+</html>

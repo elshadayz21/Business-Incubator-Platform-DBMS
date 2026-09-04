@@ -110,7 +110,7 @@ import {
   resetUserPassword,
   deleteUser,
 } from "../admin-backend/users/users.js";
-//for Announcements
+//for Announcements (imports below extended with document helpers)
 import {
   getAllAnnouncements,
   getAnnouncementById,
@@ -119,6 +119,8 @@ import {
   duplicateAnnouncement,
   getApplicationCount,
   deleteAnnouncement,
+  addAnnouncementDocuments,
+  deleteAnnouncementDocument,
 } from "../admin-backend/announcements/announcements.js";
 //for Gallery CMS
 import {
@@ -163,7 +165,18 @@ import {
   getReportSummary,
   getReportRows,
 } from "../admin-backend/reports/reports.js";
+import {
+  getAllPhases,
+  createPhase,
+  updatePhase,
+  deletePhase,
+  createTask,
+  updateTask,
+  deleteTask,
+  getProgressOverview,
+} from "../admin-backend/progress/progress.js";
 import { getSystemOverview } from "../admin-backend/system/system.js";
+import { getDashboardOverview } from "../admin-backend/dashboard/dashboard.js";
 import {
   getEmailSources,
   getEmailRecipients,
@@ -177,6 +190,8 @@ import {
 import ExcelJS from "exceljs";
 import { authorizeRole } from "../middleware/check_roles.middleware.js";
 import { loginLimiter } from "../middleware/rate_limiter.middleware.js";
+import { auditTrail } from "../middleware/audit.middleware.js";
+import { logAdminAudit, getAuditLog } from "../utils/auditLog.js";
 import { ROLES } from "../utils/constants.js";
 
 
@@ -194,6 +209,11 @@ const asyncHandler = (fn) => (req, res, next) => {
   });
 };
 
+// Audit every state-changing admin request, regardless of which controller
+// ends up handling it. Mounted before the role-gating below so blocked
+// attempts (403s) are captured too, not just successful ones.
+router.use(auditTrail);
+
 // Public Admin APIs
 router.post(
   "/auth/login",
@@ -206,6 +226,18 @@ router.post(
       req.session.userName = result.user.name;
       req.session.userEmail = result.user.email;
     }
+    // Logged explicitly (not by the generic auditTrail middleware above,
+    // which skips this route) so failed attempts are captured too, with the
+    // attempted email visible since there's no authenticated actor yet.
+    await logAdminAudit({
+      actorId: result.success ? result.user.id : null,
+      actorName: result.success ? result.user.name : req.body?.email,
+      actorRole: result.success ? result.user.role : null,
+      method: "POST",
+      path: req.originalUrl,
+      statusCode: result.success ? 200 : 401,
+      body: { outcome: result.success ? "success" : "failed" },
+    });
     res.json(result);
   }),
 );
@@ -219,6 +251,7 @@ const superadminOnly = authorizeRole(ROLES.SUPERADMIN);
 //   Superadmin -> system/CMS modules (reports, users, gallery, static pages,
 //                 system settings)
 router.use("/reports", superadminOnly);
+router.use("/audit-log", superadminOnly);
 router.use("/workshops", adminOnly);
 router.use("/resources", adminOnly);
 router.use("/bookings", adminOnly);
@@ -231,13 +264,37 @@ router.use("/cohorts", adminOnly);
 router.use("/cohort-members", adminOnly);
 router.use("/mentor-assignments", adminOnly);
 router.use("/mentor-sessions", adminOnly);
+router.use("/progress", adminOnly);
 router.use("/users-by-role", adminOnly);
 router.use("/applications", adminOnly);
 router.use("/emails", adminOnly);
 
+// Dashboard overview (Admin + Superadmin — it's the shared landing page,
+// unlike the modules above/below which are strictly one role or the other).
+router.get(
+  "/dashboard/overview",
+  adminOnly,
+  asyncHandler(async (req, res) => res.json(await getDashboardOverview())),
+);
+
 router.get(
   "/reports/summary",
   asyncHandler(async (req, res) => res.json(await getReportSummary())),
+);
+router.get(
+  "/audit-log",
+  asyncHandler(async (req, res) => {
+    const limit = Math.min(parseInt(req.query.limit, 10) || 50, 200);
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const offset = (page - 1) * limit;
+    const { rows, total } = await getAuditLog({
+      limit,
+      offset,
+      actorRole: req.query.role || undefined,
+      q: req.query.q || undefined,
+    });
+    res.json({ success: true, data: rows, total, page, limit });
+  }),
 );
 router.get(
   "/users",
@@ -559,8 +616,11 @@ router.get(
   })
 );
 
-// Create Announcement with File Upload
-// Create Announcement with File Upload
+// Create Announcement with File Upload(s)
+// Create Announcement with File Upload(s)
+// An announcement can carry any number of attached documents — "documents"
+// is submitted as a repeated multipart field and stored via
+// addAnnouncementDocuments once the announcement row (and its id) exists.
 // If it's an open call, the application form's fields are submitted together
 // with the announcement (built client-side first) and saved right after the
 // announcement row is created, BEFORE the response goes out — so an open
@@ -569,16 +629,16 @@ router.get(
 // published with no way to apply.
 router.post(
     "/announcements",
-    upload.single("document"),
+    upload.array("documents", 10),
     asyncHandler(async (req, res) => {
       try {
         // 1. Destructure ALL fields from req.body!
         const { title, content, deadline, is_open_call, capacity, category, applicant_type, fields } = req.body;
 
-        let document_url = null;
-        if (req.file) {
-          document_url = `/uploads/${req.file.filename}`;
-        }
+        const uploadedFiles = (req.files || []).map(f => ({
+          url: `/uploads/${f.filename}`,
+          filename: f.originalname,
+        }));
 
         // 2. Parse the checkbox and capacity values
         const parsedIsOpenCall = is_open_call === "true" || is_open_call === true;
@@ -610,7 +670,6 @@ router.post(
           title,
           content,
           deadline,
-          document_url,
           is_open_call: parsedIsOpenCall,
           capacity: parsedCapacity,
           category: category || "Call for Applications",
@@ -628,7 +687,12 @@ router.post(
           }
         }
 
-        res.json(newAnnouncement);
+        if (uploadedFiles.length > 0) {
+          await addAnnouncementDocuments(newAnnouncement.id, uploadedFiles);
+        }
+
+        const result = await getAnnouncementById(newAnnouncement.id);
+        res.json(result);
       } catch (error) {
         console.error("Error creating announcement:", error);
         res.status(500).json({ message: error.message || "Failed to create announcement" });
@@ -637,16 +701,16 @@ router.post(
 );
 
 // Update Announcement
+// New files come in as the repeated "documents" field and are appended to
+// whatever is already attached. "removed_document_ids" (a JSON array in the
+// body) lists existing documents the admin removed in the edit form — each
+// is deleted scoped to this announcement so one announcement can't be used
+// to delete another's document.
 router.put(
   "/announcements/:id",
-  upload.single("document"),
+  upload.array("documents", 10),
   asyncHandler(async (req, res) => {
-    const { title, content, deadline, is_open_call, capacity, category, applicant_type } = req.body;
-
-    let document_url = req.body.document_url || null;
-    if (req.file) {
-      document_url = `/uploads/${req.file.filename}`;
-    }
+    const { title, content, deadline, is_open_call, capacity, category, applicant_type, removed_document_ids } = req.body;
 
     const parsedIsOpenCall = is_open_call === "true" || is_open_call === true;
     const parsedCapacity = capacity ? parseInt(capacity, 10) : null;
@@ -655,7 +719,6 @@ router.put(
       title,
       content,
       deadline,
-      document_url,
       is_open_call: parsedIsOpenCall,
       capacity: parsedCapacity,
       category: category || "Call for Applications",
@@ -663,7 +726,29 @@ router.put(
     });
 
     if (!updated) return res.status(404).json({ message: "Announcement not found" });
-    res.json(updated);
+
+    if (removed_document_ids) {
+      let parsedRemovedIds = [];
+      try {
+        parsedRemovedIds = JSON.parse(removed_document_ids);
+      } catch (e) {
+        return res.status(400).json({ message: "Invalid removed_document_ids." });
+      }
+      for (const docId of parsedRemovedIds) {
+        await deleteAnnouncementDocument(req.params.id, docId);
+      }
+    }
+
+    const uploadedFiles = (req.files || []).map(f => ({
+      url: `/uploads/${f.filename}`,
+      filename: f.originalname,
+    }));
+    if (uploadedFiles.length > 0) {
+      await addAnnouncementDocuments(req.params.id, uploadedFiles);
+    }
+
+    const result = await getAnnouncementById(req.params.id);
+    res.json(result);
   })
 );
 
@@ -983,6 +1068,46 @@ router.post(
   asyncHandler(async (req, res) =>
     res.json(await createMentorSession(req.body)),
   ),
+);
+
+// -------- Progress Tracking (phases & tasks) --------
+router.get(
+  "/progress/overview",
+  asyncHandler(async (req, res) => res.json(await getProgressOverview())),
+);
+router.get(
+  "/progress/phases",
+  asyncHandler(async (req, res) =>
+    res.json(await getAllPhases(req.query.cohortId || null)),
+  ),
+);
+router.post(
+  "/progress/phases",
+  asyncHandler(async (req, res) => res.json(await createPhase(req.body))),
+);
+router.put(
+  "/progress/phases/:id",
+  asyncHandler(async (req, res) =>
+    res.json(await updatePhase(req.params.id, req.body)),
+  ),
+);
+router.delete(
+  "/progress/phases/:id",
+  asyncHandler(async (req, res) => res.json(await deletePhase(req.params.id))),
+);
+router.post(
+  "/progress/tasks",
+  asyncHandler(async (req, res) => res.json(await createTask(req.body))),
+);
+router.put(
+  "/progress/tasks/:id",
+  asyncHandler(async (req, res) =>
+    res.json(await updateTask(req.params.id, req.body)),
+  ),
+);
+router.delete(
+  "/progress/tasks/:id",
+  asyncHandler(async (req, res) => res.json(await deleteTask(req.params.id))),
 );
 
 router.get(

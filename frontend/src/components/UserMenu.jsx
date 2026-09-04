@@ -118,24 +118,10 @@ export default function UserMenu({
               Profile
             </a>
 
-            {typeof onNotifications === "function" && (
-              <button
-                type="button"
-                className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-xs font-bold text-[#111827] transition hover:bg-[#EAF8FC] hover:text-[#006F9E]"
-                onClick={() => {
-                  setOpen(false);
-                  onNotifications();
-                }}
-              >
-                <Bell size={15} />
-                Notifications
-                {unreadCount > 0 ? (
-                  <span className="ml-auto rounded-full bg-[#E38524] px-1.5 py-0.5 text-[10px] font-bold text-white">
-                    {unreadCount}
-                  </span>
-                ) : null}
-              </button>
-            )}
+            {/* No "Notifications" item here — the bell button next to this
+                menu (rendered above, whenever onNotifications is passed)
+                already does the same thing, so a duplicate entry inside the
+                dropdown would just be two ways to trigger one action. */}
 
             <div className="my-1 border-t border-[#D6E4EA]" />
 

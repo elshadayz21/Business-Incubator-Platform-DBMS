@@ -18,8 +18,10 @@ import {
   PanelLeftOpen,
   MessageCircle,
     X,
+    TrendingUp,
 } from "lucide-react";
 import { getEntrepreneurDashboard } from "../../services/portalService";
+import ProgressTab from "./ProgressTab";
 import UserMenu from "../../components/UserMenu";
 import ChatPanel from "../../components/ChatPanel";
 import {
@@ -71,6 +73,12 @@ const EntrepreneurPortal = () => {
   const [mentorFilter, setMentorFilter] = useState('all');
   // State to hold the mentor we want to chat with
   const [activeChatContact, setActiveChatContact] = useState(null);
+  // Deep-link support: an email "new message" notification links back with
+  // ?openChat=<userId>. App.jsx stashes that id in sessionStorage (it
+  // survives the login redirect for signed-out visitors); once this portal
+  // mounts we consume it once, jump to the Chat tab, and hand the id to
+  // ChatPanel so it can open that conversation.
+  const [openChatId, setOpenChatId] = useState(null);
   // State for unread chat messages
   const [unreadMessages, setUnreadMessages] = useState(0);
     const [activityLogPage, setActivityLogPage] = useState(1);
@@ -121,6 +129,25 @@ const EntrepreneurPortal = () => {
     setActiveChatContact(contactData);
     setActiveTab("Chat"); // Switch to the Chat tab instantly!
   };
+
+  useEffect(() => {
+    const pending = sessionStorage.getItem("pending_open_chat");
+    if (pending) {
+      sessionStorage.removeItem("pending_open_chat");
+      setOpenChatId(pending);
+      setActiveTab("Chat");
+    }
+  }, []);
+
+  // Same idea for other notification emails (project/funding/mentor
+  // updates), which deep-link to a specific tab rather than a chat contact.
+  useEffect(() => {
+    const pendingTab = sessionStorage.getItem("pending_open_tab");
+    if (pendingTab) {
+      sessionStorage.removeItem("pending_open_tab");
+      setActiveTab(pendingTab);
+    }
+  }, []);
 
   const handleSendReply = async (sessionId) => {
     const text = (replyInputs[sessionId] || "").trim();
@@ -482,6 +509,7 @@ const EntrepreneurPortal = () => {
     { id: 2, icon: FileText, label: "My Application" },
     { id: 3, icon: UserRound, label: "My Mentor" },
     { id: 4, icon: Layers, label: "My Program" },
+    { id: 11, icon: TrendingUp, label: "Progress" },
     { id: 5, icon: HandCoins, label: "Funding" },
     { id: 6, icon: GraduationCap, label: "My Workshops" },
     { id: 7, icon: Bell, label: "Notifications", badge: unreadNotifications || null },
@@ -773,6 +801,10 @@ const EntrepreneurPortal = () => {
             </div>
           </div>
       );
+    }
+
+    if (activeTab === "Progress") {
+      return <ProgressTab />;
     }
 
       if (activeTab === "Funding") {
@@ -1272,7 +1304,7 @@ const EntrepreneurPortal = () => {
     }
 
     if (activeTab === "Chat") {
-      return <ChatPanel currentUser={currentUser} initialContact={activeChatContact} />;
+      return <ChatPanel currentUser={currentUser} initialContact={activeChatContact} openContactId={openChatId} />;
     }
 
     // Default: Dashboard

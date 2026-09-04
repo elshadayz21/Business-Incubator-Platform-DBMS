@@ -1,5 +1,6 @@
 import eventBus from "../utils/eventBus.js";
 import pool from "../config/db.js";
+import { sendGenericNotificationEmail } from "../utils/mailer.js";
 
 // Helper to write to activity_logs
 async function logActivity(userId, actionType, details) {
@@ -14,8 +15,15 @@ async function logActivity(userId, actionType, details) {
   }
 }
 
-// Helper to write notifications
-async function sendNotification(userId, type, message) {
+// Helper to write notifications. `emailConfig` ({ subject, tab }) is optional
+// and only passed by the specific event handlers below that we've deliberately
+// decided should also email the recipient — NOT keyed off `type`, since the
+// same `type` string (e.g. "mentor", "project") is reused across several
+// events here, including some that already double-fire an in-app notification
+// via notificationHelper.js's createNotification() on the same action. Keying
+// by call site instead of type keeps this additive and avoids silently
+// emailing those other events too.
+async function sendNotification(userId, type, message, emailConfig = null) {
   try {
     await pool.query(
       `INSERT INTO notifications (user_id, type, message, read, created_at)
@@ -24,6 +32,24 @@ async function sendNotification(userId, type, message) {
     );
   } catch (err) {
     console.error("[Subscribers] Error sending notification:", err);
+  }
+
+  if (emailConfig) {
+    try {
+      const { rows } = await pool.query(`SELECT name, email, role FROM users WHERE id = $1`, [userId]);
+      const user = rows[0];
+      if (user?.email) {
+        await sendGenericNotificationEmail(user.email, {
+          recipientName: user.name,
+          recipientRole: user.role,
+          subject: emailConfig.subject,
+          message,
+          tab: emailConfig.tab,
+        });
+      }
+    } catch (emailErr) {
+      console.error("[Subscribers] Error sending notification email:", emailErr);
+    }
   }
 }
 
@@ -53,7 +79,12 @@ eventBus.on("project.created", async ({ project, userId }) => {
   if (!project || !userId) return;
   await logActivity(userId, "project.created", `Project '${project.name}' was created.`);
   await adjustMetric("total_projects", 1);
-  await sendNotification(userId, "project", `Your project '${project.name}' has been successfully submitted and is pending review.`);
+  await sendNotification(
+    userId,
+    "project",
+    `Your project '${project.name}' has been successfully submitted and is pending review.`,
+    { subject: "Your project submission is in", tab: "My Program" }
+  );
 });
 
 // 3. Funding Requested
@@ -82,9 +113,19 @@ eventBus.on("funding.requested", async ({ request, userId }) => {
   
   await logActivity(userId, "funding.requested", `Requested funding of ${amountStr} for project '${projectName}' from investor ${investorName}.`);
   await adjustMetric("total_funding_requested", 1);
-  await sendNotification(userId, "funding", `You requested funding of ${amountStr} for project '${projectName}' from ${investorName}.`);
+  await sendNotification(
+    userId,
+    "funding",
+    `You requested funding of ${amountStr} for project '${projectName}' from ${investorName}.`,
+    { subject: "Your funding request has been submitted", tab: "Funding" }
+  );
   if (request.investor_id) {
-    await sendNotification(request.investor_id, "funding", `You have a new funding request of ${amountStr} for project '${projectName}'.`);
+    await sendNotification(
+      request.investor_id,
+      "funding",
+      `You have a new funding request of ${amountStr} for project '${projectName}'.`,
+      { subject: "New funding request awaiting your review" }
+    );
   }
 });
 
@@ -155,7 +196,12 @@ eventBus.on("workshop.enrolled", async ({ enrollment }) => {
   }
   
   await logActivity(enrollment.user_id, "workshop.enrolled", `User '${userName}' enrolled in workshop '${workshopTitle}'.`);
-  await sendNotification(enrollment.user_id, "workshop", `You have successfully enrolled in the workshop '${workshopTitle}'.`);
+  await sendNotification(
+    enrollment.user_id,
+    "workshop",
+    `You have successfully enrolled in the workshop '${workshopTitle}'.`,
+    { subject: "You're enrolled in a workshop", tab: "My Workshops" }
+  );
 });
 
 // 6. Workshop Cancelled
@@ -179,7 +225,12 @@ eventBus.on("workshop.cancelled", async ({ enrollment }) => {
   }
 
   await logActivity(enrollment.user_id, "workshop.cancelled", `User '${userName}' cancelled enrollment in workshop '${workshopTitle}'.`);
-  await sendNotification(enrollment.user_id, "workshop", `Your enrollment in the workshop '${workshopTitle}' has been cancelled.`);
+  await sendNotification(
+    enrollment.user_id,
+    "workshop",
+    `Your enrollment in the workshop '${workshopTitle}' has been cancelled.`,
+    { subject: "Your workshop enrollment was cancelled", tab: "My Workshops" }
+  );
 });
 
 // 7. Mentor Session Booked
@@ -201,8 +252,18 @@ eventBus.on("mentor.session_booked", async ({ mentorId, date, time, notes, userI
   }
 
   await logActivity(userId, "mentor.session_booked", `Booked session with mentor '${mentorName}' on ${date} at ${time}.`);
-  await sendNotification(userId, "mentor", `You successfully booked a session with ${mentorName} on ${date} at ${time}.`);
-  await sendNotification(mentorId, "mentor", `Entrepreneur '${userName}' booked a mentoring session with you on ${date} at ${time}. Notes: ${notes}`);
+  await sendNotification(
+    userId,
+    "mentor",
+    `You successfully booked a session with ${mentorName} on ${date} at ${time}.`,
+    { subject: "Your mentor session is booked", tab: "My Mentor" }
+  );
+  await sendNotification(
+    mentorId,
+    "mentor",
+    `Entrepreneur '${userName}' booked a mentoring session with you on ${date} at ${time}. Notes: ${notes}`,
+    { subject: "New mentoring session booked", tab: "My Mentees" }
+  );
 });
 
 // 8. Application Status Changed (Admin action)
@@ -219,7 +280,16 @@ eventBus.on("application.status_changed", async ({ application, status }) => {
 
   if (applicantUserId) {
     await logActivity(applicantUserId, "application.status_changed", `Your application status has been updated to '${status}'.`);
-    await sendNotification(applicantUserId, "application", `Your application has been ${status.toLowerCase()}.`);
+    const isAccepted = String(status).toLowerCase() === "accepted";
+    await sendNotification(
+      applicantUserId,
+      "application",
+      `Your application has been ${status.toLowerCase()}.`,
+      {
+        subject: isAccepted ? "Your application has been accepted! 🎉" : "Update on your application status",
+        tab: "My Application",
+      }
+    );
   }
 });
 
@@ -292,22 +362,19 @@ eventBus.on("project.status_changed", async ({ projectId, projectName, status, u
   await sendNotification(userId, "project", `Your project '${projectName}' status has been updated to '${status}'.`);
 });
 
-// 14. Project Approval Toggled (Admin action)
-eventBus.on("project.approval_toggled", async ({ projectId, projectName, approved, userId }) => {
+// 14. Project Approval Changed (Admin action — approve/reject a project)
+// Activity-log only: updateProjectApproval() in projects.js already calls
+// createNotification() directly for this action (types "project_approved" /
+// "project_rejected", both configured to email), so adding sendNotification
+// here would double both the in-app notification and the email. This listener
+// exists purely to fill a real gap — without it, approval/rejection never
+// showed up in the entrepreneur's Activity Timeline the way other project
+// events do.
+eventBus.on("project.approval_changed", async ({ projectName, approved, userId }) => {
   if (!userId) return;
 
-  const label = approved ? "approved" : "unapproved";
-  await logActivity(userId, "project.approval_toggled", `Project '${projectName}' has been ${label}.`);
-  await sendNotification(userId, "project", `Your project '${projectName}' has been ${label}.`);
-});
-
-// 15. Funding Reviewed by Admin (Admin path)
-eventBus.on("funding.admin_reviewed", async ({ request, projectName, status, userId }) => {
-  if (!userId || !request) return;
-
-  const amountStr = Number(request.amount).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
-  await logActivity(userId, "funding.reviewed", `Your funding request of ${amountStr} for project '${projectName}' has been ${status}.`);
-  await sendNotification(userId, "funding", `Your funding request of ${amountStr} for project '${projectName}' has been ${status}.`);
+  const label = approved ? "approved" : "rejected";
+  await logActivity(userId, "project.approval_changed", `Project '${projectName}' has been ${label}.`);
 });
 
 console.log("[Subscribers] Decoupled domain subscribers initialized and listening.");

@@ -1,4 +1,6 @@
 import { Router } from "express";
+import multer from "multer";
+import path from "path";
 import pool from "../config/db.js";
 import { authorizeRole } from "../middleware/check_roles.middleware.js";
 import { isAuth } from "../middleware/auth.middlware.js";
@@ -22,6 +24,36 @@ import {
   sendChatMessage,
   getUnreadMessageCount,
 } from "../admin-backend/chat/chat.js";
+import {
+  getEntrepreneurProgress,
+  submitWork,
+  getSubmissionHistory,
+  getSubmissionsForMentor,
+  reviewSubmission,
+} from "../admin-backend/progress/progress.js";
+
+// Multer for the optional file attached to a submitted-work form. Mirrors
+// the config already used for application/announcement documents (same
+// storage folder, allowed types, per-file size cap) plus zip, since work
+// submissions may be a code archive.
+const progressUploadStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, "public/uploads/"),
+  filename: (req, file, cb) =>
+    cb(null, `submission-${Date.now()}-${Math.round(Math.random() * 1e9)}${path.extname(file.originalname)}`),
+});
+const uploadSubmissionFile = multer({
+  storage: progressUploadStorage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  fileFilter: (req, file, cb) => {
+    const allowedExt = /\.(pdf|doc|docx|png|jpg|jpeg|zip)$/i.test(file.originalname);
+    const allowedMime = /^(application\/(pdf|msword|vnd\.openxmlformats-officedocument\.wordprocessingml\.document|zip|x-zip-compressed)|image\/(png|jpe?g))$/.test(
+      file.mimetype,
+    );
+    const genericMime = file.mimetype === "application/octet-stream";
+    if (allowedExt && (allowedMime || genericMime)) return cb(null, true);
+    cb(new Error("Invalid file type. Only PDF, DOC, DOCX, ZIP, PNG, JPG, and JPEG files are allowed."));
+  },
+});
 
 const router = Router();
 
@@ -331,4 +363,86 @@ router.get("/entrepreneur/projects/:id", async (req, res) => {
         res.status(500).json({ error: "Failed to load project" });
     }
 });
+// -------- Progress Tracking --------
+
+// Entrepreneur: their phases/tasks + latest submission status per task.
+router.get(
+  "/entrepreneur/progress",
+  isAuth,
+  authorizeRole(ROLES.ENTREPRENEUR, ROLES.SUPERADMIN, ROLES.ADMIN),
+  asyncHandler(async (req, res) => {
+    res.json(await getEntrepreneurProgress(req.session.userId));
+  }),
+);
+
+// Entrepreneur: submit work for a task (multipart/form-data — file is optional).
+router.post(
+  "/entrepreneur/progress/submit",
+  isAuth,
+  authorizeRole(ROLES.ENTREPRENEUR),
+  uploadSubmissionFile.single("file"),
+  asyncHandler(async (req, res) => {
+    const submission = await submitWork(req.session.userId, {
+      task_id: req.body.task_id,
+      title: req.body.title,
+      notes: req.body.notes,
+      link_url: req.body.link_url,
+      file_path: req.file ? `/uploads/${req.file.filename}` : null,
+      file_name: req.file ? req.file.originalname : null,
+    });
+    res.status(201).json(submission);
+  }),
+);
+
+// Entrepreneur: full submission history for one task (so they can see past
+// feedback if they had to resubmit).
+router.get(
+  "/entrepreneur/progress/tasks/:taskId/history",
+  isAuth,
+  authorizeRole(ROLES.ENTREPRENEUR, ROLES.SUPERADMIN, ROLES.ADMIN),
+  asyncHandler(async (req, res) => {
+    res.json(await getSubmissionHistory(req.session.userId, req.params.taskId));
+  }),
+);
+
+// Mentor: submissions across every assigned project, optionally filtered by status.
+router.get(
+  "/mentor/progress/submissions",
+  isAuth,
+  authorizeRole(ROLES.MENTOR, ROLES.SUPERADMIN, ROLES.ADMIN),
+  asyncHandler(async (req, res) => {
+    res.json(await getSubmissionsForMentor(req.session.userId, req.query.status));
+  }),
+);
+
+// Mentor: approve / request changes / reject a submission.
+router.post(
+  "/mentor/progress/submissions/:id/review",
+  isAuth,
+  authorizeRole(ROLES.MENTOR),
+  asyncHandler(async (req, res) => {
+    const review = await reviewSubmission(req.session.userId, req.params.id, {
+      status: req.body.status,
+      feedback: req.body.feedback,
+    });
+    res.status(201).json(review);
+  }),
+);
+
+// Convert submission-upload errors (bad file type, over the size cap) into
+// JSON 400 responses instead of an HTML error page — mirrors the same
+// pattern used for announcement/application document uploads.
+router.use("/entrepreneur/progress/submit", (err, req, res, next) => {
+  if (res.headersSent) return next(err);
+
+  let message = err && err.message ? err.message : "Invalid request";
+  if (err && err.name === "MulterError") {
+    message = err.code === "LIMIT_FILE_SIZE" ? "File exceeds the maximum size of 10MB." : err.message;
+  }
+  req.on("error", () => {});
+  req.resume();
+  res.setHeader("Connection", "close");
+  return res.status(400).json({ message });
+});
+
 export default router;

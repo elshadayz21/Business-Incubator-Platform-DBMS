@@ -10,6 +10,7 @@ import fs from "fs";
 import path from "path";
 import { getStaticPageBySlug } from "../../admin-backend/content/staticPages.js";
 import { parseStaticPageBody } from "../../utils/parseStaticPageBody.js";
+import { getImpactStats } from "../../utils/impactStats.js";
 
 export const getStaticPage = async (req, res, next) => {
   try {
@@ -209,15 +210,37 @@ export const getGalleryPage = async (req, res) => {
 export const getAboutPage = async (req, res, next) => {
   try {
     const page = await getStaticPageBySlug("about");
+
+    // FAQs are admin-editable via the Static Pages CMS (slug "faq"), using
+    // the same "## Question" convention as any other page — each section
+    // becomes one accordion entry instead of being hardcoded in the view.
+    let faqs = [];
+    try {
+      const faqPage = await getStaticPageBySlug("faq");
+      if (faqPage && faqPage.body) {
+        faqs = parseStaticPageBody(faqPage.body)
+          .filter((s) => s.title)
+          .map((s) => ({ question: s.title, answer: s.content }));
+      }
+    } catch (faqErr) {
+      console.error("About page FAQ fetch error:", faqErr);
+    }
+
+    // Real impact numbers, computed live rather than hardcoded copy.
+    const impactStats = await getImpactStats();
+
     if (page && page.body) {
       const sections = parseStaticPageBody(page.body);
       return res.render("pages/static-page", {
         title: `${page.title} | DxValley`,
         page,
         sections,
+        impactStats,
+        faqs,
+        showFaqAccordion: true,
       });
     }
-    res.render("pages/about", { title: "About DxValley | Incubation Center" });
+    res.render("pages/about", { title: "About DxValley | Incubation Center", impactStats, faqs });
   } catch (err) {
     next(err);
   }

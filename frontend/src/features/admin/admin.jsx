@@ -13,9 +13,11 @@ import Gallery from "./Gallery/Gallery";
 import MassEmail from "./MassEmail/MassEmail";
 import StaticPages from "./StaticPages/StaticPages";
 import Cohorts from "./Cohorts/Cohorts";
+import Progress from "./Progress/Progress";
 import Reports from "./Reports/Reports";
 import Applications from "./Applications/Applications";
 import SystemSettings from "./SystemSettings/SystemSettings";
+import AuditLog from "./AuditLog/AuditLog";
 import UserMenu from "../../components/UserMenu";
 import ChatPanel from "../../components/ChatPanel";
 
@@ -28,6 +30,32 @@ const Admin = () => {
     sessionStorage.setItem("admin_active_tab", tab);
     setActiveTabState(tab);
   };
+
+  // Deep-link support: an email "new message" notification links back with
+  // ?openChat=<userId>. App.jsx stashes that id in sessionStorage (it
+  // survives the login redirect for signed-out visitors); once this portal
+  // mounts we consume it once, jump to the Chat tab, and hand the id to
+  // ChatPanel so it can open that conversation.
+  const [openChatId, setOpenChatId] = useState(null);
+  useEffect(() => {
+    const pending = sessionStorage.getItem("pending_open_chat");
+    if (pending) {
+      sessionStorage.removeItem("pending_open_chat");
+      setOpenChatId(pending);
+      setActiveTab("Chat");
+    }
+  }, []);
+
+  // Same idea for other notification emails (project/funding/mentor
+  // updates), which deep-link to a specific tab rather than a chat contact.
+  useEffect(() => {
+    const pendingTab = sessionStorage.getItem("pending_open_tab");
+    if (pendingTab) {
+      sessionStorage.removeItem("pending_open_tab");
+      setActiveTab(pendingTab);
+    }
+  }, []);
+
 
   const currentUser = JSON.parse(sessionStorage.getItem("user") || "{}");
   const userRole = currentUser.role;
@@ -44,6 +72,7 @@ const Admin = () => {
     "Announcements",
     "Mass Email",
     "Cohorts",
+    "Progress",
     "Applications",
   ];
   const superadminOnlyTabs = [
@@ -52,6 +81,7 @@ const Admin = () => {
     "Gallery",
     "Static Pages",
     "System Settings",
+    "Audit Trail",
   ];
 
   const canAccess = (tab) => {
@@ -94,6 +124,8 @@ const Admin = () => {
         return <Users />;
       case "Cohorts":
         return <Cohorts />;
+      case "Progress":
+        return <Progress />;
       case "Reports":
         return <Reports />;
       default:
@@ -102,8 +134,10 @@ const Admin = () => {
         return <Applications />;
       case "System Settings":
         return <SystemSettings />;
+      case "Audit Trail":
+        return <AuditLog />;
       case "Chat":
-        return <ChatPanel currentUser={currentUser} />;
+        return <ChatPanel currentUser={currentUser} openContactId={openChatId} />;
     }
   };
 

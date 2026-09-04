@@ -21,6 +21,8 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   MessageCircle,
+  History,
+  TrendingUp,
 } from "lucide-react";
 
 const Sidebar = ({
@@ -75,6 +77,7 @@ const Sidebar = ({
     { id: 8, icon: Megaphone, label: "Announcements", badge: null },
     { id: 10, icon: Mail, label: "Mass Email", badge: null },
     { id: 12, icon: Layers, label: "Cohorts", badge: null },
+    { id: 19, icon: TrendingUp, label: "Progress", badge: null },
     { id: 14, icon: ClipboardList, label: "Applications", badge: null },
     { id: 17, icon: MessageCircle, label: "Chat", badge: null },
   ];
@@ -87,6 +90,7 @@ const Sidebar = ({
     { id: 9, icon: Images, label: "Gallery", badge: null },
     { id: 11, icon: FileText, label: "Static Pages", badge: null },
     { id: 16, icon: ShieldCheck, label: "System Settings", badge: null },
+    { id: 18, icon: History, label: "Audit Trail", badge: null },
     { id: 17, icon: MessageCircle, label: "Chat", badge: null },
   ];
 

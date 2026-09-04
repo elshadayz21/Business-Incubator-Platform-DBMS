@@ -85,7 +85,9 @@ export default function Announcements() {
     const [title, setTitle] = useState("");
     const [content, setContent] = useState("");
     const [deadline, setDeadline] = useState("");
-    const [document, setDocument] = useState(null);
+    // Multiple documents can be attached to an announcement — this holds
+    // the File objects picked but not yet uploaded.
+    const [documents, setDocuments] = useState([]);
     const [submitting, setSubmitting] = useState(false);
     const [editingFormId, setEditingFormId] = useState(null);
     const [formFields, setFormFields] = useState([]);
@@ -104,8 +106,12 @@ export default function Announcements() {
     const [editTitle, setEditTitle] = useState("");
     const [editContent, setEditContent] = useState("");
     const [editDeadline, setEditDeadline] = useState("");
-    const [editDocument, setEditDocument] = useState(null);
-    const [editDocumentUrl, setEditDocumentUrl] = useState(null);
+    // Documents already attached to the announcement being edited (each
+    // { id, url, filename }), new files picked to add, and the ids of
+    // existing documents marked for removal on save.
+    const [editExistingDocuments, setEditExistingDocuments] = useState([]);
+    const [editNewDocuments, setEditNewDocuments] = useState([]);
+    const [editRemovedDocumentIds, setEditRemovedDocumentIds] = useState([]);
     const [editIsOpenCall, setEditIsOpenCall] = useState(false);
     const [editCapacity, setEditCapacity] = useState("");
     const [updating, setUpdating] = useState(false);
@@ -132,23 +138,51 @@ export default function Announcements() {
 
     useEffect(() => { fetchAnnouncements(); }, []);
 
-    const handleFileChange = (file, isEdit = false) => {
-        if (!file) return;
+    // Validates one or more newly-picked files and adds the valid ones to
+    // the relevant "pending upload" list (create form or edit modal).
+    // Multiple documents can be attached, so files accumulate rather than
+    // replacing whatever was already picked.
+    const handleFileChange = (fileList, isEdit = false) => {
+        const files = Array.from(fileList || []);
+        if (files.length === 0) return;
         const allowedExtensions = ["pdf", "doc", "docx", "png", "jpg", "jpeg"];
-        const extension = file.name.split(".").pop().toLowerCase();
-        if (!allowedExtensions.includes(extension)) {
-            window.alert("Invalid file type. Only PDF, DOC, DOCX, PNG, JPG, and JPEG files are allowed.");
-            return;
+        const validFiles = [];
+        for (const file of files) {
+            const extension = file.name.split(".").pop().toLowerCase();
+            if (!allowedExtensions.includes(extension)) {
+                window.alert(`"${file.name}": invalid file type. Only PDF, DOC, DOCX, PNG, JPG, and JPEG files are allowed.`);
+                continue;
+            }
+            if (file.size > 5 * 1024 * 1024) {
+                window.alert(`"${file.name}" exceeds the 5MB limit.`);
+                continue;
+            }
+            validFiles.push(file);
         }
-        if (file.size > 5 * 1024 * 1024) {
-            window.alert("File size exceeds the 5MB limit.");
-            return;
-        }
+        if (validFiles.length === 0) return;
         if (isEdit) {
-            setEditDocument(file);
+            setEditNewDocuments(prev => [...prev, ...validFiles]);
         } else {
-            setDocument(file);
+            setDocuments(prev => [...prev, ...validFiles]);
         }
+    };
+
+    const removeNewDocument = (index, isEdit = false) => {
+        if (isEdit) {
+            setEditNewDocuments(prev => prev.filter((_, i) => i !== index));
+        } else {
+            setDocuments(prev => prev.filter((_, i) => i !== index));
+        }
+    };
+
+    // Marks an already-attached document for removal on save — it stays
+    // visible (struck through) until the update actually goes through, in
+    // case the admin changes their mind before saving.
+    const removeExistingDocument = (docId) => {
+        setEditRemovedDocumentIds(prev => [...prev, docId]);
+    };
+    const undoRemoveExistingDocument = (docId) => {
+        setEditRemovedDocumentIds(prev => prev.filter(id => id !== docId));
     };
 
     const handleSubmit = async (e) => {
@@ -180,7 +214,7 @@ export default function Announcements() {
             formData.append('is_open_call', isOpenCall);
             if (capacity) formData.append('capacity', capacity);
             if (deadline) formData.append('deadline', deadline);
-            if (document) formData.append('document', document);
+            documents.forEach(file => formData.append('documents', file));
             if (isOpenCall) formData.append('fields', JSON.stringify(realFields));
 
             const response = await fetch('/api/admin/announcements', {
@@ -191,7 +225,7 @@ export default function Announcements() {
                 try { const data = await response.json(); if (data && data.message) message = data.message; } catch (e) { }
                 throw new Error(message);
             }
-            setTitle(""); setContent(""); setDeadline(""); setDocument(null); setIsOpenCall(false); setCapacity("");
+            setTitle(""); setContent(""); setDeadline(""); setDocuments([]); setIsOpenCall(false); setCapacity("");
             setCreateFormFields([emptyField()]);
             fetchAnnouncements();
         } catch (error) {
@@ -221,8 +255,9 @@ export default function Announcements() {
         setEditTitle(ann.title);
         setEditContent(ann.content);
         setEditDeadline(ann.deadline ? new Date(ann.deadline).toISOString().slice(0, 16) : "");
-        setEditDocumentUrl(ann.document_url);
-        setEditDocument(null);
+        setEditExistingDocuments(Array.isArray(ann.documents) ? ann.documents : []);
+        setEditNewDocuments([]);
+        setEditRemovedDocumentIds([]);
         setEditIsOpenCall(ann.is_open_call);
         setEditCapacity(ann.capacity || "");
     };
@@ -238,12 +273,9 @@ export default function Announcements() {
             formData.append('is_open_call', editIsOpenCall);
             if (editCapacity) formData.append('capacity', editCapacity);
             if (editDeadline) formData.append('deadline', editDeadline);
-            if (editDocument) {
-                formData.append('document', editDocument);
-            } else if (editDocumentUrl) {
-                formData.append('document_url', editDocumentUrl);
-            } else {
-                formData.append('document_url', '');
+            editNewDocuments.forEach(file => formData.append('documents', file));
+            if (editRemovedDocumentIds.length > 0) {
+                formData.append('removed_document_ids', JSON.stringify(editRemovedDocumentIds));
             }
 
             const response = await fetch(`/api/admin/announcements/${editModal.announcement.id}`, {
@@ -352,14 +384,24 @@ export default function Announcements() {
                                 </div>
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-[#526274] mb-2 uppercase tracking-wider">Attach Document</label>
+                                <label className="block text-xs font-bold text-[#526274] mb-2 uppercase tracking-wider">Attach Documents</label>
                                 <div className="flex items-center gap-3">
                                     <label className="flex-1 cursor-pointer flex items-center gap-2 px-4 py-3 border border-dashed border-[#00ADEF] rounded-xl bg-[#EAF8FC] hover:bg-[#D6E4EA] transition">
                                         <FileUp size={18} className="text-[#00ADEF]" />
-                                        <span className="text-sm font-bold text-[#006F9E]">{document ? document.name : "Choose a file..."}</span>
-                                        <input type="file" className="hidden" onChange={(e) => handleFileChange(e.target.files[0], false)} accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" />
+                                        <span className="text-sm font-bold text-[#006F9E]">{documents.length > 0 ? `${documents.length} file${documents.length > 1 ? 's' : ''} selected` : "Choose file(s)..."}</span>
+                                        <input type="file" multiple className="hidden" onChange={(e) => { handleFileChange(e.target.files, false); e.target.value = ""; }} accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" />
                                     </label>
                                 </div>
+                                {documents.length > 0 && (
+                                    <ul className="mt-2 space-y-1">
+                                        {documents.map((file, index) => (
+                                            <li key={index} className="flex items-center justify-between gap-2 px-3 py-2 bg-[#F6FAFC] border border-[#D6E4EA] rounded-lg text-xs">
+                                                <span className="font-medium text-[#111827] truncate">{file.name}</span>
+                                                <button type="button" onClick={() => removeNewDocument(index, false)} className="p-1 rounded text-red-500 hover:bg-red-50 shrink-0"><X size={14} /></button>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
                             </div>
                             <div className="flex items-center gap-3 py-2">
                                 <input id="is_open_call" type="checkbox" checked={isOpenCall} onChange={(e) => {
@@ -555,22 +597,44 @@ export default function Announcements() {
                                     <ReactQuill theme="snow" value={editContent} onChange={setEditContent} className="h-48 mb-12" modules={{ toolbar: [['bold', 'italic', 'underline', 'strike', { 'color': [] }, { 'background': [] }], [{'list': 'ordered'}, {'list': 'bullet'}], ['link'], ['clean']] }} />
                                 </div>
                             </div>
-                            {editDocumentUrl && !editDocument && (
-                                <div className="flex items-center gap-2 p-3 bg-[#EAF8FC] rounded-xl border border-[#00ADEF]/20">
-                                    <FileUp size={16} className="text-[#00ADEF]" />
-                                    <span className="text-sm font-medium text-[#006F9E]">Current: {editDocumentUrl.split('/').pop()}</span>
-                                    <button type="button" onClick={() => setEditDocumentUrl(null)} className="ml-auto p-1 rounded text-red-500 hover:bg-red-50"><X size={14} /></button>
+                            {editExistingDocuments.length > 0 && (
+                                <div className="space-y-1">
+                                    <label className="block text-xs font-bold text-[#526274] mb-1 uppercase tracking-wider">Attached Documents</label>
+                                    {editExistingDocuments.map((doc, index) => {
+                                        const isRemoved = editRemovedDocumentIds.includes(doc.id);
+                                        return (
+                                            <div key={doc.id ?? index} className={`flex items-center gap-2 p-3 rounded-xl border ${isRemoved ? "bg-red-50 border-red-200" : "bg-[#EAF8FC] border-[#00ADEF]/20"}`}>
+                                                <FileUp size={16} className={isRemoved ? "text-red-400" : "text-[#00ADEF]"} />
+                                                <span className={`text-sm font-medium truncate ${isRemoved ? "text-red-400 line-through" : "text-[#006F9E]"}`}>{doc.filename || doc.url.split('/').pop()}</span>
+                                                {isRemoved ? (
+                                                    <button type="button" onClick={() => undoRemoveExistingDocument(doc.id)} className="ml-auto text-xs font-bold text-[#00ADEF] hover:underline shrink-0">Undo</button>
+                                                ) : (
+                                                    <button type="button" onClick={() => removeExistingDocument(doc.id)} className="ml-auto p-1 rounded text-red-500 hover:bg-red-50 shrink-0"><X size={14} /></button>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             )}
                             <div>
-                                <label className="block text-xs font-bold text-[#526274] mb-2 uppercase tracking-wider">{editDocumentUrl && !editDocument ? "Replace Document" : "Attach Document"}</label>
+                                <label className="block text-xs font-bold text-[#526274] mb-2 uppercase tracking-wider">Attach More Documents</label>
                                 <div className="flex items-center gap-3">
                                     <label className="flex-1 cursor-pointer flex items-center gap-2 px-4 py-3 border border-dashed border-[#00ADEF] rounded-xl bg-[#EAF8FC] hover:bg-[#D6E4EA] transition">
                                         <FileUp size={18} className="text-[#00ADEF]" />
-                                        <span className="text-sm font-bold text-[#006F9E]">{editDocument ? editDocument.name : "Choose a file..."}</span>
-                                        <input type="file" className="hidden" onChange={(e) => handleFileChange(e.target.files[0], true)} accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" />
+                                        <span className="text-sm font-bold text-[#006F9E]">{editNewDocuments.length > 0 ? `${editNewDocuments.length} file${editNewDocuments.length > 1 ? 's' : ''} selected` : "Choose file(s)..."}</span>
+                                        <input type="file" multiple className="hidden" onChange={(e) => { handleFileChange(e.target.files, true); e.target.value = ""; }} accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" />
                                     </label>
                                 </div>
+                                {editNewDocuments.length > 0 && (
+                                    <ul className="mt-2 space-y-1">
+                                        {editNewDocuments.map((file, index) => (
+                                            <li key={index} className="flex items-center justify-between gap-2 px-3 py-2 bg-[#F6FAFC] border border-[#D6E4EA] rounded-lg text-xs">
+                                                <span className="font-medium text-[#111827] truncate">{file.name}</span>
+                                                <button type="button" onClick={() => removeNewDocument(index, true)} className="p-1 rounded text-red-500 hover:bg-red-50 shrink-0"><X size={14} /></button>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
                             </div>
                             <div className="flex gap-3 pt-4">
                                 <button type="button" onClick={() => setEditModal({ open: false, announcement: null })} className="flex-1 py-3 border border-[#D6E4EA] text-[#526274] rounded-xl font-bold transition hover:bg-gray-50">Cancel</button>
